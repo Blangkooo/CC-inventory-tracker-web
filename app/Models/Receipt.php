@@ -6,29 +6,26 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
-    'client_uuid',
     'branch_id',
     'user_id',
-    'product_id',
-    'quantity',
-    'total_amount',
-    'sync_status',
-    'created_offline_at',
-    'synced_at',
+    'image_path',
+    'raw_ocr_text',
+    'parsed_total_amount',
+    'matched_transaction_id',
+    'reconciliation_status',
+    'scanned_at',
 ])]
-class Transaction extends Model
+class Receipt extends Model
 {
     use HasFactory;
 
     protected function casts(): array
     {
         return [
-            'total_amount' => 'decimal:2',
-            'created_offline_at' => 'datetime',
-            'synced_at' => 'datetime',
+            'parsed_total_amount' => 'decimal:2',
+            'scanned_at' => 'datetime',
         ];
     }
 
@@ -42,13 +39,8 @@ class Transaction extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function product(): BelongsTo
+    public function matchedTransaction(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
-    }
-
-    public function receipt(): HasOne
-    {
-        return $this->hasOne(Receipt::class, 'matched_transaction_id');
+        return $this->belongsTo(Transaction::class, 'matched_transaction_id');
     }
 }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ReceiptController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
@@ -10,11 +11,18 @@ Route::post('/auth/staff-login', [AuthController::class, 'staffLogin']);
 // TEMPORARY: no-auth route for local testing of the transaction flow. Remove before production.
 Route::post('/test-transaction', [TransactionController::class, 'store']);
 
+// TEMPORARY: no-auth route for local testing of the receipt scan flow. Remove before production.
+Route::post('/test-receipt-scan', [ReceiptController::class, 'scan']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
 
     Route::post('/transactions', [TransactionController::class, 'store']);
+
+    Route::post('/receipts/scan', [ReceiptController::class, 'scan']);
+    Route::get('/receipts', [ReceiptController::class, 'index']);
+    Route::get('/receipts/summary', [ReceiptController::class, 'summary']);
 
     Route::get('/dashboard', function () {
         return response()->json([

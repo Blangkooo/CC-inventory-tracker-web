@@ -1,106 +1,121 @@
 @extends('layouts.app')
 
 @section('title', 'Dashboard')
-@section('subtitle', 'Welcome back, ' . auth()->user()->name . '!')
+@section('subtitle', 'Overview across all branches &middot; Today, ' . date('M d'))
 
 @section('content')
 
     <div class="stat-grid">
         <div class="stat-card">
+            <div class="stat-label">Today's Sales</div>
+            <div class="stat-value">&#8369;{{ number_format($total_sales ?? 0, 0) }}</div>
+            <span class="stat-badge green">Today</span>
+        </div>
+        <div class="stat-card">
             <div class="stat-label">Total Branches</div>
             <div class="stat-value">{{ $total_branches }}</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Products Tracked</div>
-            <div class="stat-value">{{ $total_products }}</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Ingredients Monitored</div>
-            <div class="stat-value">{{ $total_ingredients }}</div>
+            <span class="stat-badge blue">Active</span>
         </div>
         <div class="stat-card">
             <div class="stat-label">Active Alerts</div>
-            <div class="stat-value">{{ $total_alerts }}</div>
+            <div class="stat-value">{{ $pending_alerts }}</div>
+            @if ($pending_alerts > 0)
+                <span class="stat-badge red">Needs review</span>
+            @else
+                <span class="stat-badge green">All clear</span>
+            @endif
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Low Stock SKUs</div>
+            <div class="stat-value">{{ $low_stock_count }}</div>
+            <span class="stat-badge amber">Across branches</span>
         </div>
     </div>
 
     <div class="widget-grid">
         <div class="widget">
-            <h2>Recipe formulas</h2>
+            <div class="widget-head">
+                <h2>Sales &mdash; Last 7 Days</h2>
+            </div>
 
-            @forelse ($products as $product)
-                <div class="recipe-item">
-                    <div class="recipe-head">
-                        <span class="recipe-name">{{ $product->name }}</span>
-                        <span class="recipe-price">&#8369;{{ number_format($product->price, 2) }}</span>
-                    </div>
+            @php
+                $chartDays = collect();
+                for ($i = 6; $i >= 0; $i--) {
+                    $date = \Carbon\Carbon::today()->subDays($i);
+                    $match = $daily_sales->firstWhere('date', $date->format('Y-m-d'));
+                    $chartDays->push([
+                        'label' => substr($date->format('D'), 0, 1),
+                        'total' => $match ? (float) $match->total : 0,
+                    ]);
+                }
+                $chartMax = $chartDays->max('total');
+            @endphp
 
-                    @if ($product->ingredients->isEmpty())
-                        <div class="empty-state" style="padding: 8px 0;">No ingredients linked to this product yet.</div>
-                    @else
-                        <div class="ingredient-tags">
-                            @foreach ($product->ingredients as $ingredient)
-                                <span class="ingredient-tag">{{ $ingredient->name }} &mdash; {{ rtrim(rtrim(number_format($ingredient->pivot->quantity_required, 3), '0'), '.') }}{{ $ingredient->unit }}</span>
-                            @endforeach
+            @if ($chartMax > 0)
+                <div class="bar-chart">
+                    @foreach ($chartDays as $day)
+                        <div class="bar-col">
+                            <div class="bar" style="height: {{ max(2, ($day['total'] / $chartMax) * 100) }}%"></div>
+                            <div class="bar-day-label">{{ $day['label'] }}</div>
                         </div>
-                    @endif
+                    @endforeach
                 </div>
-            @empty
-                <div class="empty-state">No products have been added yet.</div>
-            @endforelse
+            @else
+                <div class="empty-state">No sales recorded in the last 7 days.</div>
+            @endif
         </div>
 
         <div class="widget">
-            <h2>Branch stock</h2>
+            <div class="widget-head">
+                <h2>Branches Live</h2>
+            </div>
 
-            @forelse ($branch_stocks as $stock)
-                @php
-                    $initial = 500;
-                    $percent = $initial > 0 ? min(100, ($stock->current_quantity / $initial) * 100) : 0;
-                    $colorClass = $percent > 50 ? 'green' : ($percent >= 20 ? 'yellow' : 'red');
-                    $recipe = $stock->ingredient->recipes->first();
-                    $ordersRemaining = $recipe && $recipe->quantity_required > 0
-                        ? floor($stock->current_quantity / $recipe->quantity_required)
-                        : null;
-                @endphp
-                <div class="stock-item">
-                    <div class="stock-head">
-                        <span class="stock-name">{{ $stock->ingredient->name }} ({{ $stock->branch->name }})</span>
-                        <span>{{ rtrim(rtrim(number_format($stock->current_quantity, 3), '0'), '.') }}{{ $stock->ingredient->unit }}</span>
+            @forelse ($branches_with_sales as $branch)
+                <div class="branch-live-row">
+                    <div class="branch-live-left">
+                        <span class="dot {{ $branch['has_sales'] ? 'green' : 'red' }}"></span>
+                        <span>{{ $branch['name'] }}</span>
                     </div>
-                    <div class="progress-track">
-                        <div class="progress-fill {{ $colorClass }}" style="width: {{ $percent }}%"></div>
-                    </div>
-                    <div class="stock-meta">
-                        @if ($ordersRemaining !== null)
-                            Est. {{ $ordersRemaining }} order{{ $ordersRemaining == 1 ? '' : 's' }} remaining
-                        @else
-                            No recipe linked &mdash; can't estimate orders remaining
-                        @endif
-                    </div>
+                    <span class="branch-live-amount">&#8369;{{ number_format($branch['today_sales'], 0) }}</span>
                 </div>
             @empty
-                <div class="empty-state">No branch stock recorded yet.</div>
+                <div class="empty-state">No branches have been added yet.</div>
             @endforelse
         </div>
     </div>
 
     <div class="widget">
-        <h2>Branches</h2>
+        <div class="widget-head">
+            <h2>Recent Discrepancy Alerts</h2>
+            <a href="#" class="widget-link">View all &rarr;</a>
+        </div>
 
-        @forelse ($branches as $branch)
-            <div class="branch-row">
-                <div class="branch-info">
-                    <div class="branch-name">{{ $branch->name }}</div>
-                    <div class="branch-location">{{ $branch->location ?? 'No location set' }}</div>
-                </div>
-                <span class="badge {{ $branch->status === 'active' ? 'active' : 'inactive' }}">
-                    {{ ucfirst($branch->status) }}
-                </span>
-            </div>
-        @empty
-            <div class="empty-state">No branches have been added yet.</div>
-        @endforelse
+        @if ($recent_alerts->isEmpty())
+            <div class="all-clear">No alerts &mdash; all clear &#10003;</div>
+        @else
+            <table class="alerts-table">
+                <thead>
+                    <tr>
+                        <th>Branch</th>
+                        <th>Shift</th>
+                        <th>Staff</th>
+                        <th>Variance</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($recent_alerts as $alert)
+                        <tr>
+                            <td>{{ $alert->branch->name ?? '—' }}</td>
+                            <td>{{ $alert->shiftLog?->shift_start?->format('M d, g:iA') ?? '—' }}</td>
+                            <td>{{ $alert->shiftLog?->user?->name ?? '—' }}</td>
+                            <td class="variance-cell">{{ $alert->variance !== null ? number_format($alert->variance, 2) : '—' }}</td>
+                            <td><button type="button" class="btn-review">Review</button></td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
     </div>
 
 @endsection

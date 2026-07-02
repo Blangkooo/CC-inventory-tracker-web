@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In - Inventory Tracker</title>
+    <title>Sign In - InvenTrack</title>
     <style>
         * {
             margin: 0;
@@ -29,26 +29,116 @@
             color: #ffffff;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             padding: 64px;
         }
 
-        .panel-left .logo {
-            font-size: 28px;
+        .panel-left .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-left .logo-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #2563eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
             font-weight: 800;
-            margin-bottom: 24px;
+            color: #ffffff;
+            flex-shrink: 0;
+        }
+
+        .panel-left .app-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .panel-left .app-role {
+            font-size: 9px;
+            font-weight: 400;
+            color: #d9e5ff;
+        }
+
+        .panel-left .middle {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .panel-left .tagline {
             font-size: 18px;
-            line-height: 1.6;
-            color: #c7d2fe;
+            font-weight: 600;
+            color: #ffffff;
             max-width: 360px;
+            margin-bottom: 12px;
+        }
+
+        .panel-left .sub-tagline {
+            font-size: 13px;
+            font-weight: 400;
+            color: #d9e5ff;
+        }
+
+        .panel-left .footer {
+            margin-top: auto;
+        }
+
+        .panel-left .footer-line {
+            width: 64px;
+            height: 3px;
+            background: #2563eb;
+            margin-bottom: 12px;
+        }
+
+        .panel-left .footer-text {
+            font-size: 10px;
+            color: #d9e5ff;
+            margin-bottom: 20px;
+        }
+
+        .panel-left .footer-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .panel-left .footer-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #182e6e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: #ffffff;
+            flex-shrink: 0;
+        }
+
+        .panel-left .footer-user-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .panel-left .footer-user-email {
+            font-size: 11px;
+            color: #d9e5ff;
         }
 
         /* Right form panel */
         .panel-right {
             width: 50%;
+            background: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -61,14 +151,15 @@
         }
 
         .login-card h1 {
-            font-size: 28px;
-            font-weight: 800;
+            font-size: 26px;
+            font-weight: 700;
+            color: #111827;
             margin-bottom: 8px;
         }
 
         .login-card .subtitle {
-            color: #6b7280;
-            font-size: 15px;
+            color: #6b7380;
+            font-size: 13px;
             margin-bottom: 28px;
         }
 
@@ -76,7 +167,7 @@
             background: #fef2f2;
             border: 1px solid #fecaca;
             color: #b91c1c;
-            font-size: 14px;
+            font-size: 13px;
             padding: 12px 16px;
             border-radius: 8px;
             margin-bottom: 20px;
@@ -93,30 +184,17 @@
 
         .field label {
             display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: #374151;
+            font-size: 11px;
+            font-weight: 500;
+            color: #111827;
             margin-bottom: 6px;
-        }
-
-        .input-wrap {
-            position: relative;
-        }
-
-        .input-wrap .icon {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 16px;
-            color: #9aa1b1;
-            pointer-events: none;
         }
 
         .input-wrap input {
             width: 100%;
-            padding: 12px 14px 12px 42px;
-            border: 1px solid #e2e5f0;
+            height: 44px;
+            padding: 0 14px;
+            border: 1px solid #e5e8ed;
             border-radius: 8px;
             font-size: 15px;
             background: #f8f9fc;
@@ -124,21 +202,8 @@
 
         .input-wrap input:focus {
             outline: none;
-            border-color: #3b5fd9;
+            border-color: #2563eb;
             background: #ffffff;
-        }
-
-        .toggle-pw {
-            position: absolute;
-            right: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 13px;
-            font-weight: 600;
-            color: #3b5fd9;
-            background: none;
-            border: none;
-            cursor: pointer;
         }
 
         .row-between {
@@ -146,7 +211,7 @@
             align-items: center;
             justify-content: space-between;
             margin-bottom: 24px;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .remember {
@@ -157,15 +222,15 @@
         }
 
         .forgot {
-            color: #3b5fd9;
+            color: #2563eb;
             text-decoration: none;
             font-weight: 600;
         }
 
         .btn-signin {
             width: 100%;
-            padding: 14px;
-            background: #1e3a8a;
+            height: 48px;
+            background: #2563eb;
             color: #ffffff;
             border: none;
             border-radius: 8px;
@@ -176,67 +241,19 @@
         }
 
         .btn-signin:hover {
-            background: #3b5fd9;
+            background: #1e3a8a;
         }
 
-        .divider {
-            display: flex;
-            align-items: center;
-            text-align: center;
-            color: #9aa1b1;
-            font-size: 12px;
-            font-weight: 600;
-            letter-spacing: 0.05em;
+        .divider-line {
+            border: none;
+            border-top: 1px solid #e5e8ed;
             margin: 24px 0;
         }
 
-        .divider::before,
-        .divider::after {
-            content: "";
-            flex: 1;
-            border-bottom: 1px solid #e7eaf3;
-        }
-
-        .divider::before {
-            margin-right: 12px;
-        }
-
-        .divider::after {
-            margin-left: 12px;
-        }
-
-        .btn-google {
-            width: 100%;
-            padding: 12px;
-            background: #ffffff;
-            border: 1px solid #e2e5f0;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 600;
-            color: #374151;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .btn-google .g {
-            font-weight: 800;
-            color: #4285f4;
-        }
-
         .footer-note {
-            margin-top: 28px;
-            font-size: 12px;
-            color: #9aa1b1;
+            font-size: 11px;
+            color: #9ca3b0;
             text-align: center;
-            line-height: 1.5;
-        }
-
-        .footer-note a {
-            color: #6b7280;
-            text-decoration: underline;
         }
 
         @media (max-width: 820px) {
@@ -252,14 +269,37 @@
 <body>
     <div class="split">
         <div class="panel-left">
-            <div class="logo">Inventory Tracker</div>
-            <div class="tagline">Monitor your branches, recipes, and stock in real time &mdash; all in one place.</div>
+            <div class="brand">
+                <div class="logo-circle">IT</div>
+                <div>
+                    <div class="app-name">InvenTrack</div>
+                    <div class="app-role">Owner Panel</div>
+                </div>
+            </div>
+
+            <div class="middle">
+                <div class="tagline">Multi-Branch Inventory Tracker</div>
+                <div class="sub-tagline">Anti-theft. Offline-first. Real-time.</div>
+            </div>
+
+            <div class="footer">
+                <div class="footer-line"></div>
+                <div class="footer-text">&copy; 2026 InvenTrack &middot; Certicode</div>
+
+                <div class="footer-user">
+                    <div class="footer-avatar">O</div>
+                    <div>
+                        <div class="footer-user-name">Owner</div>
+                        <div class="footer-user-email">owner@franchise.ph</div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="panel-right">
             <div class="login-card">
-                <h1>Welcome Back!</h1>
-                <p class="subtitle">Sign in to continue to your dashboard</p>
+                <h1>Welcome back</h1>
+                <p class="subtitle">Sign in to your owner account</p>
 
                 @if ($errors->any())
                     <div class="error-box">
@@ -275,10 +315,9 @@
                     @csrf
 
                     <div class="field">
-                        <label for="email">Email</label>
+                        <label for="email">Email address</label>
                         <div class="input-wrap">
-                            <span class="icon">&#9993;</span>
-                            <input type="email" id="email" name="email" placeholder="you@example.com"
+                            <input type="email" id="email" name="email" placeholder="owner@franchise.ph"
                                    value="{{ old('email') }}" required autofocus>
                         </div>
                     </div>
@@ -286,9 +325,7 @@
                     <div class="field">
                         <label for="password">Password</label>
                         <div class="input-wrap">
-                            <span class="icon">&#128274;</span>
-                            <input type="password" id="password" name="password" placeholder="Enter your password" required>
-                            <button type="button" class="toggle-pw" onclick="togglePassword()">Show</button>
+                            <input type="password" id="password" name="password" placeholder="••••••••••••" required>
                         </div>
                     </div>
 
@@ -296,36 +333,17 @@
                         <label class="remember">
                             <input type="checkbox" name="remember"> Remember me
                         </label>
-                        <a href="#" class="forgot">Forgot Password?</a>
+                        <a href="#" class="forgot">Forgot password?</a>
                     </div>
 
                     <button type="submit" class="btn-signin">Sign In</button>
                 </form>
 
-                <div class="divider">OR CONTINUE WITH</div>
+                <hr class="divider-line">
 
-                <button type="button" class="btn-google"><span class="g">G</span> Sign in with Google</button>
-
-                <p class="footer-note">
-                    By signing the account, you accept our
-                    <a href="#">Terms &amp; Conditions</a> and <a href="#">Privacy Policy</a>
-                </p>
+                <p class="footer-note">Need help? Contact admin</p>
             </div>
         </div>
     </div>
-
-    <script>
-        function togglePassword() {
-            var input = document.getElementById('password');
-            var btn = document.querySelector('.toggle-pw');
-            if (input.type === 'password') {
-                input.type = 'text';
-                btn.textContent = 'Hide';
-            } else {
-                input.type = 'password';
-                btn.textContent = 'Show';
-            }
-        }
-    </script>
 </body>
 </html>
