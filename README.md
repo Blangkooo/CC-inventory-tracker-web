@@ -1,58 +1,107 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# NITA — Multi-Branch Inventory Tracker
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Anti-theft inventory and POS backend for food cart & micro-franchise businesses (milk tea, siomai, bakery). Laravel 13 REST API with JWT auth + 3-tier role-based access control, plus a server-rendered owner web dashboard.
 
-## About Laravel
+**Core features:** recipe-driven automatic stock deduction on every sale, shift open/close physical counts with automatic variance detection, discrepancy alerts (in-app + email), full stock movement audit trail, per-branch access control.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
-
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Quick Start
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/Blangkooo/CC-inventory-tracker-web.git
+cd CC-inventory-tracker-web
+composer install
+copy .env.example .env        # then set your DB credentials (MySQL) in .env
+php artisan key:generate
+php artisan jwt:secret
+php artisan migrate:fresh --seed
+php artisan serve             # http://127.0.0.1:8000
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Requirements: PHP 8.3+, Composer, MySQL. (Mail is optional — set the `MAIL_*` vars to a [Mailtrap](https://mailtrap.io) sandbox to see alert emails; leave `MAIL_MAILER=log` otherwise.)
 
-## Contributing
+## Test Accounts (seeded)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+| Role | Login | Credentials | Access |
+|---|---|---|---|
+| Super Admin | `POST /api/auth/admin-login` | `owner@inventory.test` / `password123` | All branches, all endpoints, global dashboard |
+| Manager | `POST /api/auth/admin-login` | `manager@inventory.test` / `password123` | Own branch only (Branch QC, id=1) |
+| Staff | `POST /api/auth/staff-login` | pin `1234` + `branch_id: 1` | POS checkout, shifts, catalog reads |
 
-## Code of Conduct
+The **owner web dashboard** (Blade) is at `http://127.0.0.1:8000/login` — super admin account only.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Seeded data: 2 branches (QC, Manila), 4 products (Classic Milk Tea, Taro Milk Tea, Pork Siomai, Pandesal), 10 ingredients with recipes, and starting stock for both branches.
 
-## Security Vulnerabilities
+---
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## For Frontend Devs 👋
 
-## License
+### 1. Import the Postman collection
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+`inventory-tracker.postman_collection.json` is in the repo root — **File → Import** in Postman. It covers all 53 requests, grouped by feature, with the required role labeled on each folder.
+
+Run **"Admin Login"** (or "Staff Login") first — a test script auto-saves the JWT into `{{admin_token}}` / `{{staff_token}}`, so every other request works immediately. `{{base_url}}` defaults to `http://127.0.0.1:8000/api`.
+
+> Using Postman **web**? Install the Postman Desktop Agent, or requests to `127.0.0.1` will fail with "localhost request not supported."
+
+### 2. Auth flow
+
+```
+POST /api/auth/admin-login  { "email": "...", "password": "..." }   → { token, user }
+POST /api/auth/staff-login  { "pin": "...", "branch_id": 1 }        → { token, user, branch }
+```
+
+Send the token on every request: `Authorization: Bearer <token>`. Tokens last 8 hours (`JWT_TTL=480`). `GET /api/auth/me` returns the current user + branch; `POST /api/auth/logout` invalidates the token.
+
+### 3. Response conventions (for your Loading/Success/Error states)
+
+| Status | Meaning | What to show |
+|---|---|---|
+| `200` / `201` | Success | Render data |
+| `401` `{"message": "Unauthenticated."}` | No/expired token | Redirect to login |
+| `403` `{"message": "Forbidden: ..."}` | Role or branch not allowed | "No access" state — **expected** for managers touching other branches or staff hitting supervisory endpoints |
+| `422` | Validation / business rule | Show `errors` field messages; insufficient stock returns `{ error, needed, available }` |
+
+List endpoints (`/transactions`, `/receipts`, `/alerts`, `/shifts`, `/notifications`, `/stock/{id}/movements`) return Laravel pagination: `{ data: [...], current_page, last_page, total, ... }`.
+
+### 4. Role matrix (who can call what)
+
+| Endpoint group | Staff | Manager | Super Admin |
+|---|---|---|---|
+| POS: `POST /transactions`, `POST /receipts/scan` | ✅ own branch | ✅ own branch | ✅ any |
+| Catalog reads: `/products`, `/ingredients`, `/recipes` | ✅ | ✅ | ✅ |
+| Shifts: `/shifts/open`, `/shifts/close` | ✅ | ✅ | ❌ |
+| Staff CRUD, reports, alerts, shifts/transactions lists, stock & restock | ❌ | ✅ own branch | ✅ any |
+| Branch CRUD, product/ingredient/recipe writes, `/dashboard` | ❌ | ❌ | ✅ |
+
+Managers and staff get `403` on any `branch_id` that isn't theirs — the frontend should scope branch pickers accordingly.
+
+---
+
+## API Overview
+
+| Area | Endpoints |
+|---|---|
+| Auth | `POST /api/auth/admin-login`, `POST /api/auth/staff-login`, `POST /api/auth/logout`, `GET /api/auth/me` |
+| Products | `GET/POST /api/products`, `GET/PUT/DELETE /api/products/{id}` |
+| Ingredients | `GET/POST /api/ingredients`, `GET/PUT/DELETE /api/ingredients/{id}` |
+| Recipes (formulas) | `GET /api/recipes?product_id=`, `POST /api/recipes`, `GET/PUT/DELETE /api/recipes/{id}` |
+| Branches | `GET/POST /api/branches`, `GET/PUT/DELETE /api/branches/{id}`, `GET /api/branches/{id}/stock` |
+| Stock | `POST /api/stock` (initial), `POST /api/stock/restock`, `GET /api/stock/low-stock?branch_id=`, `GET /api/stock/{id}/movements` |
+| POS / Transactions | `POST /api/transactions` (auto recipe deduction, race-safe), `GET /api/transactions?branch_id=`, `GET /api/transactions/{id}` |
+| Shifts | `POST /api/shifts/open`, `POST /api/shifts/close` (auto variance → alert), `GET /api/shifts?branch_id=`, `GET /api/shifts/{id}` |
+| Alerts | `GET /api/alerts?branch_id=`, `GET /api/alerts/{id}`, `PUT /api/alerts/{id}/review`, `PUT /api/alerts/{id}/dismiss` |
+| Reports | `GET /api/reports/sales?branch_id=&period=daily|weekly|monthly`, `GET /api/reports/inventory?branch_id=` |
+| Notifications | `GET /api/notifications`, `PUT /api/notifications/{id}/read` |
+| Receipts (OCR) | `POST /api/receipts/scan`, `GET /api/receipts?branch_id=`, `GET /api/receipts/summary?branch_id=`, `GET /api/receipts/{id}` |
+| Dashboard | `GET /api/dashboard` (super admin, global counts) |
+
+Full request/response examples are in the Postman collection.
+
+## How the Anti-Theft Pipeline Works
+
+1. **Sale** → `POST /api/transactions` deducts each recipe ingredient from `branch_stock` (row-locked to prevent overselling) and logs a `sale` stock movement.
+2. **Shift close** → staff submits physical counts; the system computes variance vs. expected stock, creates a `DiscrepancyAlert` on any mismatch, corrects stock to the physical count, and logs a `shift_correction` movement.
+3. **Alert** → an observer instantly creates in-app notifications and sends an email to the branch manager + super admins.
+4. **Audit** → `GET /api/stock/{id}/movements` shows every change (initial/restock/sale/shift_correction) with before/after quantities and who did it.
