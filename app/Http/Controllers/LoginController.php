@@ -24,7 +24,7 @@ class LoginController extends Controller
         ]);
 
         $user = User::where('email', $credentials['email'])
-            ->where('role', 'owner')
+            ->where('role', User::ROLE_SUPER_ADMIN)
             ->first();
 
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {

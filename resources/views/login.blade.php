@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In - InvenTrack</title>
+    <title>Sign In - NITA</title>
     <style>
         * {
             margin: 0;
@@ -13,8 +13,8 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: #f4f6fb;
-            color: #1f2433;
+            background: #fdf3d0;
+            color: #4a1d18;
         }
 
         .split {
@@ -25,7 +25,7 @@
         /* Left navy panel */
         .panel-left {
             width: 50%;
-            background: #1e3a8a;
+            background: #7b2d26;
             color: #ffffff;
             display: flex;
             flex-direction: column;
@@ -42,7 +42,7 @@
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: #2563eb;
+            background: #a03d2e;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -61,7 +61,7 @@
         .panel-left .app-role {
             font-size: 9px;
             font-weight: 400;
-            color: #d9e5ff;
+            color: #f3dfc0;
         }
 
         .panel-left .middle {
@@ -82,7 +82,7 @@
         .panel-left .sub-tagline {
             font-size: 13px;
             font-weight: 400;
-            color: #d9e5ff;
+            color: #f3dfc0;
         }
 
         .panel-left .footer {
@@ -92,13 +92,13 @@
         .panel-left .footer-line {
             width: 64px;
             height: 3px;
-            background: #2563eb;
+            background: #a03d2e;
             margin-bottom: 12px;
         }
 
         .panel-left .footer-text {
             font-size: 10px;
-            color: #d9e5ff;
+            color: #f3dfc0;
             margin-bottom: 20px;
         }
 
@@ -114,7 +114,7 @@
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: #182e6e;
+            background: #63241f;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -132,7 +132,7 @@
 
         .panel-left .footer-user-email {
             font-size: 11px;
-            color: #d9e5ff;
+            color: #f3dfc0;
         }
 
         /* Right form panel */
@@ -194,15 +194,15 @@
             width: 100%;
             height: 44px;
             padding: 0 14px;
-            border: 1px solid #e5e8ed;
+            border: 1px solid #e9d9b6;
             border-radius: 8px;
             font-size: 15px;
-            background: #f8f9fc;
+            background: #fdf8ec;
         }
 
         .input-wrap input:focus {
             outline: none;
-            border-color: #2563eb;
+            border-color: #a03d2e;
             background: #ffffff;
         }
 
@@ -222,7 +222,7 @@
         }
 
         .forgot {
-            color: #2563eb;
+            color: #a03d2e;
             text-decoration: none;
             font-weight: 600;
         }
@@ -230,7 +230,7 @@
         .btn-signin {
             width: 100%;
             height: 48px;
-            background: #2563eb;
+            background: #a03d2e;
             color: #ffffff;
             border: none;
             border-radius: 8px;
@@ -241,12 +241,12 @@
         }
 
         .btn-signin:hover {
-            background: #1e3a8a;
+            background: #7b2d26;
         }
 
         .divider-line {
             border: none;
-            border-top: 1px solid #e5e8ed;
+            border-top: 1px solid #e9d9b6;
             margin: 24px 0;
         }
 
@@ -270,10 +270,10 @@
     <div class="split">
         <div class="panel-left">
             <div class="brand">
-                <div class="logo-circle">IT</div>
+                <div class="logo-circle">&#127978;</div>
                 <div>
-                    <div class="app-name">InvenTrack</div>
-                    <div class="app-role">Owner Panel</div>
+                    <div class="app-name">NITA</div>
+                    <div class="app-role">Inventory Tracker</div>
                 </div>
             </div>
 
@@ -284,13 +284,13 @@
 
             <div class="footer">
                 <div class="footer-line"></div>
-                <div class="footer-text">&copy; 2026 InvenTrack &middot; Certicode</div>
+                <div class="footer-text">&copy; 2026 NITA &middot; Certicode</div>
 
                 <div class="footer-user">
                     <div class="footer-avatar">O</div>
                     <div>
                         <div class="footer-user-name">Owner</div>
-                        <div class="footer-user-email">owner@franchise.ph</div>
+                        <div class="footer-user-email">owner@inventory.test</div>
                     </div>
                 </div>
             </div>
@@ -298,7 +298,7 @@
 
         <div class="panel-right">
             <div class="login-card">
-                <h1>Welcome back</h1>
+                <h1>Welcome Back!</h1>
                 <p class="subtitle">Sign in to your owner account</p>
 
                 @if ($errors->any())
@@ -317,7 +317,7 @@
                     <div class="field">
                         <label for="email">Email address</label>
                         <div class="input-wrap">
-                            <input type="email" id="email" name="email" placeholder="owner@franchise.ph"
+                            <input type="email" id="email" name="email" placeholder="owner@inventory.test"
                                    value="{{ old('email') }}" required autofocus>
                         </div>
                     </div>

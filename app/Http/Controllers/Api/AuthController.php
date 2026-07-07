@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -9,7 +10,7 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function ownerLogin(Request $request): JsonResponse
+    public function adminLogin(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'email' => ['required', 'email'],
@@ -17,7 +18,7 @@ class AuthController extends Controller
         ]);
 
         $user = User::where('email', $validated['email'])
-            ->where('role', 'owner')
+            ->whereIn('role', [User::ROLE_SUPER_ADMIN, User::ROLE_MANAGER])
             ->first();
 
         if (! $user || ! Hash::check($validated['password'], $user->password)) {
@@ -26,11 +27,10 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $user->tokens()->delete();
-        $token = $user->createToken('owner-token');
+        $token = auth('api')->login($user);
 
         return response()->json([
-            'token' => $token->plainTextToken,
+            'token' => $token,
             'user' => $user,
         ]);
     }
@@ -43,7 +43,7 @@ class AuthController extends Controller
         ]);
 
         $user = User::where('branch_id', $validated['branch_id'])
-            ->where('role', 'staff')
+            ->where('role', User::ROLE_STAFF)
             ->get()
             ->first(fn (User $candidate) => $candidate->pin && Hash::check($validated['pin'], $candidate->pin));
 
@@ -53,11 +53,10 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $user->tokens()->delete();
-        $token = $user->createToken('staff-token');
+        $token = auth('api')->login($user);
 
         return response()->json([
-            'token' => $token->plainTextToken,
+            'token' => $token,
             'user' => $user,
             'branch' => $user->branch,
         ]);
@@ -65,7 +64,7 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        auth('api')->logout();
 
         return response()->json([
             'message' => 'Logged out successfully.',

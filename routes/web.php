@@ -17,14 +17,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/recipes', [RecipesController::class, 'index'])->name('recipes');
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory');
     Route::get('/branches', [BranchesController::class, 'index'])->name('branches');
+    Route::get('/branches/{branch}', [BranchesController::class, 'show'])->whereNumber('branch')->name('branches.show');
     Route::get('/alerts', [AlertsController::class, 'index'])->name('alerts');
-});
-
-// Temporary test route — remove before shipping.
-Route::get('/test-data', function () {
-    return [
-        'branches' => App\Models\Branch::all(),
-        'products_with_ingredients' => App\Models\Product::with('ingredients')->get(),
-        'branch_stock' => App\Models\BranchStock::with('ingredient', 'branch')->get(),
-    ];
 });

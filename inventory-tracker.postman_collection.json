@@ -1,0 +1,712 @@
+{
+  "info": {
+    "name": "Multi-Branch Inventory Tracker API",
+    "description": "Complete endpoint collection for the Multi-Branch Inventory Tracker backend (Laravel + JWT + 3-tier RBAC: super_admin / manager / staff). Run the two Login requests first — they auto-save the JWT into {{admin_token}} / {{staff_token}} via a test script, so every other request just works.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000/api" },
+    { "key": "admin_token", "value": "" },
+    { "key": "staff_token", "value": "" },
+    { "key": "branch_id", "value": "1" },
+    { "key": "other_branch_id", "value": "2" },
+    { "key": "product_id", "value": "1" },
+    { "key": "ingredient_id", "value": "1" },
+    { "key": "recipe_id", "value": "1" },
+    { "key": "staff_id", "value": "3" },
+    { "key": "shift_log_id", "value": "1" },
+    { "key": "alert_id", "value": "1" },
+    { "key": "notification_id", "value": "1" },
+    { "key": "transaction_id", "value": "1" },
+    { "key": "receipt_id", "value": "1" },
+    { "key": "branch_stock_id", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Admin Login (super_admin / manager)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                "const json = pm.response.json();",
+                "if (json.token) { pm.collectionVariables.set('admin_token', json.token); }",
+                "pm.test('Token present', () => pm.expect(json.token).to.be.a('string'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"owner@inventory.test\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/auth/admin-login", "host": ["{{base_url}}"], "path": ["auth", "admin-login"] },
+            "description": "Also works for a manager account, e.g. manager@inventory.test / password123."
+          }
+        },
+        {
+          "name": "Staff Login (pin + branch)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                "const json = pm.response.json();",
+                "if (json.token) { pm.collectionVariables.set('staff_token', json.token); }"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pin\": \"1234\",\n  \"branch_id\": {{branch_id}}\n}"
+            },
+            "url": { "raw": "{{base_url}}/auth/staff-login", "host": ["{{base_url}}"], "path": ["auth", "staff-login"] }
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/auth/me", "host": ["{{base_url}}"], "path": ["auth", "me"] }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/auth/logout", "host": ["{{base_url}}"], "path": ["auth", "logout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Staff Management (super_admin, manager)",
+      "item": [
+        {
+          "name": "List Staff",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/staff?branch_id={{branch_id}}",
+              "host": ["{{base_url}}"], "path": ["staff"],
+              "query": [{ "key": "branch_id", "value": "{{branch_id}}" }]
+            }
+          }
+        },
+        {
+          "name": "Create Staff",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Staff Member\",\n  \"pin\": \"5678\",\n  \"branch_id\": {{branch_id}}\n}"
+            },
+            "url": { "raw": "{{base_url}}/staff", "host": ["{{base_url}}"], "path": ["staff"] }
+          }
+        },
+        {
+          "name": "Update Staff",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Staff Name\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/staff/{{staff_id}}", "host": ["{{base_url}}"], "path": ["staff", "{{staff_id}}"] }
+          }
+        },
+        {
+          "name": "Delete Staff",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/staff/{{staff_id}}", "host": ["{{base_url}}"], "path": ["staff", "{{staff_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Shifts",
+      "item": [
+        {
+          "name": "Open Shift (staff, manager)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"opening_counts\": [\n    { \"ingredient_id\": {{ingredient_id}}, \"opening_quantity\": 500 }\n  ]\n}"
+            },
+            "url": { "raw": "{{base_url}}/shifts/open", "host": ["{{base_url}}"], "path": ["shifts", "open"] }
+          }
+        },
+        {
+          "name": "Close Shift (staff, manager)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shift_log_id\": {{shift_log_id}},\n  \"closing_counts\": [\n    { \"ingredient_id\": {{ingredient_id}}, \"closing_quantity_actual\": 480 }\n  ]\n}"
+            },
+            "url": { "raw": "{{base_url}}/shifts/close", "host": ["{{base_url}}"], "path": ["shifts", "close"] }
+          }
+        },
+        {
+          "name": "List Shifts (manager, super_admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/shifts?branch_id={{branch_id}}",
+              "host": ["{{base_url}}"], "path": ["shifts"],
+              "query": [{ "key": "branch_id", "value": "{{branch_id}}" }]
+            }
+          }
+        },
+        {
+          "name": "Show Shift (manager, super_admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/shifts/{{shift_log_id}}", "host": ["{{base_url}}"], "path": ["shifts", "{{shift_log_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports (manager, super_admin)",
+      "item": [
+        {
+          "name": "Sales Report",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/reports/sales?branch_id={{branch_id}}&period=daily",
+              "host": ["{{base_url}}"], "path": ["reports", "sales"],
+              "query": [
+                { "key": "branch_id", "value": "{{branch_id}}" },
+                { "key": "period", "value": "daily" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Inventory Report",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/reports/inventory?branch_id={{branch_id}}",
+              "host": ["{{base_url}}"], "path": ["reports", "inventory"],
+              "query": [{ "key": "branch_id", "value": "{{branch_id}}" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Discrepancy Alerts (manager, super_admin)",
+      "item": [
+        {
+          "name": "List Alerts",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/alerts?branch_id={{branch_id}}",
+              "host": ["{{base_url}}"], "path": ["alerts"],
+              "query": [{ "key": "branch_id", "value": "{{branch_id}}" }]
+            }
+          }
+        },
+        {
+          "name": "Show Alert",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/alerts/{{alert_id}}", "host": ["{{base_url}}"], "path": ["alerts", "{{alert_id}}"] }
+          }
+        },
+        {
+          "name": "Review Alert",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/alerts/{{alert_id}}/review", "host": ["{{base_url}}"], "path": ["alerts", "{{alert_id}}", "review"] }
+          }
+        },
+        {
+          "name": "Dismiss Alert",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/alerts/{{alert_id}}/dismiss", "host": ["{{base_url}}"], "path": ["alerts", "{{alert_id}}", "dismiss"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications (any authenticated role)",
+      "item": [
+        {
+          "name": "List My Notifications",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/notifications", "host": ["{{base_url}}"], "path": ["notifications"] }
+          }
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/notifications/{{notification_id}}/read", "host": ["{{base_url}}"], "path": ["notifications", "{{notification_id}}", "read"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products (read: any role, write: super_admin)",
+      "item": [
+        {
+          "name": "List Products",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/products", "host": ["{{base_url}}"], "path": ["products"] }
+          }
+        },
+        {
+          "name": "Show Product",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/products/{{product_id}}", "host": ["{{base_url}}"], "path": ["products", "{{product_id}}"] }
+          }
+        },
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Taro Milk Tea\",\n  \"category\": \"Milk Tea\",\n  \"price\": 70,\n  \"is_active\": true\n}"
+            },
+            "url": { "raw": "{{base_url}}/products", "host": ["{{base_url}}"], "path": ["products"] }
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 75\n}"
+            },
+            "url": { "raw": "{{base_url}}/products/{{product_id}}", "host": ["{{base_url}}"], "path": ["products", "{{product_id}}"] }
+          }
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/products/{{product_id}}", "host": ["{{base_url}}"], "path": ["products", "{{product_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ingredients (read: any role, write: super_admin)",
+      "item": [
+        {
+          "name": "List Ingredients",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/ingredients", "host": ["{{base_url}}"], "path": ["ingredients"] }
+          }
+        },
+        {
+          "name": "Show Ingredient",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/ingredients/{{ingredient_id}}", "host": ["{{base_url}}"], "path": ["ingredients", "{{ingredient_id}}"] }
+          }
+        },
+        {
+          "name": "Create Ingredient",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Taro Powder\",\n  \"unit\": \"g\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/ingredients", "host": ["{{base_url}}"], "path": ["ingredients"] }
+          }
+        },
+        {
+          "name": "Update Ingredient",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"unit\": \"kg\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/ingredients/{{ingredient_id}}", "host": ["{{base_url}}"], "path": ["ingredients", "{{ingredient_id}}"] }
+          }
+        },
+        {
+          "name": "Delete Ingredient",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/ingredients/{{ingredient_id}}", "host": ["{{base_url}}"], "path": ["ingredients", "{{ingredient_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Recipes / Formula Configuration (read: any role, write: super_admin)",
+      "item": [
+        {
+          "name": "List Recipes for a Product",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/recipes?product_id={{product_id}}",
+              "host": ["{{base_url}}"], "path": ["recipes"],
+              "query": [{ "key": "product_id", "value": "{{product_id}}" }]
+            }
+          }
+        },
+        {
+          "name": "Show Recipe",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/recipes/{{recipe_id}}", "host": ["{{base_url}}"], "path": ["recipes", "{{recipe_id}}"] }
+          }
+        },
+        {
+          "name": "Create Recipe (assign ingredient to product)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": {{product_id}},\n  \"ingredient_id\": {{ingredient_id}},\n  \"quantity_required\": 30\n}"
+            },
+            "url": { "raw": "{{base_url}}/recipes", "host": ["{{base_url}}"], "path": ["recipes"] }
+          }
+        },
+        {
+          "name": "Update Recipe Quantity",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity_required\": 25\n}"
+            },
+            "url": { "raw": "{{base_url}}/recipes/{{recipe_id}}", "host": ["{{base_url}}"], "path": ["recipes", "{{recipe_id}}"] }
+          }
+        },
+        {
+          "name": "Delete Recipe",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/recipes/{{recipe_id}}", "host": ["{{base_url}}"], "path": ["recipes", "{{recipe_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Branches",
+      "item": [
+        {
+          "name": "List Branches (super_admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/branches", "host": ["{{base_url}}"], "path": ["branches"] }
+          }
+        },
+        {
+          "name": "Show Branch (manager: own, super_admin: any)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/branches/{{branch_id}}", "host": ["{{base_url}}"], "path": ["branches", "{{branch_id}}"] }
+          }
+        },
+        {
+          "name": "Create Branch (super_admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Branch Cebu\",\n  \"location\": \"Cebu City\",\n  \"status\": \"active\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/branches", "host": ["{{base_url}}"], "path": ["branches"] }
+          }
+        },
+        {
+          "name": "Update Branch (super_admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"inactive\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/branches/{{branch_id}}", "host": ["{{base_url}}"], "path": ["branches", "{{branch_id}}"] }
+          }
+        },
+        {
+          "name": "Delete Branch (super_admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/branches/{{branch_id}}", "host": ["{{base_url}}"], "path": ["branches", "{{branch_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stock (manager: own, super_admin: any)",
+      "item": [
+        {
+          "name": "Branch Stock Levels",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/branches/{{branch_id}}/stock", "host": ["{{base_url}}"], "path": ["branches", "{{branch_id}}", "stock"] }
+          }
+        },
+        {
+          "name": "Create Initial Stock Entry",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branch_id\": {{branch_id}},\n  \"ingredient_id\": {{ingredient_id}},\n  \"current_quantity\": 1000,\n  \"min_threshold\": 100\n}"
+            },
+            "url": { "raw": "{{base_url}}/stock", "host": ["{{base_url}}"], "path": ["stock"] }
+          }
+        },
+        {
+          "name": "Manual Restock",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branch_id\": {{branch_id}},\n  \"ingredient_id\": {{ingredient_id}},\n  \"quantity\": 500,\n  \"notes\": \"Weekly delivery from supplier\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/stock/restock", "host": ["{{base_url}}"], "path": ["stock", "restock"] },
+            "description": "Additive — adds 'quantity' to whatever is already on hand and logs a 'restock' stock movement."
+          }
+        },
+        {
+          "name": "Stock Movement History",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/stock/{{branch_stock_id}}/movements", "host": ["{{base_url}}"], "path": ["stock", "{{branch_stock_id}}", "movements"] },
+            "description": "{{branch_stock_id}} is a branch_stock row id (the id field from 'Branch Stock Levels' or 'Create Initial Stock Entry' responses) — a full audit trail of every sale, restock, and shift correction for that branch+ingredient."
+          }
+        },
+        {
+          "name": "Low Stock Helper",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/stock/low-stock?branch_id={{branch_id}}",
+              "host": ["{{base_url}}"], "path": ["stock", "low-stock"],
+              "query": [{ "key": "branch_id", "value": "{{branch_id}}" }]
+            },
+            "description": "Returns every branch_stock row currently at or below its min_threshold."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transactions (POS)",
+      "item": [
+        {
+          "name": "Create Transaction (any role)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": {{product_id}},\n  \"branch_id\": {{branch_id}},\n  \"quantity\": 1,\n  \"client_uuid\": \"{{$guid}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/transactions", "host": ["{{base_url}}"], "path": ["transactions"] },
+            "description": "{{$guid}} is Postman's built-in dynamic variable — generates a fresh UUID each send, since client_uuid must be unique per transaction."
+          }
+        },
+        {
+          "name": "List Transactions (manager, super_admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/transactions?branch_id={{branch_id}}",
+              "host": ["{{base_url}}"], "path": ["transactions"],
+              "query": [{ "key": "branch_id", "value": "{{branch_id}}" }]
+            }
+          }
+        },
+        {
+          "name": "Show Transaction (manager, super_admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/transactions/{{transaction_id}}", "host": ["{{base_url}}"], "path": ["transactions", "{{transaction_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Receipts (OCR reconciliation)",
+      "item": [
+        {
+          "name": "Scan Receipt (any role)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{staff_token}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "image", "type": "file", "src": "" },
+                { "key": "branch_id", "value": "{{branch_id}}", "type": "text" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/receipts/scan", "host": ["{{base_url}}"], "path": ["receipts", "scan"] },
+            "description": "Attach a receipt image file in the 'image' form field before sending."
+          }
+        },
+        {
+          "name": "List Receipts",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/receipts?branch_id={{branch_id}}",
+              "host": ["{{base_url}}"], "path": ["receipts"],
+              "query": [{ "key": "branch_id", "value": "{{branch_id}}" }]
+            }
+          }
+        },
+        {
+          "name": "Receipts Summary",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/receipts/summary?branch_id={{branch_id}}",
+              "host": ["{{base_url}}"], "path": ["receipts", "summary"],
+              "query": [{ "key": "branch_id", "value": "{{branch_id}}" }]
+            }
+          }
+        },
+        {
+          "name": "Show Receipt",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/receipts/{{receipt_id}}", "host": ["{{base_url}}"], "path": ["receipts", "{{receipt_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Overview / Dashboard (super_admin)",
+      "item": [
+        {
+          "name": "Global Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/dashboard", "host": ["{{base_url}}"], "path": ["dashboard"] }
+          }
+        }
+      ]
+    }
+  ]
+}

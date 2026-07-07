@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Branches')
+@section('title', 'Businesses')
 @section('subtitle', 'All franchise locations')
 
 @section('content')
@@ -30,7 +30,7 @@
                         <td><span class="badge {{ $branch->status === 'active' ? 'green' : 'gray' }}">{{ ucfirst($branch->status) }}</span></td>
                         <td class="cell-primary">&#8369;{{ number_format($branch->transactions->sum('total_amount'), 2) }}</td>
                         <td>{{ $branch->users->count() }}</td>
-                        <td><button type="button" class="btn-pill">View</button></td>
+                        <td><a href="{{ route('branches.show', $branch) }}" class="btn-pill" style="text-decoration: none; display: inline-block;">View</a></td>
                     </tr>
                 @empty
                     <tr>
