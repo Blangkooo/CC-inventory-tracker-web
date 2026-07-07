@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -10,7 +9,46 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function adminLogin(Request $request): JsonResponse
+    /**
+     * Non-owner roles that can authenticate via PIN + branch_id.
+     */
+    private const PIN_ROLES = ['staff', 'manager'];
+
+    public function login(Request $request): JsonResponse
+    {
+        $request->validate([
+            'pin' => ['required', 'string'],
+            'branch_id' => ['required', 'exists:branches,id'],
+        ]);
+
+        $user = User::where('branch_id', $request->branch_id)
+            ->whereIn('role', self::PIN_ROLES)
+            ->get()
+            ->first(fn (User $candidate) => $candidate->pin && Hash::check($request->pin, $candidate->pin));
+
+        if (! $user) {
+            return response()->json([
+                'message' => 'Invalid PIN or branch selection.',
+            ], 401);
+        }
+
+        $user->tokens()->delete();
+        $token = $user->createToken('staff-token');
+
+        return response()->json([
+            'token' => $token->plainTextToken,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'branch_id' => $user->branch_id,
+            ],
+            'branch' => $user->branch,
+        ]);
+    }
+
+    public function ownerLogin(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'email' => ['required', 'email'],
@@ -18,7 +56,7 @@ class AuthController extends Controller
         ]);
 
         $user = User::where('email', $validated['email'])
-            ->whereIn('role', [User::ROLE_SUPER_ADMIN, User::ROLE_MANAGER])
+            ->where('role', 'owner')
             ->first();
 
         if (! $user || ! Hash::check($validated['password'], $user->password)) {
@@ -27,10 +65,11 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $token = auth('api')->login($user);
+        $user->tokens()->delete();
+        $token = $user->createToken('owner-token');
 
         return response()->json([
-            'token' => $token,
+            'token' => $token->plainTextToken,
             'user' => $user,
         ]);
     }
@@ -43,7 +82,7 @@ class AuthController extends Controller
         ]);
 
         $user = User::where('branch_id', $validated['branch_id'])
-            ->where('role', User::ROLE_STAFF)
+            ->whereIn('role', self::PIN_ROLES)
             ->get()
             ->first(fn (User $candidate) => $candidate->pin && Hash::check($validated['pin'], $candidate->pin));
 
@@ -53,10 +92,11 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $token = auth('api')->login($user);
+        $user->tokens()->delete();
+        $token = $user->createToken('staff-token');
 
         return response()->json([
-            'token' => $token,
+            'token' => $token->plainTextToken,
             'user' => $user,
             'branch' => $user->branch,
         ]);
@@ -64,7 +104,7 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        auth('api')->logout();
+        $request->user()->currentAccessToken()->delete();
 
         return response()->json([
             'message' => 'Logged out successfully.',
