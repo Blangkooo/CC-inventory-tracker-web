@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InvenTrack API Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+            background: #ffffff;
+            color: #111827;
+            line-height: 1.5;
+        }
+
+        header {
+            background: #1e3a8a;
+            color: #ffffff;
+            padding: 32px 48px;
+        }
+
+        header h1 {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        header p {
+            font-size: 13px;
+            color: #d9e5ff;
+            margin-top: 6px;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px 80px;
+        }
+
+        section {
+            margin-bottom: 40px;
+        }
+
+        section h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+
+        section .section-note {
+            font-size: 13px;
+            color: #6b7380;
+            margin-bottom: 16px;
+        }
+
+        .warning-badge {
+            display: inline-block;
+            background: #fee2e2;
+            color: #991b1b;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 999px;
+            margin-left: 8px;
+        }
+
+        .endpoint {
+            border: 1px solid #e5e8ed;
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 16px;
+        }
+
+        .endpoint-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .method {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            color: #ffffff;
+        }
+
+        .method.get {
+            background: #2563eb;
+        }
+
+        .method.post {
+            background: #10b981;
+        }
+
+        .method.delete {
+            background: #ef4444;
+        }
+
+        .endpoint-url {
+            font-family: "Consolas", "SFMono-Regular", Menlo, monospace;
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .auth-tag {
+            margin-left: auto;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 999px;
+        }
+
+        .auth-tag.required {
+            background: #d9e5ff;
+            color: #2563eb;
+        }
+
+        .auth-tag.none {
+            background: #f1f2f5;
+            color: #6b7380;
+        }
+
+        table.info-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        table.info-table th {
+            text-align: left;
+            width: 130px;
+            color: #6b7380;
+            font-weight: 600;
+            padding: 8px;
+            border: 1px solid #e5e8ed;
+            background: #f7fafc;
+            vertical-align: top;
+        }
+
+        table.info-table td {
+            padding: 8px;
+            border: 1px solid #e5e8ed;
+            color: #111827;
+            vertical-align: top;
+        }
+
+        code, pre {
+            font-family: "Consolas", "SFMono-Regular", Menlo, monospace;
+            font-size: 12px;
+            background: #f7fafc;
+            border: 1px solid #e5e8ed;
+            border-radius: 6px;
+        }
+
+        code {
+            padding: 2px 6px;
+        }
+
+        pre {
+            padding: 10px 12px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin: 0;
+        }
+
+        .errors-list {
+            list-style: none;
+        }
+
+        .errors-list li {
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .errors-list .code {
+            font-weight: 700;
+            color: #ef4444;
+            border: none;
+            background: none;
+            padding: 0;
+        }
+
+        .note-text {
+            font-size: 12px;
+            color: #6b7380;
+            margin-top: 6px;
+        }
+
+        .test-section .endpoint {
+            border-color: #fecaca;
+            background: #fef7f7;
+        }
+
+        .notes-list {
+            border: 1px solid #e5e8ed;
+            border-radius: 12px;
+            padding: 20px 24px;
+            list-style: none;
+        }
+
+        .notes-list li {
+            font-size: 13px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f1f6;
+        }
+
+        .notes-list li:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>InvenTrack API Documentation</h1>
+        <p>Multi-Branch Inventory Tracker &middot; REST API reference</p>
+    </header>
+
+    <main>
+        <section>
+            <h2>Section 1: Authentication</h2>
+            <p class="section-note">No token required.</p>
+
+            <div class="endpoint">
+                <div class="endpoint-head">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-url">/api/auth/owner-login</span>
+                    <span class="auth-tag none">No auth</span>
+                </div>
+                <table class="info-table">
+                    <tr>
+                        <th>Body</th>
+                        <td><pre>{ "email": "string", "password": "string" }</pre></td>
+                    </tr>
+                    <tr>
+                        <th>Response</th>
+                        <td><pre>{ "user": {...}, "token": "string" }</pre></td>
+                    </tr>
+                    <tr>
+                        <th>Errors</th>
+                        <td>
+                            <ul class="errors-list">
+                                <li><span class="code">401</span> &mdash; wrong credentials</li>
+                            </ul>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-head">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-url">/api/auth/staff-login</span>
+                    <span class="auth-tag none">No auth</span>
+                </div>
+                <table class="info-table">
+                    <tr>
+                        <th>Body</th>
+                        <td><pre>{ "pin": "string", "branch_id": "integer" }</pre></td>
+                    </tr>
+                    <tr>
+                        <th>Response</th>
+                        <td><pre>{ "user": {...}, "token": "string", "branch": {...} }</pre></td>
+                    </tr>
+                    <tr>
+                        <th>Errors</th>
+                        <td>
+                            <ul class="errors-list">
+                                <li><span class="code">401</span> &mdash; wrong PIN or branch</li>
+                            </ul>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <section>
+            <h2>Section 2: Protected Endpoints</h2>
+            <p class="section-note">Header required: <code>Authorization: Bearer {token}</code></p>
+
+            <div class="endpoint">
+                <div class="endpoint-head">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-url">/api/auth/logout</span>
+                    <span class="auth-tag required">Bearer token</span>
+                </div>
+                <table class="info-table">
+                    <tr>
+                        <th>Response</th>
+                        <td><pre>{ "message": "Logged out" }</pre></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-head">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-url">/api/auth/me</span>
+                    <span class="auth-tag required">Bearer token</span>
+                </div>
+                <table class="info-table">
+                    <tr>
+                        <th>Response</th>
+                        <td>user object with branch</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-head">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-url">/api/transactions</span>
+                    <span class="auth-tag required">Bearer token</span>
+                </div>
+                <table class="info-table">
+                    <tr>
+                        <th>Body</th>
+                        <td><pre>{ "product_id": int, "branch_id": int, "quantity": int, "client_uuid": "uuid" }</pre></td>
+                    </tr>
+                    <tr>
+                        <th>Response 201</th>
+                        <td><pre>{ "transaction": {...}, "message": "...", "updated_stock": [...] }</pre></td>
+                    </tr>
+                    <tr>
+                        <th>Response 422</th>
+                        <td><pre>{ "error": "Insufficient stock for X", "needed": "Xg", "available": "Xg" }</pre></td>
+                    </tr>
+                    <tr>
+                        <th>Note</th>
+                        <td>client_uuid must be unique &mdash; generate on mobile before syncing</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-head">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-url">/api/dashboard</span>
+                    <span class="auth-tag required">Bearer token</span>
+                </div>
+                <table class="info-table">
+                    <tr>
+                        <th>Response</th>
+                        <td><pre>{ "total_branches": int, "total_products": int, "total_ingredients": int, "pending_alerts": int }</pre></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-head">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-url">/api/branches/{branch_id}/stock</span>
+                    <span class="auth-tag required">Bearer token</span>
+                </div>
+                <table class="info-table">
+                    <tr>
+                        <th>Response</th>
+                        <td><pre>[ { "ingredient": "string", "unit": "string", "current_quantity": float, "min_threshold": float, "status": "ok|low|out" } ]</pre></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-head">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-url">/api/receipts/scan</span>
+                    <span class="auth-tag required">Bearer token</span>
+                </div>
+                <table class="info-table">
+                    <tr>
+                        <th>Body</th>
+                        <td><code>multipart/form-data</code> <pre>{ "image": file (jpeg/png max 5MB), "branch_id": int }</pre></td>
+                    </tr>
+                    <tr>
+                        <th>Response 201</th>
+                        <td><pre>{ "receipt": {...}, "ocr_text": "string", "parsed_amount": float|null, "reconciliation_status": "matched|mismatched|pending|unreadable", "matched_transaction": {...}|null }</pre></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-head">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-url">/api/receipts?branch_id={id}</span>
+                    <span class="auth-tag required">Bearer token</span>
+                </div>
+                <table class="info-table">
+                    <tr>
+                        <th>Response</th>
+                        <td>paginated list of receipts</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-head">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-url">/api/receipts/summary?branch_id={id}</span>
+                    <span class="auth-tag required">Bearer token</span>
+                </div>
+                <table class="info-table">
+                    <tr>
+                        <th>Response</th>
+                        <td><pre>{ "total_scanned": int, "matched": int, "mismatched": int, "pending": int, "unreadable": int }</pre></td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <section class="test-section">
+            <h2>Section 3: Test Routes <span class="warning-badge">Remove before production</span></h2>
+            <p class="section-note">No auth required.</p>
+
+            <div class="endpoint">
+                <div class="endpoint-head">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-url">/api/test-transaction</span>
+                    <span class="auth-tag none">No auth</span>
+                </div>
+                <p class="note-text">Same as <code>POST /api/transactions</code></p>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-head">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-url">/api/test-receipt-scan</span>
+                    <span class="auth-tag none">No auth</span>
+                </div>
+                <p class="note-text">Same as <code>POST /api/receipts/scan</code></p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Section 4: Notes for Frontend Team</h2>
+            <ul class="notes-list">
+                <li>Base URL: <code>http://127.0.0.1:8000</code> (local) &mdash; update to production URL when deployed</li>
+                <li>All requests must include: <code>Accept: application/json</code></li>
+                <li>All POST requests: <code>Content-Type: application/json</code> (except receipt scan: <code>multipart/form-data</code>)</li>
+                <li>Token obtained from login endpoint &mdash; store in app, send in every protected request</li>
+                <li>client_uuid for transactions: generate UUID v4 on the mobile device before sending &mdash; this prevents duplicate transactions when offline queue syncs</li>
+                <li>Offline sync: if device is offline, queue transactions locally with client_uuid &mdash; when online, send all queued transactions to <code>POST /api/transactions</code> &mdash; server ignores duplicates via unique client_uuid constraint</li>
+            </ul>
+        </section>
+    </main>
+</body>
+</html>

@@ -2,31 +2,60 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\AuthorizesBranchAccess;
 use App\Http\Controllers\Controller;
+use App\Models\DiscrepancyAlert;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AlertController extends Controller
 {
-    public function index(Request $request)
+    use AuthorizesBranchAccess;
+
+    public function index(Request $request): JsonResponse
     {
-        $alerts = \App\Models\Alert::with('branch', 'shiftLog')
-            ->when($request->branch_id, fn($q) => $q->where('branch_id', $request->branch_id))
-            ->when($request->status,    fn($q) => $q->where('status', $request->status))
+        $validated = $request->validate([
+            'branch_id' => ['required', 'exists:branches,id'],
+        ]);
+
+        $this->authorizeBranch((int) $validated['branch_id']);
+
+        $alerts = DiscrepancyAlert::with('ingredient', 'shiftLog')
+            ->where('branch_id', $validated['branch_id'])
             ->latest()
-            ->get();
+            ->paginate(20);
 
         return response()->json($alerts);
     }
 
-    public function update(Request $request, $id)
+    public function show(DiscrepancyAlert $alert): JsonResponse
     {
-        $request->validate([
-            'status' => 'required|in:read,resolved',
+        $this->authorizeBranch($alert->branch_id);
+
+        return response()->json($alert->load('ingredient', 'shiftLog', 'branch'));
+    }
+
+    public function review(DiscrepancyAlert $alert): JsonResponse
+    {
+        $this->authorizeBranch($alert->branch_id);
+
+        $alert->update(['status' => 'reviewed']);
+
+        return response()->json([
+            'message' => 'Alert marked as reviewed.',
+            'alert' => $alert,
         ]);
+    }
 
-        $alert = \App\Models\Alert::findOrFail($id);
-        $alert->update(['status' => $request->status]);
+    public function dismiss(DiscrepancyAlert $alert): JsonResponse
+    {
+        $this->authorizeBranch($alert->branch_id);
 
-        return response()->json($alert);
+        $alert->update(['status' => 'dismissed']);
+
+        return response()->json([
+            'message' => 'Alert dismissed.',
+            'alert' => $alert,
+        ]);
     }
 }

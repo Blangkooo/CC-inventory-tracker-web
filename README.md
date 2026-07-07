@@ -1,82 +1,58 @@
-# CC Inventory Tracker — Backend API
+<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
-A backend REST API for a multi-branch inventory tracking system designed for food cart and micro-franchise businesses. Built to support an offline-first mobile POS app where branch staff can record sales, track ingredient stock, and log shifts — even without internet — and sync data to the server when connectivity is restored.
+<p align="center">
+<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+</p>
 
----
+## About Laravel
 
-## What this does
+Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
 
-- Authenticates branch staff using a PIN (no email/password required)
-- Tracks product sales and automatically deducts ingredients from stock based on recipes
-- Logs shift opening and closing stock, calculates variance, and flags suspicious discrepancies
-- Supports idempotent transaction syncing via UUID — safe to re-submit offline transactions without duplicating records
-- Issues Sanctum API tokens for authenticated access to all protected routes
+- [Simple, fast routing engine](https://laravel.com/docs/routing).
+- [Powerful dependency injection container](https://laravel.com/docs/container).
+- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
+- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
+- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
+- [Robust background job processing](https://laravel.com/docs/queues).
+- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
 
----
+Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
-## Tech stack
+## Learning Laravel
 
-| Technology | Role |
-|------------|------|
-| **PHP 8.3** | Server-side language |
-| **Laravel 13** | Backend framework — routing, ORM, migrations, validation |
-| **Laravel Sanctum** | Token-based API authentication |
-| **MySQL 8.4** | Relational database |
-| **Eloquent ORM** | Database models and relationships |
+Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
 
----
+In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
 
-## Database tables
+You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
 
-| Table | Description |
-|-------|-------------|
-| `branches` | Physical locations/branches of the business |
-| `users` | Staff accounts with PIN login, linked to a branch |
-| `products` | Items sold at the POS (e.g. Milk Tea, Fries) |
-| `recipes` | Ingredient breakdown per product (used for stock deduction) |
-| `transactions` | Sales records, each with a UUID for offline-sync idempotency |
-| `stock_levels` | Current ingredient stock per branch |
-| `shift_logs` | Shift records with opening/closing stock, variance, and a flag if variance exceeds threshold |
+## Agentic Development
 
----
-
-## API endpoints
-
-| Method | Route | Auth | Description |
-|--------|-------|------|-------------|
-| POST | `/api/login` | No | PIN login, returns Sanctum token |
-| GET | `/api/products` | Yes | List all products |
-| GET | `/api/recipes` | Yes | List recipes, filter by `?product_id=` |
-| POST | `/api/transactions` | Yes | Record a sale, deduct stock, idempotent by UUID |
-| POST | `/api/shift-logs` | Yes | Submit shift log, auto-calculates variance |
-
-See `API_DOCS.md` for full request/response examples.
-
----
-
-## Local setup
-
-**Requirements:** PHP 8.3, Composer, MySQL 8.4 (Laragon recommended on Windows)
+Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
 
 ```bash
-# Install dependencies
-composer install
+composer require laravel/boost --dev
 
-# Copy environment file
-cp .env.example .env
-
-# Generate app key
-php artisan key:generate
-
-# Configure .env with your DB credentials, then run:
-php artisan migrate
-
-# Start the dev server
-php artisan serve
+php artisan boost:install
 ```
 
----
+Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
 
-## Project context
+## Contributing
 
-This is the backend component of a larger system that includes a React Native mobile app for offline-first POS operations across multiple food cart branches. The mobile app syncs transactions to this API when internet is available.
+Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+
+## Code of Conduct
+
+In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+
+## Security Vulnerabilities
+
+If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+
+## License
+
+The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).

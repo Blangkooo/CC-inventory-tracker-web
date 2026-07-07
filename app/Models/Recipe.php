@@ -2,14 +2,30 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+#[Fillable(['product_id', 'ingredient_id', 'quantity_required'])]
 class Recipe extends Model
 {
-    protected $fillable = ['product_id', 'ingredient_name', 'quantity', 'unit'];
+    use HasFactory;
 
-    public function product()
+    protected function casts(): array
+    {
+        return [
+            'quantity_required' => 'decimal:3',
+        ];
+    }
+
+    public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function ingredient(): BelongsTo
+    {
+        return $this->belongsTo(Ingredient::class);
     }
 }

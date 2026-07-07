@@ -2,19 +2,38 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[Fillable(['name', 'location', 'status'])]
 class Branch extends Model
 {
-    protected $fillable = ['name', 'location'];
+    use HasFactory;
 
-    public function users()
+    public function users(): HasMany
     {
         return $this->hasMany(User::class);
     }
 
-    public function stockLevels()
+    public function stocks(): HasMany
     {
-        return $this->hasMany(StockLevel::class);
+        return $this->hasMany(BranchStock::class);
+    }
+
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
+    public function shiftLogs(): HasMany
+    {
+        return $this->hasMany(ShiftLog::class);
+    }
+
+    public function discrepancyAlerts(): HasMany
+    {
+        return $this->hasMany(DiscrepancyAlert::class);
     }
 }

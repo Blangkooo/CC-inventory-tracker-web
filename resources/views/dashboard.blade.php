@@ -1,138 +1,242 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventory Tracker — Owner Dashboard</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: system-ui, sans-serif; background: #f4f4f5; color: #18181b; }
-        header { background: #18181b; color: #fff; padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; }
-        header h1 { font-size: 1.1rem; font-weight: 600; }
-        header span { font-size: 0.85rem; color: #a1a1aa; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
-        .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-        .kpi { background: #fff; border-radius: 10px; padding: 1.25rem 1.5rem; border: 1px solid #e4e4e7; }
-        .kpi-label { font-size: 0.78rem; color: #71717a; text-transform: uppercase; letter-spacing: .05em; margin-bottom: .5rem; }
-        .kpi-value { font-size: 2rem; font-weight: 700; }
-        .kpi-value.danger { color: #dc2626; }
-        .kpi-value.warning { color: #d97706; }
-        .kpi-value.success { color: #16a34a; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
-        @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
-        .card { background: #fff; border-radius: 10px; border: 1px solid #e4e4e7; padding: 1.25rem 1.5rem; }
-        .card h2 { font-size: 0.9rem; font-weight: 600; margin-bottom: 1rem; color: #3f3f46; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-        th { text-align: left; color: #71717a; font-weight: 500; padding: 0.4rem 0.5rem; border-bottom: 1px solid #e4e4e7; }
-        td { padding: 0.5rem 0.5rem; border-bottom: 1px solid #f4f4f5; }
-        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; }
-        .badge-danger { background: #fee2e2; color: #991b1b; }
-        .badge-warn { background: #fef9c3; color: #854d0e; }
-        .chart-bar-wrap { display: flex; align-items: flex-end; gap: 6px; height: 100px; margin-top: .5rem; }
-        .chart-bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; }
-        .chart-bar { background: #6366f1; border-radius: 4px 4px 0 0; width: 100%; }
-        .chart-label { font-size: 0.65rem; color: #71717a; margin-top: 4px; }
-        .empty { color: #a1a1aa; font-size: 0.85rem; text-align: center; padding: 1rem 0; }
-    </style>
-</head>
-<body>
+@extends('layouts.app')
 
-<header>
-    <h1>Inventory Tracker — Owner Dashboard</h1>
-    <span>{{ now()->format('F j, Y') }}</span>
-</header>
+@section('title', 'Dashboard')
+@section('subtitle', 'Overview across all branches &middot; Today, ' . date('M d'))
 
-<div class="container">
+@section('content')
 
-    {{-- KPIs --}}
-    <div class="kpis">
-        <div class="kpi">
-            <div class="kpi-label">Revenue today</div>
-            <div class="kpi-value success">₱{{ number_format($totalRevenue, 2) }}</div>
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="stat-label">Today's Sales</div>
+            <div class="stat-value">&#8369;{{ number_format($total_sales ?? 0, 0) }}</div>
+            <span class="stat-badge green">Today</span>
         </div>
-        <div class="kpi">
-            <div class="kpi-label">Transactions today</div>
-            <div class="kpi-value">{{ $totalSales }}</div>
+        <div class="stat-card">
+            <div class="stat-label">Total Branches</div>
+            <div class="stat-value">{{ $total_branches }}</div>
+            <span class="stat-badge blue">Active</span>
         </div>
-        <div class="kpi">
-            <div class="kpi-label">Flagged shifts</div>
-            <div class="kpi-value {{ $flaggedShifts > 0 ? 'danger' : '' }}">{{ $flaggedShifts }}</div>
+        <div class="stat-card">
+            <div class="stat-label">Active Alerts</div>
+            <div class="stat-value">{{ $pending_alerts }}</div>
+            @if ($pending_alerts > 0)
+                <span class="stat-badge red">Needs review</span>
+            @else
+                <span class="stat-badge green">All clear</span>
+            @endif
         </div>
-        <div class="kpi">
-            <div class="kpi-label">Open alerts</div>
-            <div class="kpi-value {{ $openAlerts > 0 ? 'warning' : '' }}">{{ $openAlerts }}</div>
+        <div class="stat-card">
+            <div class="stat-label">Low Stock SKUs</div>
+            <div class="stat-value">{{ $low_stock_count }}</div>
+            <span class="stat-badge amber">Across branches</span>
         </div>
     </div>
 
-    <div class="grid-2">
+    <div class="dash-grid">
+        <div class="dash-main">
 
-        {{-- Sales chart (last 7 days) --}}
-        <div class="card">
-            <h2>Sales — last 7 days</h2>
-            @if($salesSummary->count())
-                @php $maxRev = $salesSummary->max('revenue') ?: 1; @endphp
-                <div class="chart-bar-wrap">
-                    @foreach($salesSummary as $day)
-                        <div class="chart-bar-col">
-                            <div class="chart-bar" style="height: {{ round(($day->revenue / $maxRev) * 100) }}px" title="₱{{ number_format($day->revenue,2) }}"></div>
-                            <div class="chart-label">{{ \Carbon\Carbon::parse($day->date)->format('D') }}</div>
-                        </div>
-                    @endforeach
+            <div class="widget">
+                <div class="widget-head">
+                    <h2>Flags Summary</h2>
+                    <a href="{{ route('alerts') }}" class="widget-link">View all &rarr;</a>
                 </div>
-            @else
-                <div class="empty">No sales data yet.</div>
-            @endif
-        </div>
 
-        {{-- Top products --}}
-        <div class="card">
-            <h2>Top products today</h2>
-            @if($topProducts->count())
-                <table>
-                    <thead>
-                        <tr><th>Product</th><th>Units</th><th>Revenue</th></tr>
-                    </thead>
-                    <tbody>
-                        @foreach($topProducts as $p)
-                        <tr>
-                            <td>{{ $p['name'] }}</td>
-                            <td>{{ $p['units_sold'] }}</td>
-                            <td>₱{{ number_format($p['revenue'], 2) }}</td>
-                        </tr>
+                @if ($recent_flags->isEmpty())
+                    <div class="all-clear">No pending flags &mdash; all clear &#10003;</div>
+                @else
+                    <div class="flag-pills" style="margin-bottom: 14px;">
+                        @foreach (['high' => 'red', 'medium' => 'amber', 'low' => 'blue'] as $severity => $color)
+                            @if (($flag_counts[$severity] ?? 0) > 0)
+                                <span class="badge {{ $color }}">{{ $flag_counts[$severity] }} {{ ucfirst($severity) }}</span>
+                            @endif
                         @endforeach
-                    </tbody>
-                </table>
-            @else
-                <div class="empty">No sales today yet.</div>
-            @endif
+                    </div>
+
+                    <table class="alerts-table">
+                        <thead>
+                            <tr>
+                                <th>Branch</th>
+                                <th>Ingredient</th>
+                                <th>Type</th>
+                                <th>Variance</th>
+                                <th>Severity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($recent_flags as $flag)
+                                <tr>
+                                    <td>{{ $flag->branch->name ?? '—' }}</td>
+                                    <td>{{ $flag->ingredient->name ?? '—' }}</td>
+                                    <td>{{ str_replace('_', ' ', ucfirst($flag->type)) }}</td>
+                                    <td class="variance-cell">{{ $flag->variance !== null ? number_format($flag->variance, 2) : '—' }}</td>
+                                    <td>
+                                        @php $sevColors = ['high' => 'red', 'medium' => 'amber', 'low' => 'blue']; @endphp
+                                        <span class="badge {{ $sevColors[$flag->severity] ?? 'gray' }}">{{ ucfirst($flag->severity) }}</span>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                @endif
+            </div>
+
+            <div class="kpi-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Annual Revenue (total)</div>
+                    <div class="stat-value">&#8369;{{ number_format($annual_revenue, 0) }}</div>
+                    <span class="stat-badge blue">{{ now()->year }}</span>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Percentage of Leakage (overall)</div>
+                    <div class="stat-value">{{ number_format($leakage_pct, 1) }}%</div>
+                    <span class="stat-badge red">Leakage</span>
+                    <span class="stat-note">Est. across all stock counts.</span>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Value Saved</div>
+                    <div class="stat-value">&#8369;{{ number_format($value_saved, 0) }}</div>
+                    <span class="stat-badge green">Caught</span>
+                    <span class="stat-note">Leakage caught &amp; reviewed, est.</span>
+                </div>
+            </div>
+
+            <div class="two-up">
+                <div class="widget">
+                    <div class="widget-head">
+                        <h2>Top Earner</h2>
+                    </div>
+                    @forelse ($top_earners as $i => $earner)
+                        <div class="branch-live-row">
+                            <div class="branch-live-left">
+                                <span class="rank-num">{{ $i + 1 }}</span>
+                                <span>{{ $earner->name }}</span>
+                            </div>
+                            <span class="branch-live-amount">&#8369;{{ number_format($earner->revenue ?? 0, 0) }}</span>
+                        </div>
+                    @empty
+                        <div class="empty-state">No branches yet.</div>
+                    @endforelse
+                </div>
+
+                <div class="widget">
+                    <div class="widget-head">
+                        <h2>Least Leakage</h2>
+                    </div>
+                    @forelse ($least_leakage as $i => $row)
+                        <div class="branch-live-row">
+                            <div class="branch-live-left">
+                                <span class="rank-num">{{ $i + 1 }}</span>
+                                <span>{{ $row['name'] }}</span>
+                                @if ($i === 0)
+                                    <span class="dot green"></span>
+                                @endif
+                            </div>
+                            <span class="branch-live-amount">-{{ rtrim(rtrim(number_format($row['leak'], 2), '0'), '.') ?: '0' }} units</span>
+                        </div>
+                    @empty
+                        <div class="empty-state">No branches yet.</div>
+                    @endforelse
+                </div>
+            </div>
+
+            <div class="widget">
+                <div class="widget-head">
+                    <h2>Sales &mdash; Last 7 Days</h2>
+                </div>
+
+                @php
+                    $chartDays = collect();
+                    for ($i = 6; $i >= 0; $i--) {
+                        $date = \Carbon\Carbon::today()->subDays($i);
+                        $match = $daily_sales->firstWhere('date', $date->format('Y-m-d'));
+                        $chartDays->push([
+                            'label' => substr($date->format('D'), 0, 1),
+                            'total' => $match ? (float) $match->total : 0,
+                        ]);
+                    }
+                    $chartMax = $chartDays->max('total');
+                @endphp
+
+                @if ($chartMax > 0)
+                    <div class="bar-chart">
+                        @foreach ($chartDays as $day)
+                            <div class="bar-col">
+                                <div class="bar" style="height: {{ max(2, ($day['total'] / $chartMax) * 100) }}%"></div>
+                                <div class="bar-day-label">{{ $day['label'] }}</div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="empty-state">No sales recorded in the last 7 days.</div>
+                @endif
+            </div>
+
         </div>
 
-    </div>
+        <div class="dash-aside">
 
-    {{-- Alerts --}}
-    <div class="card">
-        <h2>Open alerts</h2>
-        @if($recentAlerts->count())
-            <table>
-                <thead>
-                    <tr><th>Branch</th><th>Type</th><th>Message</th><th>Time</th></tr>
-                </thead>
-                <tbody>
-                    @foreach($recentAlerts as $alert)
-                    <tr>
-                        <td>{{ $alert->branch->name ?? '—' }}</td>
-                        <td><span class="badge badge-danger">{{ $alert->type }}</span></td>
-                        <td>{{ $alert->message }}</td>
-                        <td>{{ $alert->created_at->diffForHumans() }}</td>
-                    </tr>
+            <div class="widget">
+                <div class="calendar-head">
+                    <span class="cal-month">{{ now()->format('F Y') }}</span>
+                </div>
+                @php
+                    $startOfMonth = now()->startOfMonth();
+                    $leadBlanks = $startOfMonth->dayOfWeek; // 0 = Sunday
+                    $daysInMonth = $startOfMonth->daysInMonth;
+                    $today = now()->day;
+                @endphp
+                <div class="calendar-grid">
+                    @foreach (['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'] as $dow)
+                        <span class="cal-dow">{{ $dow }}</span>
                     @endforeach
-                </tbody>
-            </table>
-        @else
-            <div class="empty">No open alerts.</div>
-        @endif
+                    @for ($i = 0; $i < $leadBlanks; $i++)
+                        <span class="cal-day muted"></span>
+                    @endfor
+                    @for ($day = 1; $day <= $daysInMonth; $day++)
+                        <span class="cal-day {{ $day === $today ? 'today' : '' }}">{{ $day }}</span>
+                    @endfor
+                </div>
+            </div>
+
+            <div class="widget">
+                <div class="widget-head">
+                    <h2>Ongoing Shifts</h2>
+                </div>
+                @forelse ($ongoing_shifts as $shift)
+                    <div class="branch-live-row">
+                        <div class="branch-live-left">
+                            <span class="dot green"></span>
+                            <div>
+                                <div>{{ $shift->user->name ?? '—' }}</div>
+                                <div class="detail-sub" style="font-weight: 400;">{{ $shift->branch->name ?? '—' }}</div>
+                            </div>
+                        </div>
+                        <span class="branch-live-amount" style="font-size: 12px;">{{ $shift->shift_start?->format('g:iA') ?? '—' }}</span>
+                    </div>
+                @empty
+                    <div class="empty-state">No shifts in progress.</div>
+                @endforelse
+            </div>
+
+            <div class="widget">
+                <div class="widget-head">
+                    <h2>Branches Live</h2>
+                </div>
+
+                @forelse ($branches_with_sales as $branch)
+                    <div class="branch-live-row">
+                        <div class="branch-live-left">
+                            <span class="dot {{ $branch['has_sales'] ? 'green' : 'red' }}"></span>
+                            <span>{{ $branch['name'] }}</span>
+                        </div>
+                        <span class="branch-live-amount">&#8369;{{ number_format($branch['today_sales'], 0) }}</span>
+                    </div>
+                @empty
+                    <div class="empty-state">No branches have been added yet.</div>
+                @endforelse
+            </div>
+
+        </div>
     </div>
 
-</div>
-</body>
-</html>
+@endsection
