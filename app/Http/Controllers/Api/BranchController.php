@@ -2,61 +2,44 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Concerns\AuthorizesBranchAccess;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\BranchFormRequest;
+use App\Http\Resources\BranchResource;
 use App\Models\Branch;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class BranchController extends Controller
 {
-    use AuthorizesBranchAccess;
-
-    public function index(): JsonResponse
+    public function index(): AnonymousResourceCollection
     {
-        return response()->json(Branch::all());
+        $branches = Branch::withCount('users')->latest()->get();
+
+        return BranchResource::collection($branches);
     }
 
-    public function show(Branch $branch): JsonResponse
+    public function store(BranchFormRequest $request): JsonResponse
     {
-        $this->authorizeBranch($branch->id);
-
-        return response()->json($branch);
-    }
-
-    public function store(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'location' => ['nullable', 'string', 'max:255'],
-            'status' => ['sometimes', Rule::in(['active', 'inactive'])],
-        ]);
-
-        $branch = Branch::create($validated);
-
-        return response()->json($branch, 201);
-    }
-
-    public function update(Request $request, Branch $branch): JsonResponse
-    {
-        $validated = $request->validate([
-            'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'location' => ['nullable', 'string', 'max:255'],
-            'status' => ['sometimes', Rule::in(['active', 'inactive'])],
-        ]);
-
-        $branch->update($validated);
-
-        return response()->json($branch);
-    }
-
-    public function destroy(Branch $branch): JsonResponse
-    {
-        $branch->delete();
+        $branch = Branch::create($request->only(['name', 'location', 'status']));
 
         return response()->json([
-            'message' => 'Branch deleted successfully.',
+            'message' => 'Branch created successfully.',
+            'branch' => new BranchResource($branch),
+        ], 201);
+    }
+
+    public function show(Branch $branch): BranchResource
+    {
+        return new BranchResource($branch->loadCount('users'));
+    }
+
+    public function update(BranchFormRequest $request, Branch $branch): JsonResponse
+    {
+        $branch->update($request->only(['name', 'location', 'status']));
+
+        return response()->json([
+            'message' => 'Branch updated successfully.',
+            'branch' => new BranchResource($branch->fresh()->loadCount('users')),
         ]);
     }
 }

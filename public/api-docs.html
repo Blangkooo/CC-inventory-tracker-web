@@ -279,10 +279,113 @@
                     </tr>
                 </table>
             </div>
+        </section>            <section>
+            <h2>Section 2: Onboarding / Registration Endpoints</h2>
+            <p class="section-note">No token required. These map to the multi-step registration UI flow.</p>
+
+            <div class="endpoint">
+                <div class="endpoint-head">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-url">/api/auth/login</span>
+                    <span class="auth-tag none">No auth</span>
+                </div>
+                <table class="info-table">
+                    <tr>
+                        <th>Body</th>
+                        <td><pre>{ "full_name": "string", "email": "string", "owner_id": "string", "password": "string" }</pre></td>
+                    </tr>
+                    <tr>
+                        <th>Response</th>
+                        <td><pre>{ "success": true, "token": "mock-jwt-...", "user": { "full_name": "...", "email": "...", "owner_id": "..." } }</pre></td>
+                    </tr>
+                    <tr>
+                        <th>cURL</th>
+                        <td><pre>curl -X POST http://127.0.0.1:8000/api/auth/login \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{"full_name":"Juan Cruz","email":"juan@example.com","owner_id":"OWN-001","password":"secret123"}'</pre></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-head">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-url">/api/auth/register/step-1</span>
+                    <span class="auth-tag none">No auth</span>
+                </div>
+                <table class="info-table">
+                    <tr>
+                        <th>Body</th>
+                        <td><pre>{ "full_name": "string", "email": "string", "contact_number": "string", "business_registration_id": "string" }</pre></td>
+                    </tr>
+                    <tr>
+                        <th>Response</th>
+                        <td><pre>{ "success": true, "message": "Step 1 personal information is valid.", "data": {...} }</pre></td>
+                    </tr>
+                    <tr>
+                        <th>cURL</th>
+                        <td><pre>curl -X POST http://127.0.0.1:8000/api/auth/register/step-1 \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{"full_name":"Juan Cruz","email":"juan@example.com","contact_number":"+63-912-345-6789","business_registration_id":"BR-98765"}'</pre></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-head">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-url">/api/auth/register/step-2</span>
+                    <span class="auth-tag none">No auth</span>
+                </div>
+                <table class="info-table">
+                    <tr>
+                        <th>Body</th>
+                        <td><pre>{ "businesses": [{ "business_name": "string", "type_of_business": "string", "business_registration": "string", "business_permit": "string", "location": "string" }] }</pre></td>
+                    </tr>
+                    <tr>
+                        <th>Response</th>
+                        <td><pre>{ "success": true, "message": "Multi-location business payload received.", "businesses": [...] }</pre></td>
+                    </tr>
+                    <tr>
+                        <th>cURL</th>
+                        <td><pre>curl -X POST http://127.0.0.1:8000/api/auth/register/step-2 \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{"businesses":[{"business_name":"Juan's Mart","type_of_business":"retail","business_registration":"BR-001","business_permit":"PER-001","location":"Manila"}]}'</pre></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-head">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-url">/api/auth/register/confirm</span>
+                    <span class="auth-tag none">No auth</span>
+                </div>
+                <table class="info-table">
+                    <tr>
+                        <th>Body</th>
+                        <td><pre>{ "owner_id": "string", "permit_validity": boolean, "terms_accepted": boolean, "legal_papers_submitted": boolean, "legal_papers_secondary_submitted": boolean }</pre></td>
+                    </tr>
+                    <tr>
+                        <th>Response</th>
+                        <td><pre>{ "success": true, "message": "Onboarding document trackers initialized successfully.", "trackers": {...} }</pre></td>
+                    </tr>
+                    <tr>
+                        <th>cURL</th>
+                        <td><pre>curl -X POST http://127.0.0.1:8000/api/auth/register/confirm \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{"owner_id":"OWN-001","permit_validity":true,"terms_accepted":true,"legal_papers_submitted":true,"legal_papers_secondary_submitted":true}'</pre></td>
+                    </tr>
+                </table>
+            </div>
         </section>
 
         <section>
-            <h2>Section 2: Protected Endpoints</h2>
+            <h2>Section 3: Protected Endpoints</h2>
             <p class="section-note">Header required: <code>Authorization: Bearer {token}</code></p>
 
             <div class="endpoint">
@@ -415,7 +518,7 @@
         </section>
 
         <section class="test-section">
-            <h2>Section 3: Test Routes <span class="warning-badge">Remove before production</span></h2>
+            <h2>Section 4: Test Routes <span class="warning-badge">Remove before production</span></h2>
             <p class="section-note">No auth required.</p>
 
             <div class="endpoint">
@@ -438,7 +541,7 @@
         </section>
 
         <section>
-            <h2>Section 4: Notes for Frontend Team</h2>
+            <h2>Section 5: Notes for Frontend Team</h2>
             <ul class="notes-list">
                 <li>Base URL: <code>http://127.0.0.1:8000</code> (local) &mdash; update to production URL when deployed</li>
                 <li>All requests must include: <code>Accept: application/json</code></li>

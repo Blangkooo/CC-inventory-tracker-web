@@ -2,82 +2,88 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Concerns\AuthorizesBranchAccess;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StaffStoreRequest;
+use App\Http\Requests\StaffUpdateRequest;
+use App\Http\Resources\StaffResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Hash;
 
 class StaffController extends Controller
 {
-    use AuthorizesBranchAccess;
+    /**
+     * Roles that are managed via the Staff CRUD endpoints.
+     */
+    private const MANAGED_ROLES = ['staff', 'manager'];
 
-    public function index(Request $request): JsonResponse
+    public function index(): AnonymousResourceCollection
     {
-        $validated = $request->validate([
-            'branch_id' => ['required', 'exists:branches,id'],
-        ]);
+        $staff = User::whereIn('role', self::MANAGED_ROLES)
+            ->with('branch')
+            ->latest()
+            ->paginate(20);
 
-        $this->authorizeBranch((int) $validated['branch_id']);
-
-        $staff = User::where('role', User::ROLE_STAFF)
-            ->where('branch_id', $validated['branch_id'])
-            ->get();
-
-        return response()->json($staff);
+        return StaffResource::collection($staff);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StaffStoreRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'pin' => ['required', 'string', 'min:4', 'max:12'],
-            'branch_id' => ['required', 'exists:branches,id'],
-        ]);
-
-        $this->authorizeBranch((int) $validated['branch_id']);
-
         $staff = User::create([
-            'name' => $validated['name'],
-            'pin' => $validated['pin'],
-            'branch_id' => $validated['branch_id'],
-            'role' => User::ROLE_STAFF,
+            'name' => $request->name,
+            'email' => $request->email,
+            'pin' => Hash::make($request->pin),
+            'role' => 'manager',
+            'branch_id' => $request->branch_id,
         ]);
 
-        return response()->json($staff, 201);
+        return response()->json([
+            'message' => 'Staff member created successfully.',
+            'staff' => new StaffResource($staff->load('branch')),
+        ], 201);
     }
 
-    public function update(Request $request, User $staff): JsonResponse
+    public function show(User $staff): JsonResponse
     {
-        abort_if($staff->role !== User::ROLE_STAFF, 404);
-
-        $this->authorizeBranch($staff->branch_id);
-
-        $validated = $request->validate([
-            'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'pin' => ['sometimes', 'required', 'string', 'min:4', 'max:12'],
-            'branch_id' => ['sometimes', 'required', 'exists:branches,id'],
-        ]);
-
-        if (isset($validated['branch_id'])) {
-            $this->authorizeBranch((int) $validated['branch_id']);
+        if (! in_array($staff->role, self::MANAGED_ROLES)) {
+            return response()->json(['message' => 'Staff member not found.'], 404);
         }
 
-        $staff->update($validated);
+        return response()->json(new StaffResource($staff->load('branch')));
+    }
 
-        return response()->json($staff);
+    public function update(StaffUpdateRequest $request, User $staff): JsonResponse
+    {
+        if (! in_array($staff->role, self::MANAGED_ROLES)) {
+            return response()->json(['message' => 'Staff member not found.'], 404);
+        }
+
+        $data = $request->only(['name', 'email', 'branch_id']);
+
+        if ($request->filled('pin')) {
+            $data['pin'] = Hash::make($request->pin);
+        }
+
+        $staff->update($data);
+
+        return response()->json([
+            'message' => 'Staff member updated successfully.',
+            'staff' => new StaffResource($staff->fresh()->load('branch')),
+        ]);
     }
 
     public function destroy(User $staff): JsonResponse
     {
-        abort_if($staff->role !== User::ROLE_STAFF, 404);
+        if (! in_array($staff->role, self::MANAGED_ROLES)) {
+            return response()->json(['message' => 'Staff member not found.'], 404);
+        }
 
-        $this->authorizeBranch($staff->branch_id);
-
+        $staff->tokens()->delete();
         $staff->delete();
 
         return response()->json([
-            'message' => 'Staff deleted successfully.',
+            'message' => 'Staff member deleted successfully.',
         ]);
     }
 }
