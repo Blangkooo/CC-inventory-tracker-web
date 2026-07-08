@@ -30,7 +30,6 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:pi
 
 // ── Onboarding / Registration API routes ─────────────────────────────
 
-Route::post('/auth/login', [AuthOnboardingController::class, 'apiLogin'])->middleware('web');
 Route::post('/auth/register/step-1', [AuthOnboardingController::class, 'apiRegisterStep1']);
 Route::post('/auth/register/step-2', [AuthOnboardingController::class, 'apiRegisterStep2']);
 Route::post('/auth/register/manager/step-2', [AuthOnboardingController::class, 'apiRegisterManagerStep2']);
