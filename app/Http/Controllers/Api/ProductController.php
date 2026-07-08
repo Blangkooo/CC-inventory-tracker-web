@@ -25,6 +25,7 @@ class ProductController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'category' => ['nullable', 'string', 'max:255'],
             'price' => ['required', 'numeric', 'min:0'],
+            'procedure' => ['nullable', 'string'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
@@ -39,6 +40,7 @@ class ProductController extends Controller
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'category' => ['nullable', 'string', 'max:255'],
             'price' => ['sometimes', 'required', 'numeric', 'min:0'],
+            'procedure' => ['nullable', 'string'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
 

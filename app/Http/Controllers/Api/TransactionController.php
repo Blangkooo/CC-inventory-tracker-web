@@ -8,11 +8,13 @@ use App\Http\Controllers\Controller;
 use App\Models\BranchStock;
 use App\Models\DiscrepancyAlert;
 use App\Models\Product;
+use App\Models\Recipe;
 use App\Models\StockMovement;
 use App\Models\Transaction;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class TransactionController extends Controller
 {
@@ -47,12 +49,15 @@ class TransactionController extends Controller
             'product_id' => 'required|exists:products,id',
             'branch_id' => 'required|exists:branches,id',
             'quantity' => 'required|integer|min:1',
+            'size' => ['sometimes', Rule::in([Recipe::SIZE_REGULAR, Recipe::SIZE_LARGE])],
             'client_uuid' => 'required|string|unique:transactions,client_uuid',
         ]);
+        $validated['size'] ??= Recipe::SIZE_REGULAR;
 
         $this->authorizeBranch((int) $validated['branch_id']);
 
-        $product = Product::with('recipes.ingredient')->findOrFail($validated['product_id']);
+        $product = Product::with(['recipes' => fn ($q) => $q->where('size', $validated['size'])->with('ingredient')])
+            ->findOrFail($validated['product_id']);
         $total_amount = $product->price * $validated['quantity'];
 
         try {

@@ -134,28 +134,58 @@ class DatabaseSeeder extends Seeder
             'butter' => Ingredient::create(['name' => 'Butter', 'unit' => 'g']),
         ]);
 
-        // ── Menu + recipes (formula per unit sold) ─────────────────────
+        // ── Menu + recipes (formula per unit sold, per size) ────────────
+        // POS sales currently deduct the "regular" formula only — "large" is
+        // formula-configuration data for the Recipe tab until the tablet POS
+        // supports a size selector.
 
-        $classicMilkTea = Product::create(['name' => 'Classic Milk Tea', 'category' => 'Milk Tea', 'price' => 65.00]);
-        Recipe::create(['product_id' => $classicMilkTea->id, 'ingredient_id' => $ingredients['flavor_powder']->id, 'quantity_required' => 30]);
-        Recipe::create(['product_id' => $classicMilkTea->id, 'ingredient_id' => $ingredients['milk_tea_cup']->id, 'quantity_required' => 1]);
-        Recipe::create(['product_id' => $classicMilkTea->id, 'ingredient_id' => $ingredients['cup_wrapper']->id, 'quantity_required' => 1]);
+        $classicMilkTea = Product::create([
+            'name' => 'Classic Milk Tea',
+            'category' => 'Milk Tea',
+            'price' => 65.00,
+            'procedure' => "Brew the tea: Steep tea leaves in hot water for 5 minutes, then let cool.\nMix: Combine brewed tea with flavor powder and shake well.\nAssemble: Pour into cup with ice, seal with cup wrapper, serve.",
+        ]);
+        Recipe::create(['product_id' => $classicMilkTea->id, 'ingredient_id' => $ingredients['flavor_powder']->id, 'size' => Recipe::SIZE_REGULAR, 'quantity_required' => 30]);
+        Recipe::create(['product_id' => $classicMilkTea->id, 'ingredient_id' => $ingredients['milk_tea_cup']->id, 'size' => Recipe::SIZE_REGULAR, 'quantity_required' => 1]);
+        Recipe::create(['product_id' => $classicMilkTea->id, 'ingredient_id' => $ingredients['cup_wrapper']->id, 'size' => Recipe::SIZE_REGULAR, 'quantity_required' => 1]);
+        Recipe::create(['product_id' => $classicMilkTea->id, 'ingredient_id' => $ingredients['flavor_powder']->id, 'size' => Recipe::SIZE_LARGE, 'quantity_required' => 45]);
+        Recipe::create(['product_id' => $classicMilkTea->id, 'ingredient_id' => $ingredients['milk_tea_cup']->id, 'size' => Recipe::SIZE_LARGE, 'quantity_required' => 1]);
+        Recipe::create(['product_id' => $classicMilkTea->id, 'ingredient_id' => $ingredients['cup_wrapper']->id, 'size' => Recipe::SIZE_LARGE, 'quantity_required' => 1]);
 
-        $taroMilkTea = Product::create(['name' => 'Taro Milk Tea', 'category' => 'Milk Tea', 'price' => 70.00]);
-        Recipe::create(['product_id' => $taroMilkTea->id, 'ingredient_id' => $ingredients['flavor_powder']->id, 'quantity_required' => 25]);
-        Recipe::create(['product_id' => $taroMilkTea->id, 'ingredient_id' => $ingredients['tapioca_pearls']->id, 'quantity_required' => 20]);
-        Recipe::create(['product_id' => $taroMilkTea->id, 'ingredient_id' => $ingredients['milk_tea_cup']->id, 'quantity_required' => 1]);
-        Recipe::create(['product_id' => $taroMilkTea->id, 'ingredient_id' => $ingredients['cup_wrapper']->id, 'quantity_required' => 1]);
+        $taroMilkTea = Product::create([
+            'name' => 'Taro Milk Tea',
+            'category' => 'Milk Tea',
+            'price' => 70.00,
+            'procedure' => "Cook the pearls: Boil 2 cups of water. Add pearls and simmer for 5-7 minutes. Drain water.\nMake it sweet: Mix cooked pearls with sugar and a tablespoon of water. Simmer on low heat until thick and glossy.\nAssemble: Combine taro powder with milk, add pearls, seal with cup wrapper, serve.",
+        ]);
+        Recipe::create(['product_id' => $taroMilkTea->id, 'ingredient_id' => $ingredients['flavor_powder']->id, 'size' => Recipe::SIZE_REGULAR, 'quantity_required' => 25]);
+        Recipe::create(['product_id' => $taroMilkTea->id, 'ingredient_id' => $ingredients['tapioca_pearls']->id, 'size' => Recipe::SIZE_REGULAR, 'quantity_required' => 20]);
+        Recipe::create(['product_id' => $taroMilkTea->id, 'ingredient_id' => $ingredients['milk_tea_cup']->id, 'size' => Recipe::SIZE_REGULAR, 'quantity_required' => 1]);
+        Recipe::create(['product_id' => $taroMilkTea->id, 'ingredient_id' => $ingredients['cup_wrapper']->id, 'size' => Recipe::SIZE_REGULAR, 'quantity_required' => 1]);
+        Recipe::create(['product_id' => $taroMilkTea->id, 'ingredient_id' => $ingredients['flavor_powder']->id, 'size' => Recipe::SIZE_LARGE, 'quantity_required' => 35]);
+        Recipe::create(['product_id' => $taroMilkTea->id, 'ingredient_id' => $ingredients['tapioca_pearls']->id, 'size' => Recipe::SIZE_LARGE, 'quantity_required' => 30]);
+        Recipe::create(['product_id' => $taroMilkTea->id, 'ingredient_id' => $ingredients['milk_tea_cup']->id, 'size' => Recipe::SIZE_LARGE, 'quantity_required' => 1]);
+        Recipe::create(['product_id' => $taroMilkTea->id, 'ingredient_id' => $ingredients['cup_wrapper']->id, 'size' => Recipe::SIZE_LARGE, 'quantity_required' => 1]);
 
-        $porkSiomai = Product::create(['name' => 'Pork Siomai (4pcs)', 'category' => 'Siomai', 'price' => 55.00]);
-        Recipe::create(['product_id' => $porkSiomai->id, 'ingredient_id' => $ingredients['siomai_wrapper']->id, 'quantity_required' => 4]);
-        Recipe::create(['product_id' => $porkSiomai->id, 'ingredient_id' => $ingredients['pork_filling']->id, 'quantity_required' => 120]);
-        Recipe::create(['product_id' => $porkSiomai->id, 'ingredient_id' => $ingredients['steamer_cup']->id, 'quantity_required' => 1]);
+        $porkSiomai = Product::create([
+            'name' => 'Pork Siomai (4pcs)',
+            'category' => 'Siomai',
+            'price' => 55.00,
+            'procedure' => "Prep filling: Mix pork filling with seasoning until well combined.\nWrap: Spoon filling into siomai wrapper, pleat sides, shape into a cup.\nSteam: Arrange in steamer cup, steam for 15-20 minutes until cooked through.",
+        ]);
+        Recipe::create(['product_id' => $porkSiomai->id, 'ingredient_id' => $ingredients['siomai_wrapper']->id, 'size' => Recipe::SIZE_REGULAR, 'quantity_required' => 4]);
+        Recipe::create(['product_id' => $porkSiomai->id, 'ingredient_id' => $ingredients['pork_filling']->id, 'size' => Recipe::SIZE_REGULAR, 'quantity_required' => 120]);
+        Recipe::create(['product_id' => $porkSiomai->id, 'ingredient_id' => $ingredients['steamer_cup']->id, 'size' => Recipe::SIZE_REGULAR, 'quantity_required' => 1]);
 
-        $pandesal = Product::create(['name' => 'Pandesal (5pcs)', 'category' => 'Bakery', 'price' => 40.00]);
-        Recipe::create(['product_id' => $pandesal->id, 'ingredient_id' => $ingredients['flour']->id, 'quantity_required' => 200]);
-        Recipe::create(['product_id' => $pandesal->id, 'ingredient_id' => $ingredients['sugar']->id, 'quantity_required' => 30]);
-        Recipe::create(['product_id' => $pandesal->id, 'ingredient_id' => $ingredients['butter']->id, 'quantity_required' => 20]);
+        $pandesal = Product::create([
+            'name' => 'Pandesal (5pcs)',
+            'category' => 'Bakery',
+            'price' => 40.00,
+            'procedure' => "Mix dough: Combine flour, sugar, and butter, knead until smooth.\nProof: Let dough rise for 1 hour until doubled in size.\nShape & bake: Divide into 5 pieces, coat in breadcrumbs, bake at 180C for 15-18 minutes.",
+        ]);
+        Recipe::create(['product_id' => $pandesal->id, 'ingredient_id' => $ingredients['flour']->id, 'size' => Recipe::SIZE_REGULAR, 'quantity_required' => 200]);
+        Recipe::create(['product_id' => $pandesal->id, 'ingredient_id' => $ingredients['sugar']->id, 'size' => Recipe::SIZE_REGULAR, 'quantity_required' => 30]);
+        Recipe::create(['product_id' => $pandesal->id, 'ingredient_id' => $ingredients['butter']->id, 'size' => Recipe::SIZE_REGULAR, 'quantity_required' => 20]);
 
         // ── Starting stock — every ingredient stocked at every branch ──
 

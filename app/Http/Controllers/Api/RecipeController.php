@@ -14,10 +14,12 @@ class RecipeController extends Controller
     {
         $validated = $request->validate([
             'product_id' => ['required', 'exists:products,id'],
+            'size' => ['sometimes', Rule::in([Recipe::SIZE_REGULAR, Recipe::SIZE_LARGE])],
         ]);
 
         $recipes = Recipe::with('ingredient')
             ->where('product_id', $validated['product_id'])
+            ->when(isset($validated['size']), fn ($q) => $q->where('size', $validated['size']))
             ->get();
 
         return response()->json($recipes);
@@ -32,13 +34,24 @@ class RecipeController extends Controller
     {
         $validated = $request->validate([
             'product_id' => ['required', 'exists:products,id'],
-            'ingredient_id' => [
-                'required',
-                'exists:ingredients,id',
-                Rule::unique('recipes')->where('product_id', $request->product_id),
-            ],
+            'size' => ['sometimes', Rule::in([Recipe::SIZE_REGULAR, Recipe::SIZE_LARGE])],
+            'ingredient_id' => ['required', 'exists:ingredients,id'],
             'quantity_required' => ['required', 'numeric', 'min:0.001'],
         ]);
+
+        $validated['size'] ??= Recipe::SIZE_REGULAR;
+
+        $exists = Recipe::where('product_id', $validated['product_id'])
+            ->where('ingredient_id', $validated['ingredient_id'])
+            ->where('size', $validated['size'])
+            ->exists();
+
+        if ($exists) {
+            return response()->json([
+                'message' => 'This ingredient is already in the recipe for this size.',
+                'errors' => ['ingredient_id' => ['This ingredient is already in the recipe for this size.']],
+            ], 422);
+        }
 
         $recipe = Recipe::create($validated);
 
