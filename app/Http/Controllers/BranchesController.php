@@ -13,10 +13,14 @@ class BranchesController extends Controller
 {
     public function index(): View
     {
+        $user = auth()->user();
+
         $branches = Branch::with([
             'transactions' => fn ($q) => $q->whereDate('created_at', today()),
             'users' => fn ($q) => $q->where('role', 'staff'),
-        ])->get();
+        ])
+            ->when($user->isManager(), fn ($q) => $q->where('id', $user->branch_id))
+            ->get();
 
         return view('branches.index', [
             'branches' => $branches,
@@ -25,6 +29,9 @@ class BranchesController extends Controller
 
     public function show(Branch $branch, Request $request): View
     {
+        $user = auth()->user();
+        abort_if($user->isManager() && $branch->id !== $user->branch_id, 403);
+
         $tab = in_array($request->query('tab'), ['analytics', 'recipe', 'workers', 'logistics'], true)
             ? $request->query('tab')
             : 'analytics';

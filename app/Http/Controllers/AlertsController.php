@@ -9,7 +9,12 @@ class AlertsController extends Controller
 {
     public function index(): View
     {
-        $alerts = DiscrepancyAlert::with('branch', 'ingredient', 'shiftLog')->latest()->get();
+        $user = auth()->user();
+
+        $alerts = DiscrepancyAlert::with('branch', 'ingredient', 'shiftLog')
+            ->when($user->isManager(), fn ($q) => $q->where('branch_id', $user->branch_id))
+            ->latest()
+            ->get();
 
         return view('alerts.index', [
             'alerts' => $alerts,

@@ -16,58 +16,83 @@ class DashboardController extends Controller
 {
     public function index(): View
     {
-        $expectedTotal = (float) ShiftStockCount::sum('closing_quantity_expected');
+        $user = auth()->user();
+        $isManager = $user->isManager();
+        $branchId = $isManager ? $user->branch_id : null;
+
+        $expectedTotal = (float) ShiftStockCount::when($isManager, fn ($q) => $q->whereHas(
+            'shiftLog', fn ($q2) => $q2->where('branch_id', $branchId)
+        ))->sum('closing_quantity_expected');
 
         return view('dashboard', [
             'total_branches' => Branch::count(),
-            'pending_alerts' => DiscrepancyAlert::where('status', 'pending')->count(),
+            'pending_alerts' => DiscrepancyAlert::where('status', 'pending')
+                ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
+                ->count(),
             'low_stock_count' => BranchStock::where('current_quantity', '<=', DB::raw('min_threshold'))
                 ->where('min_threshold', '>', 0)
+                ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
                 ->count(),
-            'total_sales' => Transaction::whereDate('created_at', today())->sum('total_amount'),
+            'total_sales' => Transaction::whereDate('created_at', today())
+                ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
+                ->sum('total_amount'),
             'daily_sales' => Transaction::selectRaw('DATE(created_at) as date, SUM(total_amount) as total')
                 ->whereDate('created_at', '>=', now()->subDays(7))
+                ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
                 ->groupBy('date')
                 ->orderBy('date')
                 ->get(),
             'branches_with_sales' => Branch::with(['transactions' => fn ($q) => $q->whereDate('created_at', today())])
+                ->when($isManager, fn ($q) => $q->where('id', $branchId))
                 ->get()
                 ->map(fn ($b) => [
                     'name' => $b->name,
                     'today_sales' => $b->transactions->sum('total_amount'),
                     'has_sales' => $b->transactions->count() > 0,
                 ]),
-            'recent_transactions' => Transaction::with('product', 'branch', 'user')->latest()->take(10)->get(),
+            'recent_transactions' => Transaction::with('product', 'branch', 'user')
+                ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
+                ->latest()->take(10)->get(),
 
-            'annual_revenue' => Transaction::whereYear('created_at', now()->year)->sum('total_amount'),
+            'annual_revenue' => Transaction::whereYear('created_at', now()->year)
+                ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
+                ->sum('total_amount'),
             'leakage_pct' => $expectedTotal > 0
-                ? (float) ShiftStockCount::where('variance', '<', 0)->sum(DB::raw('ABS(variance)')) / $expectedTotal * 100
+                ? (float) ShiftStockCount::where('variance', '<', 0)
+                    ->when($isManager, fn ($q) => $q->whereHas('shiftLog', fn ($q2) => $q2->where('branch_id', $branchId)))
+                    ->sum(DB::raw('ABS(variance)')) / $expectedTotal * 100
                 : 0,
-            'value_saved' => $this->estimatedValueSaved(),
+            'value_saved' => $this->estimatedValueSaved($isManager, $branchId),
 
             'flag_counts' => DiscrepancyAlert::where('status', 'pending')
+                ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
                 ->selectRaw('severity, COUNT(*) as c')
                 ->groupBy('severity')
                 ->pluck('c', 'severity'),
             'recent_flags' => DiscrepancyAlert::with('branch', 'ingredient', 'shiftLog.user')
                 ->where('status', 'pending')
+                ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
                 ->latest()
                 ->take(6)
                 ->get(),
 
             'top_earners' => Branch::withSum('transactions as revenue', 'total_amount')
+                ->when($isManager, fn ($q) => $q->where('id', $branchId))
                 ->orderByDesc('revenue')
                 ->take(5)
                 ->get(),
-            'least_leakage' => Branch::all()->map(fn ($b) => [
-                'name' => $b->name,
-                'leak' => (float) ShiftStockCount::whereHas('shiftLog', fn ($q) => $q->where('branch_id', $b->id))
-                    ->where('variance', '<', 0)
-                    ->sum(DB::raw('ABS(variance)')),
-            ])->sortBy('leak')->values(),
+            'least_leakage' => Branch::when($isManager, fn ($q) => $q->where('id', $branchId))
+                ->get()
+                ->map(fn ($b) => [
+                    'name' => $b->name,
+                    'leak' => (float) ShiftStockCount::whereHas('shiftLog', fn ($q) => $q->where('branch_id', $b->id))
+                        ->where('variance', '<', 0)
+                        ->sum(DB::raw('ABS(variance)')),
+                ])->sortBy('leak')->values(),
 
             'ongoing_shifts' => ShiftLog::with('branch', 'user')
                 ->where('status', 'open')
+                ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
                 ->latest('shift_start')
                 ->take(4)
                 ->get(),
@@ -80,7 +105,7 @@ class DashboardController extends Controller
      * so each ingredient's unit value is pro-rated from product prices:
      * price / total recipe quantity, averaged across products using it.
      */
-    private function estimatedValueSaved(): float
+    private function estimatedValueSaved(bool $isManager, ?int $branchId): float
     {
         $unitValues = [];
 
@@ -101,6 +126,7 @@ class DashboardController extends Controller
         return DiscrepancyAlert::whereIn('status', ['reviewed', 'dismissed'])
             ->whereNotNull('ingredient_id')
             ->whereNotNull('variance')
+            ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
             ->get()
             ->sum(fn ($alert) => abs((float) $alert->variance) * ($avgUnitValue[$alert->ingredient_id] ?? 0));
     }
