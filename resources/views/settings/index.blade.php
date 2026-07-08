@@ -219,7 +219,7 @@
         </div>
     </div>
 
-    {{─ Overlay ──}}
+    {{-- Overlay --}}
     <div class="overlay" onclick="window.location.href='{{ url('/dashboard') }}'">
         {{-- Click the dimmed overlay to dismiss — drawer stops propagation --}}
 

@@ -16,12 +16,13 @@ class DashboardController extends Controller
         if ($branchId) $txQuery->where('branch_id', $branchId);
 
         $totalSales     = (clone $txQuery)->count();
-        $totalRevenue   = (clone $txQuery)->join('products', 'products.id', '=', 'transactions.product_id')
-                            ->sum(\Illuminate\Support\Facades\DB::raw('products.price * transactions.quantity'));
-        $flaggedShifts  = \App\Models\ShiftLog::whereDate('created_at', $date)
+        $totalRevenue   = (clone $txQuery)->sum('total_amount');
+        // "Flagged shifts" = shifts that produced a variance alert that day.
+        $flaggedShifts  = \App\Models\DiscrepancyAlert::whereDate('created_at', $date)
+                            ->where('type', 'shift_variance')
                             ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
-                            ->where('flagged', true)->count();
-        $openAlerts     = \App\Models\Alert::where('status', 'unread')
+                            ->distinct('shift_log_id')->count('shift_log_id');
+        $openAlerts     = \App\Models\DiscrepancyAlert::where('status', 'pending')
                             ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
                             ->count();
 

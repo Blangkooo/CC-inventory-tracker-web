@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -10,45 +11,15 @@ use Illuminate\Support\Facades\Hash;
 class AuthController extends Controller
 {
     /**
-     * Non-owner roles that can authenticate via PIN + branch_id.
+     * Roles that can authenticate via PIN + branch_id (per Ally's unified
+     * login: managers covering a POS shift may also clock in by PIN).
      */
-    private const PIN_ROLES = ['staff', 'manager'];
+    private const PIN_ROLES = [User::ROLE_STAFF, User::ROLE_MANAGER];
 
-    public function login(Request $request): JsonResponse
-    {
-        $request->validate([
-            'pin' => ['required', 'string'],
-            'branch_id' => ['required', 'exists:branches,id'],
-        ]);
-
-        $user = User::where('branch_id', $request->branch_id)
-            ->whereIn('role', self::PIN_ROLES)
-            ->get()
-            ->first(fn (User $candidate) => $candidate->pin && Hash::check($request->pin, $candidate->pin));
-
-        if (! $user) {
-            return response()->json([
-                'message' => 'Invalid PIN or branch selection.',
-            ], 401);
-        }
-
-        $user->tokens()->delete();
-        $token = $user->createToken('staff-token');
-
-        return response()->json([
-            'token' => $token->plainTextToken,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'branch_id' => $user->branch_id,
-            ],
-            'branch' => $user->branch,
-        ]);
-    }
-
-    public function ownerLogin(Request $request): JsonResponse
+    /**
+     * Email + password login for super admins and managers. Returns a JWT.
+     */
+    public function adminLogin(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'email' => ['required', 'email'],
@@ -56,7 +27,7 @@ class AuthController extends Controller
         ]);
 
         $user = User::where('email', $validated['email'])
-            ->where('role', 'owner')
+            ->whereIn('role', [User::ROLE_SUPER_ADMIN, User::ROLE_MANAGER])
             ->first();
 
         if (! $user || ! Hash::check($validated['password'], $user->password)) {
@@ -65,15 +36,25 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $user->tokens()->delete();
-        $token = $user->createToken('owner-token');
+        $token = auth('api')->login($user);
 
         return response()->json([
-            'token' => $token->plainTextToken,
+            'token' => $token,
             'user' => $user,
         ]);
     }
 
+    /**
+     * Backwards-compatible alias — the team's older clients call /auth/owner-login.
+     */
+    public function ownerLogin(Request $request): JsonResponse
+    {
+        return $this->adminLogin($request);
+    }
+
+    /**
+     * PIN + branch login for on-site roles. Returns a JWT.
+     */
     public function staffLogin(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -92,19 +73,26 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $user->tokens()->delete();
-        $token = $user->createToken('staff-token');
+        $token = auth('api')->login($user);
 
         return response()->json([
-            'token' => $token->plainTextToken,
+            'token' => $token,
             'user' => $user,
             'branch' => $user->branch,
         ]);
     }
 
+    /**
+     * Unified login endpoint (Ally's /api/login) — same as staffLogin.
+     */
+    public function login(Request $request): JsonResponse
+    {
+        return $this->staffLogin($request);
+    }
+
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        auth('api')->logout();
 
         return response()->json([
             'message' => 'Logged out successfully.',

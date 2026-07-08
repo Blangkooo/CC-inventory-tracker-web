@@ -18,6 +18,7 @@ class StaffStoreRequest extends FormRequest
             'email' => ['nullable', 'email', 'unique:users,email'],
             'pin' => ['required', 'string', 'min:4', 'max:8'],
             'branch_id' => ['required', 'exists:branches,id'],
+            'role' => ['sometimes', 'in:staff,manager'],
         ];
     }
 

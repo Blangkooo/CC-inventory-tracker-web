@@ -51,6 +51,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/recipes', [RecipesController::class, 'index'])->name('recipes');
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory');
     Route::get('/branches', [BranchesController::class, 'index'])->name('branches');
+    Route::get('/branches/{branch}', [BranchesController::class, 'show'])->whereNumber('branch')->name('branches.show');
     Route::get('/alerts', [AlertsController::class, 'index'])->name('alerts');
 
     // ── Business Pages (static structural placeholders) ───────────────

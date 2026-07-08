@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\AuthorizesBranchAccess;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BranchFormRequest;
 use App\Http\Resources\BranchResource;
@@ -11,6 +12,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class BranchController extends Controller
 {
+    use AuthorizesBranchAccess;
+
     public function index(): AnonymousResourceCollection
     {
         $branches = Branch::withCount('users')->latest()->get();
@@ -30,6 +33,8 @@ class BranchController extends Controller
 
     public function show(Branch $branch): BranchResource
     {
+        $this->authorizeBranch($branch->id);
+
         return new BranchResource($branch->loadCount('users'));
     }
 
@@ -40,6 +45,15 @@ class BranchController extends Controller
         return response()->json([
             'message' => 'Branch updated successfully.',
             'branch' => new BranchResource($branch->fresh()->loadCount('users')),
+        ]);
+    }
+
+    public function destroy(Branch $branch): JsonResponse
+    {
+        $branch->delete();
+
+        return response()->json([
+            'message' => 'Branch deleted successfully.',
         ]);
     }
 }

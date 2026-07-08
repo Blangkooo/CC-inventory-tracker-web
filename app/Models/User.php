@@ -68,6 +68,15 @@ class User extends Authenticatable implements JWTSubject
         return $this->role === self::ROLE_SUPER_ADMIN;
     }
 
+    /**
+     * Legacy alias — teammates' Blade views still call isOwner(); "owner"
+     * became the super_admin role in the 3-tier RBAC migration.
+     */
+    public function isOwner(): bool
+    {
+        return $this->isSuperAdmin();
+    }
+
     public function isManager(): bool
     {
         return $this->role === self::ROLE_MANAGER;
