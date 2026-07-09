@@ -254,27 +254,20 @@
                 <rect x="2" y="6" width="20" height="16" rx="2" fill="#BC614B" stroke="#5C2D1B" stroke-width="1.5"/>
                 <path d="M22 8c2 0 4 1 4 4s-2 4-4 4" stroke="#5C2D1B" stroke-width="1.5" fill="none"/>
             </svg>
-            <div class="biz-name">Coffee Shop</div>
-            <div class="biz-sub">Main Branch</div>
+            <div class="biz-name">{{ $activeBranch?->name ?? 'All Branches' }}</div>
+            <div class="biz-sub">{{ $activeBranch ? 'Active Branch' : 'Owner View' }}</div>
         </div>
 
         @php
             $isOwner = auth()->user()->role === 'super_admin';
             $userBranchId = auth()->user()->branch_id;
-            $branchLabels = [
-                1 => 'QC', 2 => 'Makati', 3 => 'BGC',
-                4 => 'Cebu', 5 => 'Davao', 6 => 'Clark',
-            ];
         @endphp
 
         <div class="branch-list">
-            @if ($isOwner)
-                @foreach ($branchLabels as $id => $label)
-                    <a href="#" class="branch-dot {{ $id === 1 ? 'active' : '' }}" title="{{ $label }} Branch">{{ $label }}</a>
-                @endforeach
-            @else
-                <a href="#" class="branch-dot active">{{ $branchLabels[$userBranchId] ?? 'My' }}</a>
-            @endif
+            @foreach ($branches as $branch)
+                @php $ini = collect(explode(' ', $branch->name))->map(fn($w) => strtoupper($w[0]))->take(2)->implode(''); @endphp
+                <a href="#" class="branch-dot {{ $activeBranch?->id === $branch->id ? 'active' : '' }}" title="{{ $branch->name }}">{{ $ini }}</a>
+            @endforeach
         </div>
     </div>
 
@@ -317,62 +310,83 @@
             {{-- LEFT COLUMN --}}
             <div class="left-col">
                 <div class="card">
-                    <h3>Current Activity</h3>
-                    <ul class="activity-log">
-                        <li><span><strong>Transaction 5</strong></span><span>&#8369;375.00</span></li>
-                        <li class="items-list"><span>Classic Milk Tea (x1), Tapioca (x1)</span></li>
-                        <li><span><strong>Transaction 4</strong></span><span>&#8369;600.00</span></li>
-                        <li class="items-list"><span>Black Forest Milk Tea (x2)</span></li>
-                        <li><span><strong>Transaction 3</strong></span><span>&#8369;275.00</span></li>
-                        <li class="items-list"><span>Iced Coffee (x1)</span></li>
-                        <li><span><strong>Transaction 2</strong></span><span>&#8369;50.00</span></li>
-                        <li class="items-list"><span>Extra Sugar Shot (x1)</span></li>
-                        <li><span><strong>Transaction 1</strong></span><span>&#8369;0.00</span></li>
-                        <li class="items-list"><span>Voided</span></li>
-                        <li class="total-row"><span>TOTAL:</span><span>&#8369;1,300.00</span></li>
-                    </ul>
+                    <h3>Recent Transactions — {{ $activeBranch?->name ?? 'All' }}</h3>
+                    @if ($recentTransactions->isEmpty())
+                        <p style="font-size:13px;opacity:.4;padding:8px 0">No transactions recorded yet.</p>
+                    @else
+                        <ul class="activity-log">
+                            @foreach ($recentTransactions as $i => $tx)
+                                <li>
+                                    <span><strong>Txn #{{ $tx->id }}</strong></span>
+                                    <span>&#8369;{{ number_format($tx->total_amount, 2) }}</span>
+                                </li>
+                                <li class="items-list">
+                                    <span>{{ $tx->product?->name ?? 'Unknown Item' }} — {{ $tx->created_at->format('M d, g:iA') }} · {{ $tx->user?->name ?? '—' }}</span>
+                                </li>
+                            @endforeach
+                            <li class="total-row">
+                                <span>TOTAL:</span>
+                                <span>&#8369;{{ number_format($recentTransactions->sum('total_amount'), 2) }}</span>
+                            </li>
+                        </ul>
+                    @endif
                 </div>
 
                 <div class="card">
-                    <h3>Annual Leakage History</h3>
-                    <div class="leakage-row"><span>Whole Milk</span><span class="qty red">−12.5 L</span></div>
-                    <div class="leakage-row"><span>Flavor Powder</span><span class="qty amber">−3.2 kg</span></div>
-                    <div class="leakage-row"><span>Sugar</span><span class="qty red">−8.7 kg</span></div>
+                    <h3>Leakage Log (Negative Variance)</h3>
+                    @if ($leakageRows->isEmpty())
+                        <p style="font-size:13px;opacity:.4;padding:8px 0">No leakage records found.</p>
+                    @else
+                        @foreach ($leakageRows as $row)
+                            <div class="leakage-row">
+                                <span>{{ $row->ingredient?->name ?? 'Unknown' }}</span>
+                                <span class="qty red">{{ number_format($row->variance, 2) }} {{ $row->ingredient?->unit ?? '' }}</span>
+                            </div>
+                        @endforeach
+                    @endif
                 </div>
             </div>
 
             {{-- RIGHT COLUMN --}}
             <div class="right-col">
                 <div class="profit-card">
-                    <h3>Total Profit Margin</h3>
-                    <div class="profit-value">20% <span class="arrow">&uarr;</span></div>
+                    <h3>Annual Revenue ({{ now()->year }})</h3>
+                    <div class="profit-value">
+                        &#8369;{{ $totalRevenue >= 1_000_000
+                            ? number_format($totalRevenue / 1_000_000, 2) . 'M'
+                            : ($totalRevenue >= 1_000 ? number_format($totalRevenue / 1_000, 1) . 'k' : number_format($totalRevenue, 2)) }}
+                        @if ($totalRevenue > 0)<span class="arrow">&uarr;</span>@endif
+                    </div>
                 </div>
 
-                <div class="chart-card">
-                    <h3>Annual Performance Analytics</h3>
-                    <div class="chart-canvas">
-                        <svg class="chart-svg" viewBox="0 0 300 120" preserveAspectRatio="none">
-                            <polygon points="0,90 30,70 60,80 90,45 120,55 150,30 180,40 210,20 240,35 270,15 300,25 300,120 0,120" fill="rgba(188,97,75,.08)"/>
-                            <polyline points="0,90 30,70 60,80 90,45 120,55 150,30 180,40 210,20 240,35 270,15 300,25" fill="none" stroke="#BC614B" stroke-width="2.5" stroke-linejoin="round"/>
-                            <polyline points="0,100 30,85 60,90 90,65 120,70 150,50 180,60 210,40 240,50 270,35 300,45" fill="none" stroke="rgba(92,45,27,.3)" stroke-width="1.5" stroke-dasharray="4,3"/>
-                        </svg>
-                    </div>
-                    <div class="chart-milestones"><span>Jan</span><span>Mar</span><span>May</span><span>Jul</span><span>Sep</span><span>Nov</span></div>
-                </div>
+                @php
+                    // Build 12-point SVG line from $monthlySales (month => total)
+                    $maxSales = $monthlySales->max() ?: 1;
+                    $svgW = 300; $svgH = 110; $pad = 10;
+                    $pts = collect(range(1, 12))->map(function ($m) use ($monthlySales, $maxSales, $svgW, $svgH, $pad) {
+                        $x = $pad + ($m - 1) * (($svgW - $pad * 2) / 11);
+                        $val = $monthlySales->get($m, 0);
+                        $y = $svgH - $pad - ($val / $maxSales) * ($svgH - $pad * 2);
+                        return "$x,$y";
+                    })->implode(' ');
+                    $polyClose = $pts . " $svgW,$svgH 0,$svgH";
+                    $months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                @endphp
 
                 <div class="chart-card">
-                    <h3>Annual Historical Trends</h3>
+                    <h3>Monthly Sales — {{ now()->year }}</h3>
                     <div class="chart-canvas">
-                        <svg class="chart-svg" viewBox="0 0 300 120" preserveAspectRatio="none">
-                            <polygon points="0,50 25,35 50,55 75,30 100,45 125,25 150,40 175,18 200,30 225,15 250,22 275,10 300,18 300,120 0,120" fill="rgba(92,45,27,.06)"/>
-                            <polyline points="0,50 25,35 50,55 75,30 100,45 125,25 150,40 175,18 200,30 225,15 250,22 275,10 300,18" fill="none" stroke="#5C2D1B" stroke-width="2.5" stroke-linejoin="round"/>
-                            <circle cx="75"  cy="30" r="3.5" fill="#BC614B"/>
-                            <circle cx="150" cy="40" r="3.5" fill="#BC614B"/>
-                            <circle cx="225" cy="15" r="3.5" fill="#BC614B"/>
-                            <circle cx="275" cy="10" r="3.5" fill="#BC614B"/>
+                        <svg class="chart-svg" viewBox="0 0 {{ $svgW }} {{ $svgH }}" preserveAspectRatio="none">
+                            <polygon points="{{ $polyClose }}" fill="rgba(188,97,75,.08)"/>
+                            <polyline points="{{ $pts }}" fill="none" stroke="#BC614B" stroke-width="2.5" stroke-linejoin="round"/>
                         </svg>
                     </div>
-                    <div class="chart-milestones"><span>2022</span><span>2023</span><span>2024</span><span>2025</span><span>2026</span></div>
+                    <div class="chart-milestones">
+                        @foreach (['Jan','Mar','May','Jul','Sep','Nov'] as $ml)<span>{{ $ml }}</span>@endforeach
+                    </div>
+                    @if ($monthlySales->isEmpty())
+                        <p style="font-size:12px;opacity:.4;margin-top:8px;text-align:center">No sales data yet for this year.</p>
+                    @endif
                 </div>
             </div>
 

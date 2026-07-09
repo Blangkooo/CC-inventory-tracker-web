@@ -261,24 +261,24 @@
             </div>
         </div>
         <div class="nav__right">
-            <button class="nav__icon" title="Notifications">
+            <a href="{{ url('/alerts') }}" class="nav__icon" title="Alerts">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                 </svg>
-            </button>
-            <button class="nav__icon nav__icon--box" title="Messages">
+            </a>
+            <a href="{{ url('/alerts') }}" class="nav__icon nav__icon--box" title="Messages" style="text-decoration:none">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="2" y="4" width="20" height="16" rx="2"/>
                     <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
                 </svg>
-            </button>
-            <button class="nav__icon" title="Settings">
+            </a>
+            <a href="{{ url('/settings') }}" class="nav__icon" title="Settings" style="text-decoration:none">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="3"/>
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                 </svg>
-            </button>
+            </a>
             <div class="nav__sep"></div>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
@@ -287,6 +287,32 @@
         </div>
     </div>
 </nav>
+
+@php
+    // ── Metric formatting helper ──────────────────────────────────────
+    $fmt = fn($n) => $n >= 1_000_000
+        ? '&#8369;' . number_format($n / 1_000_000, 1) . 'M'
+        : ($n >= 1_000 ? '&#8369;' . number_format($n / 1_000, 1) . 'k' : '&#8369;' . number_format($n));
+
+    // ── Branch alert severity map ─────────────────────────────────────
+    $sevMap   = []; // branch_id => worst severity
+    $sevOrder = ['high' => 3, 'medium' => 2, 'low' => 1];
+    foreach ($recent_flags as $f) {
+        $bid = $f->branch_id;
+        if (!isset($sevMap[$bid]) || ($sevOrder[$f->severity] ?? 0) > ($sevOrder[$sevMap[$bid]] ?? 0)) {
+            $sevMap[$bid] = $f->severity;
+        }
+    }
+    $sevColors = ['high' => '#ef4444', 'medium' => '#f97316', 'low' => '#eab308'];
+
+    // ── Dynamic calendar ─────────────────────────────────────────────
+    $calNow    = now();
+    $firstDow  = $calNow->copy()->startOfMonth()->dayOfWeek; // 0=Sun
+    $daysInMon = $calNow->daysInMonth;
+    $todayDay  = $calNow->day;
+    $prevMonth = $calNow->copy()->subMonth();
+    $daysInPrev= $prevMonth->daysInMonth;
+@endphp
 
 <div class="page">
 
@@ -298,166 +324,227 @@
             <span class="page-head__role">/ {{ auth()->user()->isOwner() ? 'Owner' : 'Manager' }}</span>
         </div>
 
-        {{-- Flag Summary --}}
+        {{-- Branch Flag Summary --}}
         <div class="card">
             <div class="card__head">
-                <span class="card__title">Flag Summary</span>
+                <span class="card__title">Branch Status — Today</span>
                 <div class="legend">
-                    <span class="legend__item"><span class="legend__dot" style="background:#eab308"></span>Low</span>
-                    <span class="legend__item"><span class="legend__dot" style="background:#f97316"></span>Moderate</span>
-                    <span class="legend__item"><span class="legend__dot" style="background:#ef4444"></span>High</span>
+                    <span class="legend__item"><span class="legend__dot" style="background:#16a34a"></span>Active</span>
+                    <span class="legend__item"><span class="legend__dot" style="background:#eab308"></span>Low Alert</span>
+                    <span class="legend__item"><span class="legend__dot" style="background:#f97316"></span>Med Alert</span>
+                    <span class="legend__item"><span class="legend__dot" style="background:#ef4444"></span>High Alert</span>
                 </div>
             </div>
             <div class="card__body">
-                <div class="flag-grid">
-                    @php
-                        $flags = [
-                            ['Main Branch',       '#eab308'],
-                            ['Downtown Outlet',   '#eab308'],
-                            ['Uptown Mall',       '#f97316'],
-                            ['Airport Branch',    '#ef4444'],
-                            ['Harbor Side',       '#eab308'],
-                            ['University Branch', '#f97316'],
-                            ['Business Park',     '#eab308'],
-                            ['Residential Hub',   '#ef4444'],
-                            ['Express Kiosk',     '#eab308'],
-                        ];
-                    @endphp
-                    @foreach ($flags as [$name, $color])
-                        <div class="flag-row">
-                            <span class="flag-pip" style="background:{{ $color }}"></span>
-                            <span>{{ $name }}</span>
-                        </div>
-                    @endforeach
-                </div>
+                @if ($branches_with_sales->isEmpty())
+                    <div style="font-size:13px;opacity:.4;text-align:center;padding:12px 0;">No branch data yet.</div>
+                @else
+                    <div class="flag-grid">
+                        @foreach ($branches_with_sales as $b)
+                            @php
+                                // Find this branch's worst alert severity
+                                // branches_with_sales has no ID, match by name via recent_flags
+                                $flagMatch = $recent_flags->first(fn($f) => $f->branch?->name === $b['name']);
+                                $branchSev = $flagMatch ? ($sevMap[$flagMatch->branch_id] ?? null) : null;
+                                $pip = $branchSev ? ($sevColors[$branchSev] ?? '#eab308') : ($b['has_sales'] ? '#16a34a' : 'rgba(92,45,27,.25)');
+                            @endphp
+                            <div class="flag-row">
+                                <span class="flag-pip" style="background:{{ $pip }}"></span>
+                                <span>{{ $b['name'] }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
             </div>
         </div>
 
         {{-- Key Metrics --}}
         <div class="metrics">
             <div class="metric">
-                <div class="metric__label">Total Monthly Revenue</div>
-                <div class="metric__value">&#8369;300k</div>
+                <div class="metric__label">Annual Revenue ({{ now()->year }})</div>
+                <div class="metric__value">{!! $fmt($annual_revenue) !!}</div>
+                <div class="metric__sub">Today: {!! $fmt($total_sales) !!}</div>
             </div>
             <div class="metric">
                 <div class="metric__label">Overall Leakage</div>
-                <div class="metric__value">20% <span class="down">&darr;</span></div>
-                <div class="metric__sub">vs. last month</div>
+                <div class="metric__value">
+                    {{ number_format($leakage_pct, 1) }}%
+                    @if ($leakage_pct > 0)<span class="down">&darr;</span>@endif
+                </div>
+                <div class="metric__sub">Based on shift count variances</div>
             </div>
             <div class="metric">
-                <div class="metric__label">Total Value Saved</div>
-                <div class="metric__value">&#8369;80k</div>
+                <div class="metric__label">Est. Value Saved</div>
+                <div class="metric__value">{!! $fmt($value_saved) !!}</div>
+                <div class="metric__sub">From reviewed alerts</div>
+            </div>
+        </div>
+
+        {{-- Stats row --}}
+        <div class="metrics">
+            <div class="metric">
+                <div class="metric__label">Total Branches</div>
+                <div class="metric__value" style="font-size:28px">{{ $total_branches }}</div>
+            </div>
+            <div class="metric">
+                <div class="metric__label">Pending Alerts</div>
+                <div class="metric__value" style="font-size:28px;color:{{ $pending_alerts > 0 ? '#dc2626' : '#16a34a' }}">{{ $pending_alerts }}</div>
+            </div>
+            <div class="metric">
+                <div class="metric__label">Low Stock Items</div>
+                <div class="metric__value" style="font-size:28px;color:{{ $low_stock_count > 0 ? '#d97706' : '#16a34a' }}">{{ $low_stock_count }}</div>
             </div>
         </div>
 
         {{-- Rankings --}}
         <div class="rankings">
             <div class="rank">
-                <div class="rank__head">Top Earner — Last Month</div>
+                <div class="rank__head">Top Earners — {{ now()->year }}</div>
                 <div class="rank__body">
-                    @php
-                        $earners = [
-                            'Main Branch','Downtown Outlet','Uptown Mall','Airport Branch',
-                            'Harbor Side','University Branch','Business Park','Residential Hub',
-                        ];
-                        $earnAmounts = ['&#8369;50,000','&#8369;48,000','&#8369;42,000','&#8369;39,000','&#8369;35,000','&#8369;25,000','&#8369;22,000','&#8369;19,000'];
-                    @endphp
-                    @foreach ($earners as $i => $name)
+                    @forelse ($top_earners as $i => $branch)
                         <div class="rank__row">
                             <div class="rank__row-left">
                                 <span class="rank__num">{{ $i + 1 }}</span>
-                                <span class="name">{{ $name }}</span>
+                                <span class="name">{{ $branch->name }}</span>
                             </div>
-                            <span class="val-green">{!! $earnAmounts[$i] !!}</span>
+                            <span class="val-green">&#8369;{{ number_format($branch->revenue ?? 0) }}</span>
                         </div>
-                    @endforeach
+                    @empty
+                        <div style="font-size:13px;opacity:.4;padding:12px 0;">No transaction data yet.</div>
+                    @endforelse
                 </div>
             </div>
 
             <div class="rank">
-                <div class="rank__head">Least Leakage — Last Month</div>
+                <div class="rank__head">Least Leakage (Units)</div>
                 <div class="rank__body">
-                    @php
-                        $leakBranches = [
-                            'Main Branch','Downtown Outlet','Uptown Mall','Airport Branch',
-                            'Harbor Side','University Branch','Business Park','Residential Hub',
-                        ];
-                        $leakAmounts = ['&#8369;1,000','&#8369;1,400','&#8369;1,800','&#8369;2,000','&#8369;2,100','&#8369;2,300','&#8369;2,900','&#8369;3,000'];
-                    @endphp
-                    @foreach ($leakBranches as $i => $name)
+                    @forelse ($least_leakage->take(8) as $i => $item)
                         <div class="rank__row">
                             <div class="rank__row-left">
                                 <span class="rank__num">{{ $i + 1 }}</span>
-                                <span class="name">{{ $name }}</span>
+                                <span class="name">{{ $item['name'] }}</span>
                             </div>
-                            <span class="val-red">{!! $leakAmounts[$i] !!}</span>
+                            <span class="{{ $item['leak'] > 0 ? 'val-red' : 'val-green' }}">
+                                {{ $item['leak'] > 0 ? '−' . number_format($item['leak'], 2) . 'u' : 'Clean' }}
+                            </span>
                         </div>
-                    @endforeach
+                    @empty
+                        <div style="font-size:13px;opacity:.4;padding:12px 0;">No leakage data yet.</div>
+                    @endforelse
                 </div>
             </div>
         </div>
+
+        {{-- Recent Pending Flags --}}
+        @if ($recent_flags->isNotEmpty())
+        <div class="card">
+            <div class="card__head">
+                <span class="card__title">Recent Pending Alerts</span>
+                <a href="{{ url('/alerts') }}" style="font-size:12px;font-weight:600;color:var(--terra);text-decoration:none;">View All &rarr;</a>
+            </div>
+            <div style="overflow-x:auto">
+                <table style="width:100%;border-collapse:collapse">
+                    <thead>
+                        <tr style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:.4;background:rgba(92,45,27,.03);">
+                            <th style="text-align:left;padding:10px 20px;border-bottom:1px solid var(--border)">Branch</th>
+                            <th style="text-align:left;padding:10px 20px;border-bottom:1px solid var(--border)">Ingredient</th>
+                            <th style="text-align:left;padding:10px 20px;border-bottom:1px solid var(--border)">Severity</th>
+                            <th style="text-align:left;padding:10px 20px;border-bottom:1px solid var(--border)">Variance</th>
+                            <th style="text-align:left;padding:10px 20px;border-bottom:1px solid var(--border)">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($recent_flags as $flag)
+                        @php
+                            $sc = ['high'=>'#fee2e2','medium'=>'#fef3c7','low'=>'#dbeafe'];
+                            $tc = ['high'=>'#991b1b','medium'=>'#92400e','low'=>'#1e40af'];
+                        @endphp
+                        <tr style="font-size:13px;border-bottom:1px solid rgba(92,45,27,.06)">
+                            <td style="padding:11px 20px;font-weight:600">{{ $flag->branch->name ?? '—' }}</td>
+                            <td style="padding:11px 20px">{{ $flag->ingredient->name ?? '—' }}</td>
+                            <td style="padding:11px 20px">
+                                <span style="padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;background:{{ $sc[$flag->severity] ?? '#f3f4f6' }};color:{{ $tc[$flag->severity] ?? '#374151' }}">
+                                    {{ ucfirst($flag->severity) }}
+                                </span>
+                            </td>
+                            <td style="padding:11px 20px;color:#dc2626;font-weight:700">{{ $flag->variance !== null ? '−' . number_format(abs($flag->variance), 2) : '—' }}</td>
+                            <td style="padding:11px 20px;opacity:.5">{{ $flag->created_at->format('M d, g:iA') }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
 
     </div>
 
     {{-- SIDEBAR --}}
     <aside class="sidebar">
         <div class="cal-card">
-            <div class="cal-card__head">July 2026</div>
+            <div class="cal-card__head">{{ now()->format('F Y') }}</div>
             <div class="cal-grid-wrap">
                 <div class="cal-days">
                     <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
                 </div>
                 <div class="cal-grid">
-                    @php
-                        $cal = [
-                            ['28','faded'],['29','faded'],['30','faded'],['1',''],['2',''],['3',''],['4',''],
-                            ['5',''],['6',''],['7',''],['8',''],['9','today'],['10',''],['11',''],
-                            ['12',''],['13',''],['14',''],['15','event'],['16',''],['17',''],['18','event'],
-                            ['19',''],['20',''],['21',''],['22',''],['23',''],['24',''],['25',''],
-                            ['26',''],['27',''],['28',''],['29',''],['30',''],['31',''],['1','faded'],
-                        ];
-                    @endphp
-                    @foreach ($cal as [$d, $cls])
-                        <span class="cal-cell {{ $cls }}">{{ $d }}</span>
-                    @endforeach
+                    {{-- Leading faded days from previous month --}}
+                    @for ($i = $firstDow - 1; $i >= 0; $i--)
+                        <span class="cal-cell faded">{{ $daysInPrev - $i }}</span>
+                    @endfor
+                    {{-- Current month days --}}
+                    @for ($d = 1; $d <= $daysInMon; $d++)
+                        <span class="cal-cell {{ $d === $todayDay ? 'today' : '' }}">{{ $d }}</span>
+                    @endfor
+                    {{-- Trailing faded days --}}
+                    @php $cellsUsed = $firstDow + $daysInMon; $trail = (7 - ($cellsUsed % 7)) % 7; @endphp
+                    @for ($d = 1; $d <= $trail; $d++)
+                        <span class="cal-cell faded">{{ $d }}</span>
+                    @endfor
                 </div>
             </div>
             <div class="cal-schedule">
-                <div class="cal-schedule__label">Upcoming</div>
+                <div class="cal-schedule__label">
+                    {{ $ongoing_shifts->isNotEmpty() ? 'Open Shifts' : 'No Active Shifts' }}
+                </div>
                 <div class="sched-list">
-                    <div class="sched-item">
-                        <span class="sched-dot"></span>
-                        <div>
-                            <div class="sched-title">Inventory Audit</div>
-                            <div class="sched-meta">
-                                <div class="sched-meta-row"><span>9:00 AM</span><span>Jul 15</span></div>
-                                <div>All Branches</div>
+                    @forelse ($ongoing_shifts as $shift)
+                        <div class="sched-item">
+                            <span class="sched-dot"></span>
+                            <div>
+                                <div class="sched-title">{{ $shift->branch->name ?? 'Unknown Branch' }}</div>
+                                <div class="sched-meta">
+                                    <div class="sched-meta-row">
+                                        <span>{{ $shift->shift_start->format('g:i A') }}</span>
+                                        <span>{{ $shift->shift_start->format('M d') }}</span>
+                                    </div>
+                                    <div>{{ $shift->user->name ?? 'Unknown Staff' }}</div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="sched-item">
-                        <span class="sched-dot"></span>
-                        <div>
-                            <div class="sched-title">Staff Review</div>
-                            <div class="sched-meta">
-                                <div class="sched-meta-row"><span>2:00 PM</span><span>Jul 18</span></div>
-                                <div>Main Branch</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="sched-item">
-                        <span class="sched-dot"></span>
-                        <div>
-                            <div class="sched-title">Monthly Report</div>
-                            <div class="sched-meta">
-                                <div class="sched-meta-row"><span>10:00 AM</span><span>Jul 31</span></div>
-                                <div>Finance Dept</div>
-                            </div>
-                        </div>
-                    </div>
+                    @empty
+                        <div class="sched-meta" style="opacity:.5;font-size:12px">All shifts closed</div>
+                    @endforelse
                 </div>
             </div>
         </div>
+
+        {{-- Quick stats --}}
+        <div class="card" style="padding:16px 20px">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:.4;margin-bottom:12px">Alert Breakdown</div>
+            @foreach (['high' => '#dc2626', 'medium' => '#d97706', 'low' => '#2563eb'] as $sev => $color)
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(92,45,27,.06)">
+                    <span style="font-size:13px;font-weight:500">{{ ucfirst($sev) }}</span>
+                    <span style="font-size:16px;font-weight:800;color:{{ $color }}">{{ $flag_counts[$sev] ?? 0 }}</span>
+                </div>
+            @endforeach
+            <div style="margin-top:12px">
+                <a href="{{ url('/alerts') }}" style="display:block;text-align:center;padding:9px;background:var(--terra);color:#fff;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none">
+                    View All Alerts
+                </a>
+            </div>
+        </div>
+
     </aside>
 
 </div>

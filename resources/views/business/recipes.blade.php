@@ -261,25 +261,23 @@
 
     {{-- Branch Sidebar --}}
     <div class="branch-bar">
+        @php $userBranchId = auth()->user()->branch_id; @endphp
         <div class="biz-badge">
             <div class="biz-badge__icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#BC614B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/>
                 </svg>
             </div>
-            <div class="biz-badge__name">Coffee Shop</div>
-            <div class="biz-badge__sub">Main Branch</div>
+            <div class="biz-badge__name">{{ $branches->count() }} {{ Str::plural('Branch', $branches->count()) }}</div>
+            <div class="biz-badge__sub">All Locations</div>
         </div>
 
         <div class="branch-divider"></div>
 
         <div class="branch-dots">
-            @php
-                $branches = [['QC',1],['Makati',2],['BGC',3],['Cebu',4],['Davao',5],['Clark',6]];
-                $active = auth()->user()->isOwner() ? 1 : auth()->user()->branch_id;
-            @endphp
-            @foreach ($branches as [$label, $id])
-                <a href="#" class="branch-dot {{ $id === $active ? 'is-active' : '' }}" title="{{ $label }} Branch">{{ $label }}</a>
+            @foreach ($branches as $branch)
+                @php $initials = collect(explode(' ', $branch->name))->map(fn($w) => strtoupper($w[0]))->take(2)->implode(''); @endphp
+                <a href="#" class="branch-dot {{ $branch->id === $userBranchId ? 'is-active' : '' }}" title="{{ $branch->name }}">{{ $initials }}</a>
             @endforeach
         </div>
     </div>
@@ -322,68 +320,90 @@
         </div>
 
         <div class="search-row">
-            <input type="text" class="search-input" placeholder="Search item name…">
-            <div class="cat-pills">
-                <span class="cat-pill is-active">Drinks</span>
-                <span class="cat-pill">Goods</span>
-                <span class="cat-pill">Sets</span>
+            <input type="text" class="search-input" id="recipe-search" placeholder="Search product name…">
+            <div class="cat-pills" id="cat-pills">
+                <span class="cat-pill is-active" data-cat="">All</span>
+                @foreach ($categories as $cat)
+                    <span class="cat-pill" data-cat="{{ $cat }}">{{ $cat }}</span>
+                @endforeach
             </div>
         </div>
 
-        <div class="recipe-card">
+        @forelse ($products as $product)
+        <div class="recipe-card" data-cat="{{ $product->category }}" data-name="{{ strtolower($product->name) }}">
             <div class="recipe-card__head">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#BC614B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/>
                     <line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/>
                 </svg>
-                <span class="recipe-card__name">Black Forest Milk Tea</span>
+                <span class="recipe-card__name">{{ $product->name }}</span>
+                @if ($product->category)
+                    <span style="margin-left:auto;font-size:11px;font-weight:600;opacity:.45;text-transform:uppercase;letter-spacing:.04em">{{ $product->category }}</span>
+                @endif
             </div>
 
-            <table class="recipe-table">
-                <thead>
-                    <tr>
-                        <th>Regular — Measurements / Ingredients</th>
-                        <th>Large — Measurements / Ingredients</th>
-                        <th>Procedure</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>
-                            <strong>Black Tea Base:</strong> 200ml<br>
-                            <strong>Whole Milk:</strong> 60ml<br>
-                            <strong>Chocolate Syrup:</strong> 30ml<br>
-                            <strong>Cherry Syrup:</strong> 15ml<br>
-                            <strong>Flavor Powder:</strong> 25g<br>
-                            <strong>Sugar:</strong> 20g<br>
-                            <strong>Ice:</strong> 1 cup
-                        </td>
-                        <td>
-                            <strong>Black Tea Base:</strong> 300ml<br>
-                            <strong>Whole Milk:</strong> 90ml<br>
-                            <strong>Chocolate Syrup:</strong> 45ml<br>
-                            <strong>Cherry Syrup:</strong> 22ml<br>
-                            <strong>Flavor Powder:</strong> 38g<br>
-                            <strong>Sugar:</strong> 30g<br>
-                            <strong>Ice:</strong> 1.5 cups
-                        </td>
-                        <td>
-                            1. Brew black tea base and let cool to room temperature.<br>
-                            2. Combine chocolate syrup and cherry syrup in a mixing cup.<br>
-                            3. Add flavor powder and sugar, stir until fully dissolved.<br>
-                            4. Pour in the black tea base and whole milk.<br>
-                            5. Fill serving cup with ice, then pour the mixture over.<br>
-                            6. Stir gently and serve chilled. Garnish with cherry if desired.
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            @if ($product->recipes->isEmpty())
+                <div style="padding:20px 24px;font-size:13px;opacity:.4">No recipe ingredients defined yet.</div>
+            @else
+                <table class="recipe-table">
+                    <thead>
+                        <tr>
+                            <th>Ingredient</th>
+                            <th>Regular Amount</th>
+                            <th>Large Amount</th>
+                            <th>Unit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($product->recipes as $recipe)
+                            <tr>
+                                <td><strong>{{ $recipe->ingredient->name ?? '—' }}</strong></td>
+                                <td>{{ $recipe->quantity_regular ?? '—' }}</td>
+                                <td>{{ $recipe->quantity_large ?? '—' }}</td>
+                                <td>{{ $recipe->ingredient->unit ?? '—' }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
 
             <div class="recipe-card__foot">
-                <span class="recipe-card__foot-label">Edit the recipe?</span>
+                <span class="recipe-card__foot-label">{{ $product->recipes->count() }} ingredient{{ $product->recipes->count() !== 1 ? 's' : '' }}</span>
                 <button class="btn-edit">Edit</button>
             </div>
         </div>
+        @empty
+            <div style="text-align:center;padding:40px;opacity:.35;font-size:14px">No products with recipes found.</div>
+        @endforelse
+
+        <script>
+        (function () {
+            var activeCat = '';
+            var search = document.getElementById('recipe-search');
+            var pills = document.querySelectorAll('#cat-pills .cat-pill');
+            var cards = document.querySelectorAll('.recipe-card');
+
+            function filter() {
+                var q = search.value.toLowerCase().trim();
+                cards.forEach(function (card) {
+                    var catMatch = !activeCat || card.dataset.cat === activeCat;
+                    var nameMatch = !q || card.dataset.name.includes(q);
+                    card.style.display = catMatch && nameMatch ? '' : 'none';
+                });
+            }
+
+            pills.forEach(function (pill) {
+                pill.addEventListener('click', function () {
+                    pills.forEach(function (p) { p.classList.remove('is-active'); });
+                    this.classList.add('is-active');
+                    activeCat = this.dataset.cat;
+                    filter();
+                });
+            });
+
+            search.addEventListener('input', filter);
+        })();
+        </script>
 
     </div>
 </div>
