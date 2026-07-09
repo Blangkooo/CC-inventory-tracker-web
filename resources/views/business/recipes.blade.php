@@ -1,3 +1,56 @@
+@php
+    // ── Placeholder fallbacks ─────────────────────────────────────────
+    if (!isset($branches) || $branches->isEmpty()) {
+        $branches = collect([
+            (object)['id'=>1,'name'=>'QC Main Branch'],
+            (object)['id'=>2,'name'=>'Makati Outlet'],
+            (object)['id'=>3,'name'=>'BGC Branch'],
+            (object)['id'=>4,'name'=>'Cebu City Branch'],
+        ]);
+    }
+    if (!isset($categories) || $categories->isEmpty()) {
+        $categories = collect(['Drinks','Goods','Sets']);
+    }
+    if (!isset($products) || $products->isEmpty()) {
+        $makeProd = fn($id,$name,$cat,$ings) => (object)[
+            'id'=>$id, 'name'=>$name, 'category'=>$cat,
+            'recipes'=>collect(array_map(fn($i)=>(object)[
+                'ingredient'=>(object)['name'=>$i[0],'unit'=>$i[2]],
+                'quantity_regular'=>$i[1], 'quantity_large'=>$i[3],
+            ], $ings)),
+        ];
+        $products = collect([
+            $makeProd(1,'Black Forest Milk Tea','Drinks',[
+                ['Black Tea Base','200ml','ml','300ml'],
+                ['Whole Milk','60ml','ml','90ml'],
+                ['Chocolate Syrup','30ml','ml','45ml'],
+                ['Cherry Syrup','15ml','ml','22ml'],
+                ['Flavor Powder','25g','g','38g'],
+                ['Sugar','20g','g','30g'],
+                ['Ice','1 cup','cup','1.5 cups'],
+            ]),
+            $makeProd(2,'Classic Milk Tea','Drinks',[
+                ['Black Tea Base','200ml','ml','300ml'],
+                ['Whole Milk','80ml','ml','120ml'],
+                ['Brown Sugar Syrup','25ml','ml','40ml'],
+                ['Tapioca Pearls','50g','g','80g'],
+                ['Ice','1 cup','cup','1.5 cups'],
+            ]),
+            $makeProd(3,'Taro Milk Tea','Drinks',[
+                ['Taro Powder','30g','g','45g'],
+                ['Whole Milk','100ml','ml','150ml'],
+                ['Sugar Syrup','20ml','ml','30ml'],
+                ['Ice','1 cup','cup','1.5 cups'],
+            ]),
+            $makeProd(4,'Cheese Dog Set','Sets',[
+                ['Hotdog Bun','1 pc','pc','2 pc'],
+                ['Hotdog','1 pc','pc','2 pc'],
+                ['Cheese Sauce','30g','g','60g'],
+                ['Ketchup','10g','g','20g'],
+            ]),
+        ]);
+    }
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>

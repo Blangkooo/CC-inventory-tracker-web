@@ -289,6 +289,59 @@
 </nav>
 
 @php
+    // ── Placeholder fallbacks for empty DB (presentation mode) ────────
+    if (empty($branches_with_sales) || (is_object($branches_with_sales) && $branches_with_sales->isEmpty())) {
+        $branches_with_sales = collect([
+            ['name' => 'QC Main Branch',      'has_sales' => true,  'today_sales' => 12500],
+            ['name' => 'Makati Outlet',        'has_sales' => true,  'today_sales' => 9800],
+            ['name' => 'BGC Branch',           'has_sales' => false, 'today_sales' => 0],
+            ['name' => 'Cebu City Branch',     'has_sales' => true,  'today_sales' => 7300],
+            ['name' => 'Davao Branch',         'has_sales' => true,  'today_sales' => 4100],
+            ['name' => 'Clark Pampanga',       'has_sales' => false, 'today_sales' => 0],
+        ]);
+    }
+    if (!isset($annual_revenue) || $annual_revenue == 0)  $annual_revenue  = 1_240_000;
+    if (!isset($total_sales)    || $total_sales == 0)     $total_sales     = 33_700;
+    if (!isset($leakage_pct)    || $leakage_pct == 0)     $leakage_pct     = 8.4;
+    if (!isset($value_saved)    || $value_saved == 0)     $value_saved     = 92_000;
+    if (!isset($total_branches) || $total_branches == 0)  $total_branches  = 6;
+    if (!isset($pending_alerts) || $pending_alerts == 0)  $pending_alerts  = 3;
+    if (!isset($low_stock_count)|| $low_stock_count == 0) $low_stock_count = 5;
+    if (!isset($flag_counts)    || empty($flag_counts))   $flag_counts     = ['high' => 1, 'medium' => 2, 'low' => 3];
+
+    if (!isset($top_earners) || (is_object($top_earners) && $top_earners->isEmpty())) {
+        $top_earners = collect([
+            (object)['name' => 'QC Main Branch',  'revenue' => 380000],
+            (object)['name' => 'Makati Outlet',   'revenue' => 295000],
+            (object)['name' => 'BGC Branch',       'revenue' => 210000],
+            (object)['name' => 'Cebu City Branch', 'revenue' => 188000],
+            (object)['name' => 'Davao Branch',     'revenue' => 142000],
+            (object)['name' => 'Clark Pampanga',   'revenue' => 25000],
+        ]);
+    }
+    if (!isset($least_leakage) || (is_object($least_leakage) && $least_leakage->isEmpty())) {
+        $least_leakage = collect([
+            ['name' => 'BGC Branch',       'leak' => 0.4],
+            ['name' => 'Cebu City Branch', 'leak' => 0.9],
+            ['name' => 'Clark Pampanga',   'leak' => 1.2],
+            ['name' => 'QC Main Branch',   'leak' => 2.1],
+            ['name' => 'Makati Outlet',    'leak' => 3.5],
+            ['name' => 'Davao Branch',     'leak' => 5.0],
+        ]);
+    }
+    if (!isset($ongoing_shifts) || (is_object($ongoing_shifts) && $ongoing_shifts->isEmpty())) {
+        $ongoing_shifts = collect([
+            (object)['branch' => (object)['name' => 'QC Main Branch'],  'shift_start' => now()->setTime(7,0),  'user' => (object)['name' => 'Maria Santos']],
+            (object)['branch' => (object)['name' => 'Makati Outlet'],   'shift_start' => now()->setTime(8,30), 'user' => (object)['name' => 'Juan dela Cruz']],
+            (object)['branch' => (object)['name' => 'Cebu City Branch'],'shift_start' => now()->setTime(9,0),  'user' => (object)['name' => 'Ana Reyes']],
+        ]);
+    }
+    if (!isset($recent_flags) || (is_object($recent_flags) && $recent_flags->isEmpty())) {
+        $recent_flags = collect([]);
+    }
+@endphp
+
+@php
     // ── Metric formatting helper ──────────────────────────────────────
     $fmt = fn($n) => $n >= 1_000_000
         ? '&#8369;' . number_format($n / 1_000_000, 1) . 'M'
