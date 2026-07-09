@@ -32,7 +32,7 @@
         .navbar-left { display: flex; align-items: center; gap: 32px; }
         .logo-area { display: flex; align-items: center; }
 
-        .logo-area svg.logo-svg { width: 120px; height: 36px; flex-shrink: 0; }
+        .logo-area .logo-svg { width: 120px; height: auto; flex-shrink: 0; }
 
         .nav-pills { display: flex; gap: 8px; }
 
@@ -253,31 +253,7 @@
     <nav class="navbar">
         <div class="navbar-left">
             <div class="logo-area">
-                <svg class="logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 180" width="120" height="36">
-                    <g>
-                        <path d="M 50,110 L 160,110 A 15,15 0 0 1 175,125 L 175,145 A 25,25 0 0 1 150,170 L 75,170 A 25,25 0 0 1 50,145 Z" fill="#FDF5D6" stroke="#5C2D1B" stroke-width="5" stroke-linejoin="round"/>
-                        <path d="M 50,135 Q 110,140 175,115 L 175,145 A 25,25 0 0 1 150,170 L 75,170 A 25,25 0 0 1 50,145 Z" fill="#E67A15" stroke="#5C2D1B" stroke-width="5" stroke-linejoin="round"/>
-                        <rect x="62" y="90" width="10" height="20" fill="#FDF5D6" stroke="#5C2D1B" stroke-width="5" stroke-linejoin="round"/>
-                        <rect x="153" y="90" width="10" height="20" fill="#FDF5D6" stroke="#5C2D1B" stroke-width="5" stroke-linejoin="round"/>
-                        <path d="M 45,90 L 60,50 L 165,50 L 180,90 Z" fill="#E12D2D" stroke="#5C2D1B" stroke-width="5" stroke-linejoin="round"/>
-                        <path d="M 45,90 Q 53,102 61,90 Q 69,102 78,90 Q 87,102 96,90 Q 105,102 114,90 Q 123,102 132,90 Q 141,102 150,90 Q 159,102 168,90 Q 174,102 180,90" fill="none" stroke="#5C2D1B" stroke-width="5" stroke-linecap="round"/>
-                        <line x1="78" y1="50" x2="78" y2="92" stroke="#5C2D1B" stroke-width="4"/>
-                        <line x1="112" y1="50" x2="112" y2="92" stroke="#5C2D1B" stroke-width="4"/>
-                        <line x1="146" y1="50" x2="146" y2="92" stroke="#5C2D1B" stroke-width="4"/>
-                    </g>
-                    <g stroke="#5C2D1B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M 210,115 L 210,50 M 216,115 L 216,50 M 222,115 L 222,50"/>
-                        <path d="M 210,50 L 250,115 M 216,50 L 256,115 M 222,50 L 262,115"/>
-                        <path d="M 250,115 L 250,50 M 256,115 L 256,50 M 262,115 L 262,50"/>
-                        <path d="M 285,115 L 285,50 M 292,115 L 292,50 M 299,115 L 299,50"/>
-                        <path d="M 320,50 L 375,50 M 320,56 L 375,56 M 320,62 L 375,62"/>
-                        <path d="M 341,62 L 341,115 M 347,62 L 347,115 M 353,62 L 353,115"/>
-                        <path d="M 410,50 L 385,115 M 415,50 L 391,115 M 420,50 L 397,115"/>
-                        <path d="M 410,50 L 435,115 M 415,50 L 441,115 M 420,50 L 447,115"/>
-                        <path d="M 396,95 L 430,95 M 394,101 L 433,101"/>
-                    </g>
-                    <text x="207" y="148" font-family="sans-serif" font-weight="900" font-size="25" fill="#5C2D1B" letter-spacing="3">INVENTORY TRACKER</text>
-                </svg>
+                <img class="logo-svg" src="{{ asset('images/logo.svg') }}" alt="NITA Logo">
             </div>
 
             <div class="nav-pills">
