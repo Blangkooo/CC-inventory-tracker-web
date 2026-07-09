@@ -3,302 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings - NITA</title>
+    <title>Settings — NITA</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: #FDF5D6;
-            color: #5C2D1B;
-            min-height: 100vh;
+        :root {
+            --cream: #FDF5D6;
+            --brown: #5C2D1B;
+            --terra: #BC614B;
+            --border: rgba(92,45,27,.16);
+            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
-        /* ── Dimmed Overlay ── */
+        body { font-family: var(--font); background: var(--cream); color: var(--brown); min-height: 100vh; }
+
+        /* ── Dimmed overlay ── */
         .overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(92, 45, 27, 0.55);
-            z-index: 100;
-            display: flex;
-            justify-content: flex-end;
+            position: fixed; inset: 0;
+            background: rgba(92,45,27,.5); backdrop-filter: blur(3px);
+            z-index: 100; display: flex; justify-content: flex-end;
+            cursor: pointer;
         }
 
-        /* ── Slide-out Sidebar ── */
+        /* ── Drawer ── */
         .drawer {
-            width: 380px;
-            max-width: 90vw;
-            height: 100vh;
-            background: #FDF5D6;
-            border-radius: 20px 0 0 20px;
-            padding: 32px 28px;
-            display: flex;
-            flex-direction: column;
-            box-shadow: -8px 0 24px rgba(0, 0, 0, 0.15);
-            animation: slideIn 0.25s ease-out;
+            width: 380px; max-width: 90vw; height: 100vh;
+            background: var(--cream); border-radius: 20px 0 0 20px;
+            padding: 32px 28px; display: flex; flex-direction: column;
+            box-shadow: -8px 0 40px rgba(0,0,0,.18);
+            animation: slideIn .22s ease-out;
+            cursor: default;
         }
 
         @keyframes slideIn {
             from { transform: translateX(100%); }
-            to { transform: translateX(0); }
+            to   { transform: translateX(0); }
         }
 
-        /* ── Drawer Header ── */
+        /* ── Header ── */
         .drawer-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 36px;
-            padding-bottom: 16px;
-            border-bottom: 1.5px solid rgba(92, 45, 27, 0.15);
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 28px; padding-bottom: 20px;
+            border-bottom: 1.5px solid var(--border);
         }
 
-        .gear-icon {
-            width: 28px;
-            height: 28px;
-            flex-shrink: 0;
+        .drawer-header h2 { font-size: 20px; font-weight: 800; }
+
+        /* ── Profile card ── */
+        .profile-card {
+            display: flex; align-items: center; gap: 14px;
+            padding: 16px; margin-bottom: 24px;
+            background: rgba(188,97,75,.08); border: 1px solid var(--border);
+            border-radius: 12px;
         }
 
-        .gear-icon svg { width: 100%; height: 100%; }
-
-        .drawer-header h2 {
-            font-size: 20px;
-            font-weight: 800;
-            color: #5C2D1B;
+        .profile-avatar {
+            width: 46px; height: 46px; border-radius: 50%;
+            background: var(--terra); color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 800; flex-shrink: 0;
+            text-transform: uppercase;
         }
 
-        /* ── Drawer Body ── */
-        .drawer-body {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
+        .profile-info .name  { font-size: 15px; font-weight: 700; }
+        .profile-info .email { font-size: 12px; opacity: .55; margin-top: 2px; }
+        .profile-info .role  { font-size: 11px; font-weight: 600; color: var(--terra); margin-top: 3px; text-transform: capitalize; }
 
-        .drawer-section {
-            margin-bottom: 24px;
-        }
+        /* ── Sections ── */
+        .drawer-section { margin-bottom: 20px; }
 
         .drawer-section h3 {
-            font-size: 13px;
-            font-weight: 700;
-            color: #5C2D1B;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            margin-bottom: 10px;
-            opacity: 0.7;
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .06em; opacity: .5; margin-bottom: 8px;
         }
 
         .drawer-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 0;
-            font-size: 14px;
-            font-weight: 500;
-            color: #5C2D1B;
-            border-bottom: 1px solid rgba(92, 45, 27, 0.08);
-            cursor: default;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 11px 0; font-size: 13.5px; font-weight: 500;
+            border-bottom: 1px solid rgba(92,45,27,.07);
         }
 
         .drawer-row:last-child { border-bottom: none; }
 
-        .drawer-row .row-value {
-            color: #5C2D1B;
-            opacity: 0.6;
-            font-size: 13px;
-        }
+        .row-value { opacity: .55; font-size: 13px; font-weight: 400; }
 
-        /* ── Profile card ── */
-        .profile-card {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 16px;
-            background: rgba(188, 97, 75, 0.08);
-            border: 1px solid rgba(92, 45, 27, 0.15);
-            border-radius: 12px;
-            margin-bottom: 24px;
-        }
-
-        .profile-avatar {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: #BC614B;
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            font-weight: 700;
-            flex-shrink: 0;
-        }
-
-        .profile-info .name {
-            font-size: 15px;
-            font-weight: 700;
-            color: #5C2D1B;
-        }
-
-        .profile-info .email {
-            font-size: 12px;
-            color: #5C2D1B;
-            opacity: 0.6;
-        }
-
-        /* ── Logout Button ── */
+        /* ── Logout ── */
         .logout-section {
-            margin-top: auto;
-            padding-top: 20px;
-            border-top: 1.5px solid rgba(92, 45, 27, 0.15);
+            margin-top: auto; padding-top: 20px;
+            border-top: 1.5px solid var(--border);
         }
 
-        .btn-logout-drawer {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            width: 100%;
-            height: 50px;
-            background: transparent;
-            color: #dc2626;
-            border: 1.5px solid #dc2626;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 700;
-            font-family: inherit;
-            cursor: pointer;
-            transition: all 0.15s ease;
+        .btn-logout {
+            display: flex; align-items: center; justify-content: center;
+            gap: 10px; width: 100%; height: 50px;
+            background: transparent; color: #dc2626;
+            border: 1.5px solid #dc2626; border-radius: 12px;
+            font-size: 15px; font-weight: 700; font-family: var(--font);
+            cursor: pointer; transition: all .15s ease;
         }
 
-        .btn-logout-drawer:hover {
-            background: #dc2626;
-            color: #ffffff;
-        }
+        .btn-logout:hover { background: #dc2626; color: #fff; }
 
-        .btn-logout-drawer svg {
-            width: 18px;
-            height: 18px;
-            flex-shrink: 0;
-        }
-
-
-
-        /* ── Dismiss hint ── */
         .dismiss-hint {
-            text-align: center;
-            font-size: 11px;
-            color: rgba(255,255,255,0.5);
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            z-index: 101;
-            cursor: default;
+            position: fixed; bottom: 20px; left: 20px; z-index: 101;
+            font-size: 11px; color: rgba(255,255,255,.45); cursor: default;
         }
     </style>
 </head>
 <body>
-    {{-- Underlying dashboard simulation (dimmed) --}}
-    <div style="padding: 24px; opacity: 0.3; pointer-events: none; filter: blur(2px);">
-        <div style="background:#FDF5D6; border:1px solid #5C2D1B; border-radius:10px; padding:14px 20px; margin-bottom:20px;">
-            <div style="font-size:22px; font-weight:800; color:#5C2D1B;">DASHBOARD</div>
-        </div>
-        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
-            <div style="background:#FDF5D6; border:1px solid #5C2D1B; border-radius:10px; padding:20px; text-align:center;">
-                <div style="font-size:11px; font-weight:700; color:#5C2D1B; text-transform:uppercase;">Total Monthly Revenue</div>
-                <div style="font-size:30px; font-weight:800; color:#5C2D1B; margin-top:8px;">$300k</div>
-            </div>
-            <div style="background:#FDF5D6; border:1px solid #5C2D1B; border-radius:10px; padding:20px; text-align:center;">
-                <div style="font-size:11px; font-weight:700; color:#5C2D1B; text-transform:uppercase;">Overall Leakage</div>
-                <div style="font-size:30px; font-weight:800; color:#5C2D1B; margin-top:8px;">20% &darr;</div>
-            </div>
-            <div style="background:#FDF5D6; border:1px solid #5C2D1B; border-radius:10px; padding:20px; text-align:center;">
-                <div style="font-size:11px; font-weight:700; color:#5C2D1B; text-transform:uppercase;">Total Value Saved</div>
-                <div style="font-size:30px; font-weight:800; color:#5C2D1B; margin-top:8px;">$80k</div>
-            </div>
-        </div>
-    </div>
 
-    {{-- Overlay --}}
+    {{-- Dimmed background -- click to close --}}
     <div class="overlay" onclick="window.location.href='{{ url('/dashboard') }}'">
-        {{-- Click the dimmed overlay to dismiss — drawer stops propagation --}}
 
-        {{-- Drawer --}}
         <div class="drawer" onclick="event.stopPropagation()">
+
             {{-- Header --}}
             <div class="drawer-header">
-                <div class="gear-icon">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="12" cy="12" r="3" stroke="#5C2D1B" stroke-width="2"/>
-                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
-                            stroke="#5C2D1B" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                </div>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
                 <h2>Settings</h2>
             </div>
 
-            {{-- Body --}}
-            <div class="drawer-body">
-                {{-- Profile --}}
-                <div class="profile-card">
-                    <div class="profile-avatar">A</div>
-                    <div class="profile-info">
-                        <div class="name">Admin Owner</div>
-                        <div class="email">admin@inventory.ph</div>
-                    </div>
-                </div>
-
-                {{-- Account Section --}}
-                <div class="drawer-section">
-                    <h3>Account</h3>
-                    <div class="drawer-row">
-                        <span>Name</span>
-                        <span class="row-value">Admin Owner</span>
-                    </div>
-                    <div class="drawer-row">
-                        <span>Email</span>
-                        <span class="row-value">admin@inventory.ph</span>
-                    </div>
-                    <div class="drawer-row">
-                        <span>Role</span>
-                        <span class="row-value">Owner</span>
-                    </div>
-                </div>
-
-                {{-- Preferences Section --}}
-                <div class="drawer-section">
-                    <h3>Preferences</h3>
-                    <div class="drawer-row">
-                        <span>Currency</span>
-                        <span class="row-value">USD ($)</span>
-                    </div>
-                    <div class="drawer-row">
-                        <span>Language</span>
-                        <span class="row-value">English</span>
-                    </div>
-                    <div class="drawer-row">
-                        <span>Notifications</span>
-                        <span class="row-value">Enabled</span>
-                    </div>
-                </div>
-
-                {{-- Logout --}}
-                <div class="logout-section">
-                    <form method="POST" action="{{ url('/api/logout') }}" onsubmit="event.preventDefault(); alert('Sanctum placeholder: POST /api/logout — token revoked.');">
-                        <button type="submit" class="btn-logout-drawer">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                                <polyline points="16 17 21 12 16 7"/>
-                                <line x1="21" y1="12" x2="9" y2="12"/>
-                            </svg>
-                            Log Out
-                        </button>
-                    </form>
+            {{-- Profile Card --}}
+            @php $user = auth()->user(); @endphp
+            <div class="profile-card">
+                <div class="profile-avatar">{{ mb_substr($user->name, 0, 1) }}</div>
+                <div class="profile-info">
+                    <div class="name">{{ $user->name }}</div>
+                    <div class="email">{{ $user->email }}</div>
+                    <div class="role">{{ str_replace('_', ' ', $user->role) }}</div>
                 </div>
             </div>
+
+            {{-- Account --}}
+            <div class="drawer-section">
+                <h3>Account</h3>
+                <div class="drawer-row">
+                    <span>Name</span>
+                    <span class="row-value">{{ $user->name }}</span>
+                </div>
+                <div class="drawer-row">
+                    <span>Email</span>
+                    <span class="row-value">{{ $user->email }}</span>
+                </div>
+                <div class="drawer-row">
+                    <span>Role</span>
+                    <span class="row-value">{{ ucwords(str_replace('_', ' ', $user->role)) }}</span>
+                </div>
+                @if ($user->branch_id)
+                    <div class="drawer-row">
+                        <span>Branch</span>
+                        <span class="row-value">{{ $user->branch->name ?? '—' }}</span>
+                    </div>
+                @endif
+            </div>
+
+            {{-- Preferences --}}
+            <div class="drawer-section">
+                <h3>Preferences</h3>
+                <div class="drawer-row">
+                    <span>Currency</span>
+                    <span class="row-value">Philippine Peso (&#8369;)</span>
+                </div>
+                <div class="drawer-row">
+                    <span>Language</span>
+                    <span class="row-value">English</span>
+                </div>
+                <div class="drawer-row">
+                    <span>Notifications</span>
+                    <span class="row-value">Enabled</span>
+                </div>
+                <div class="drawer-row">
+                    <span>Timezone</span>
+                    <span class="row-value">Asia/Manila (PHT)</span>
+                </div>
+            </div>
+
+            {{-- Logout --}}
+            <div class="logout-section">
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="btn-logout">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        Log Out
+                    </button>
+                </form>
+            </div>
+
         </div>
     </div>
 
-    <div class="dismiss-hint">Click the dimmed area to close</div>
+    <div class="dismiss-hint">Click outside to close</div>
+
 </body>
 </html>

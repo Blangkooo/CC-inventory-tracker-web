@@ -3,200 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register Business - InvenTrack</title>
+    <title>Register Businesses — NITA</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: #f4f6fb;
-            color: #1f2433;
+        :root {
+            --cream:  #FDF5D6;
+            --brown:  #5C2D1B;
+            --terra:  #BC614B;
+            --border: rgba(92,45,27,.16);
+            --font:   -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
-        .split {
-            display: grid;
-            grid-template-columns: 1fr;
-            min-height: 100vh;
+        body { font-family: var(--font); color: var(--brown); }
+
+        .split { display: grid; grid-template-columns: 1fr; min-height: 100vh; }
+        @media (min-width: 768px) { .split { grid-template-columns: 1fr 1fr; } }
+
+        .panel-left { display: none; background: var(--cream); position: relative; overflow: hidden; }
+        @media (min-width: 768px) { .panel-left { display: block; } }
+
+        .topo-grid {
+            position: absolute; inset: 0;
+            display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: repeat(12, 1fr);
+            width: 100%; height: 100%;
         }
 
-        @media (min-width: 768px) {
-            .split {
-                grid-template-columns: 1fr 1fr;
-            }
+        .tb { width: 100%; height: 100%; border: 1px solid rgba(188,97,75,.12); }
+        .tb.s  { background: rgba(188,97,75,.07); border-color: rgba(188,97,75,.22); }
+        .tb.wh { border-top: 2.5px solid rgba(188,97,75,.18); border-bottom: 2.5px solid rgba(188,97,75,.18); }
+        .tb.wv { border-left: 2.5px solid rgba(188,97,75,.18); border-right: 2.5px solid rgba(188,97,75,.18); }
+        .tb.d  { background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(188,97,75,.05) 3px, rgba(188,97,75,.05) 6px); }
+        .tb.dh { background: repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(188,97,75,.05) 3px, rgba(188,97,75,.05) 6px); }
+
+        .panel-brand {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 12px; padding: 40px;
         }
 
-        .panel-left {
-            display: none;
-            background: #E5E7EB;
+        .panel-brand img { width: 120px; filter: drop-shadow(0 2px 8px rgba(92,45,27,.12)); }
+        .panel-brand p { font-size: 13px; font-weight: 600; opacity: .5; letter-spacing: .04em; text-align: center; }
+
+        .panel-right { background: var(--cream); display: flex; align-items: center; justify-content: center; padding: 48px 24px; }
+
+        .form-box {
+            width: 100%; max-width: 420px;
+            background: #fff; border: 1px solid var(--border); border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(92,45,27,.06), 0 8px 24px rgba(92,45,27,.08);
+            padding: 36px 32px;
         }
 
-        @media (min-width: 768px) {
-            .panel-left {
-                display: block;
-            }
-        }
+        .logo-area { display: flex; justify-content: center; margin-bottom: 24px; }
+        .logo-area img { height: 32px; }
 
-        .panel-right {
-            background: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 48px 24px;
+        .steps { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 24px; }
+        .step-dot {
+            width: 28px; height: 28px; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 700;
+            background: rgba(92,45,27,.08); color: rgba(92,45,27,.4);
         }
+        .step-dot.active { background: var(--terra); color: #fff; }
+        .step-dot.done   { background: #16a34a; color: #fff; }
+        .step-line { width: 24px; height: 1.5px; background: var(--border); }
+        .step-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; opacity: .4; text-align: center; margin-bottom: 16px; }
 
-        .form-card {
-            width: 100%;
-            max-width: 420px;
-            background: #ffffff;
-            border: 4px solid #FF007F;
-            border-radius: 20px;
-            padding: 48px 40px 40px;
-            box-shadow: 0 0 0 6px rgba(255, 0, 127, 0.08),
-                        0 8px 32px rgba(255, 0, 127, 0.10);
-        }
+        .form-box h1 { font-size: 20px; font-weight: 800; text-align: center; margin-bottom: 4px; }
+        .form-subtitle { font-size: 13px; opacity: .5; text-align: center; margin-bottom: 22px; }
 
-        .logo-placeholder {
-            width: 64px;
-            height: 64px;
-            background: #d1d5db;
-            border-radius: 12px;
-            margin: 0 auto 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            color: #9ca3af;
-            font-weight: 600;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-        }
+        .business-group { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+        .business-group:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .group-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; opacity: .4; margin-bottom: 10px; }
 
-        .form-card h1 {
-            text-align: center;
-            font-size: 24px;
-            font-weight: 700;
-            color: #111827;
-            margin-bottom: 28px;
-        }
-
-        .field {
-            margin-bottom: 14px;
-        }
+        .field { margin-bottom: 10px; }
 
         .input-block {
-            width: 100%;
-            height: 48px;
-            padding: 0 16px;
-            background: #f3f4f6;
-            border: none;
-            border-radius: 10px;
-            font-size: 15px;
-            color: #111827;
-            font-family: inherit;
-            transition: background 0.15s ease;
-            -webkit-appearance: none;
-            appearance: none;
+            width: 100%; height: 44px; padding: 0 14px;
+            background: var(--cream); border: 1.5px solid var(--border);
+            border-radius: 10px; font-size: 14px; color: var(--brown); font-family: var(--font);
+            transition: border-color .15s, box-shadow .15s; -webkit-appearance: none; appearance: none;
         }
 
-        .input-block::placeholder {
-            color: #9ca3af;
-        }
+        .input-block::placeholder { color: rgba(92,45,27,.35); }
+        .input-block:focus { outline: none; border-color: var(--terra); box-shadow: 0 0 0 3px rgba(188,97,75,.12); }
 
-        .input-block:focus {
-            outline: none;
-            background: #e8eaf0;
-        }
-
-        /* Dropdown styled as a flat gray block */
         select.input-block {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239ca3af' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 16px center;
-            background-size: 12px 8px;
-            padding-right: 40px;
-            color: #6b7380;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%235C2D1B' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 14px center;
+            background-size: 12px; padding-right: 36px; cursor: pointer;
         }
 
-        select.input-block option {
-            color: #111827;
+        .nav-row { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
+
+        .btn-secondary {
+            height: 44px; padding: 0 16px;
+            background: transparent; color: var(--brown);
+            border: 1.5px solid var(--border); border-radius: 10px;
+            font-size: 13px; font-weight: 600; font-family: var(--font);
+            cursor: pointer; transition: all .15s; white-space: nowrap;
         }
 
-        .btn-row {
-            display: flex;
-            gap: 12px;
-            margin-top: 12px;
+        .btn-secondary:hover { border-color: var(--terra); color: var(--terra); }
+
+        .btn-primary {
+            flex: 1; height: 44px;
+            background: var(--terra); color: #fff; border: none; border-radius: 10px;
+            font-size: 14px; font-weight: 700; font-family: var(--font);
+            cursor: pointer; transition: background .15s;
         }
 
-        .btn-next {
-            flex: 1;
-            height: 48px;
-            background: #FF007F;
-            color: #ffffff;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 700;
-            font-family: inherit;
-            cursor: pointer;
-            transition: background 0.15s ease;
-        }
+        .btn-primary:hover { background: #a8523e; }
 
-        .btn-next:hover {
-            background: #cc0066;
-        }
-
-        .btn-add-another {
-            height: 48px;
-            padding: 0 20px;
-            background: #f3f4f6;
-            color: #374151;
-            border: none;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            font-family: inherit;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: background 0.15s ease, color 0.15s ease;
-        }
-
-        .btn-add-another:hover {
-            background: #e5e7eb;
-            color: #FF007F;
-        }
-
-        .form-footer-link {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 13px;
-            color: #6b7380;
-        }
-
-        .form-footer-link a {
-            color: #FF007F;
-            font-weight: 600;
-            text-decoration: none;
-        }
-
-        .form-footer-link a:hover {
-            text-decoration: underline;
-        }
-
+        .form-footer { text-align: center; margin-top: 18px; font-size: 13px; opacity: .65; }
+        .form-footer a { color: var(--terra); font-weight: 600; text-decoration: none; opacity: 1; }
+        .form-footer a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
     <div class="split">
-        <div class="panel-left"></div>
+
+        <div class="panel-left">
+            <div class="topo-grid">
+                @php $topo = [
+                    ['','','','wh','','','d','','','wv','',''],
+                    ['','s','','','','wv','','dh','','','',''],
+                    ['','','','d','','','','','wv','','d',''],
+                    ['wv','','s','','','dh','','s','','','','wh'],
+                    ['','','','','','','','','','dh','',''],
+                    ['d','','wv','','s','','','wh','','','',''],
+                    ['','','','','','wh','','','','s','',''],
+                    ['','s','','','','','d','','','','wv',''],
+                    ['','','','wv','','','','','dh','','',''],
+                    ['wh','','','','dh','','s','','','','',''],
+                    ['','','d','','','','','','wv','','s',''],
+                    ['','','','','wv','','dh','','','','',''],
+                ]; @endphp
+                @foreach ($topo as $row)
+                    @foreach ($row as $c)<span class="tb {{ $c }}"></span>@endforeach
+                @endforeach
+            </div>
+            <div class="panel-brand">
+                <img src="{{ asset('images/logo.svg') }}" alt="NITA">
+                <p>Inventory Intelligence for<br>Philippine Micro-Franchises</p>
+            </div>
+        </div>
 
         <div class="panel-right">
-            <div class="form-card">
-                <div class="logo-placeholder">Logo</div>
-                <h1>Register your business/es</h1>
+            <div class="form-box">
+                <div class="logo-area">
+                    <img src="{{ asset('images/logo.svg') }}" alt="NITA">
+                </div>
+
+                <div class="steps">
+                    <div class="step-dot done">✓</div>
+                    <div class="step-line"></div>
+                    <div class="step-dot active">2</div>
+                    <div class="step-line"></div>
+                    <div class="step-dot">3</div>
+                </div>
+                <div class="step-label">Step 2 of 3 — Your Businesses</div>
+
+                <h1>Register your businesses</h1>
+                <p class="form-subtitle">Add one or more businesses you operate</p>
 
                 <form method="POST" action="{{ url('/api/auth/register/step-2') }}">
                     @csrf
-                    <div id="business-fields-container">
-                        <div class="business-group" data-index="0">
+                    <div id="biz-container">
+                        <div class="business-group">
+                            <div class="group-label">Business 1</div>
                             <div class="field">
                                 <input type="text" class="input-block" name="businesses[0][business_name]" placeholder="Business Name" required>
                             </div>
@@ -205,81 +181,68 @@
                                     <option value="" disabled selected>Type of Business</option>
                                     <option value="retail">Retail</option>
                                     <option value="wholesale">Wholesale</option>
-                                    <option value="restaurant">Restaurant</option>
+                                    <option value="restaurant">Restaurant / Food Cart</option>
                                     <option value="service">Service</option>
                                     <option value="manufacturing">Manufacturing</option>
                                     <option value="other">Other</option>
                                 </select>
                             </div>
                             <div class="field">
-                                <input type="text" class="input-block" name="businesses[0][business_registration]" placeholder="Business Registration" required>
+                                <input type="text" class="input-block" name="businesses[0][business_registration]" placeholder="Business Registration No." required>
                             </div>
                             <div class="field">
-                                <input type="text" class="input-block" name="businesses[0][business_permit]" placeholder="Business Permit" required>
+                                <input type="text" class="input-block" name="businesses[0][business_permit]" placeholder="Business Permit No." required>
                             </div>
                             <div class="field">
-                                <input type="text" class="input-block" name="businesses[0][location]" placeholder="Location" required>
+                                <input type="text" class="input-block" name="businesses[0][location]" placeholder="Location / Address" required>
                             </div>
                         </div>
                     </div>
 
-                    <div class="btn-row">
-                        <button type="button" class="btn-add-another" id="add-another-btn">+ Add Another</button>
-                        <button type="submit" class="btn-next">Next</button>
-                    </div>
-
-                    <div class="form-footer-link">
-                        Already have an account? <a href="{{ url('/auth/login') }}">Sign in</a>
+                    <div class="nav-row">
+                        <button type="button" class="btn-secondary" id="add-btn">+ Add Another</button>
+                        <button type="submit" class="btn-primary">Continue</button>
                     </div>
                 </form>
+
+                <div class="form-footer">
+                    Already have an account? <a href="{{ url('/auth/login') }}">Sign In</a>
+                </div>
             </div>
         </div>
+
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            let bizIdx = 1;
-            const container = document.getElementById('business-fields-container');
-            const addBtn = document.getElementById('add-another-btn');
+        (function () {
+            let idx = 1;
+            const container = document.getElementById('biz-container');
 
-            function createBusinessGroup(index) {
-                const div = document.createElement('div');
-                div.className = 'business-group';
-                div.dataset.index = index;
-                div.innerHTML = `
+            document.getElementById('add-btn').addEventListener('click', function () {
+                const group = document.createElement('div');
+                group.className = 'business-group';
+                group.innerHTML = `
+                    <div class="group-label">Business ${idx + 1}</div>
+                    <div class="field"><input type="text" class="input-block" name="businesses[${idx}][business_name]" placeholder="Business Name" required></div>
                     <div class="field">
-                        <input type="text" class="input-block" name="businesses[${index}][business_name]" placeholder="Business Name" required>
-                    </div>
-                    <div class="field">
-                        <select class="input-block" name="businesses[${index}][type_of_business]" required>
+                        <select class="input-block" name="businesses[${idx}][type_of_business]" required>
                             <option value="" disabled selected>Type of Business</option>
                             <option value="retail">Retail</option>
                             <option value="wholesale">Wholesale</option>
-                            <option value="restaurant">Restaurant</option>
+                            <option value="restaurant">Restaurant / Food Cart</option>
                             <option value="service">Service</option>
                             <option value="manufacturing">Manufacturing</option>
                             <option value="other">Other</option>
                         </select>
                     </div>
-                    <div class="field">
-                        <input type="text" class="input-block" name="businesses[${index}][business_registration]" placeholder="Business Registration" required>
-                    </div>
-                    <div class="field">
-                        <input type="text" class="input-block" name="businesses[${index}][business_permit]" placeholder="Business Permit" required>
-                    </div>
-                    <div class="field">
-                        <input type="text" class="input-block" name="businesses[${index}][location]" placeholder="Location" required>
-                    </div>
+                    <div class="field"><input type="text" class="input-block" name="businesses[${idx}][business_registration]" placeholder="Business Registration No." required></div>
+                    <div class="field"><input type="text" class="input-block" name="businesses[${idx}][business_permit]" placeholder="Business Permit No." required></div>
+                    <div class="field"><input type="text" class="input-block" name="businesses[${idx}][location]" placeholder="Location / Address" required></div>
                 `;
-                return div;
-            }
-
-            addBtn.addEventListener('click', function () {
-                const group = createBusinessGroup(bizIdx);
                 container.appendChild(group);
-                bizIdx++;
+                idx++;
             });
-        });
+        })();
     </script>
 </body>
 </html>

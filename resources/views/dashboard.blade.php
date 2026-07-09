@@ -3,732 +3,454 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - NITA</title>
+    <title>Dashboard — NITA</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: #FDF5D6;
-            color: #5C2D1B;
-            min-height: 100vh;
+        :root {
+            --cream:   #FDF5D6;
+            --cream-2: #F7ECC0;
+            --brown:   #5C2D1B;
+            --terra:   #BC614B;
+            --terra-dk:#A8523E;
+            --border:  rgba(92, 45, 27, 0.18);
+            --shadow:  0 1px 3px rgba(92,45,27,.08), 0 4px 12px rgba(92,45,27,.06);
+            --shadow-md: 0 2px 8px rgba(92,45,27,.1), 0 8px 24px rgba(92,45,27,.07);
+            --radius:  12px;
+            --font:    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
-        /* ── Top Navigation Bar ── */
-        .navbar {
-            width: 100%;
-            max-width: 1440px;
-            margin: 0 auto;
-            margin-top: 8px;
-            background: #FDF5D6;
-            border: 1px solid #5C2D1B;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 24px;
+        body { font-family: var(--font); background: var(--cream); color: var(--brown); min-height: 100vh; }
+
+        /* ── NAV ── */
+        .nav {
+            position: sticky; top: 0; z-index: 50;
+            background: rgba(253,245,214,.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
         }
 
-        .navbar-left {
-            display: flex;
-            align-items: center;
-            gap: 32px;
+        .nav__inner {
+            max-width: 1400px; margin: 0 auto;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 32px; height: 60px;
         }
 
-        .logo-area {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .nav__left { display: flex; align-items: center; gap: 36px; }
+
+        .nav__logo img { height: 30px; display: block; }
+
+        .nav__pills { display: flex; gap: 4px; }
+
+        .nav__pill {
+            padding: 7px 18px; border-radius: 999px; font-size: 13px; font-weight: 600;
+            color: var(--brown); text-decoration: none; letter-spacing: .01em;
+            transition: all .15s ease; border: 1.5px solid transparent;
         }
 
-        .logo-area .logo-svg {
-            width: 120px;
-            height: auto;
-            flex-shrink: 0;
+        .nav__pill:hover { background: rgba(92,45,27,.06); }
+        .nav__pill.is-active { background: var(--terra); color: #fff; border-color: var(--terra); }
+
+        .nav__right { display: flex; align-items: center; gap: 8px; }
+
+        .nav__icon {
+            width: 36px; height: 36px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            background: transparent; border: none; color: var(--brown);
+            cursor: pointer; transition: background .15s ease;
         }
 
-        .nav-pills {
-            display: flex;
-            gap: 8px;
+        .nav__icon:hover { background: rgba(92,45,27,.07); }
+        .nav__icon--box { background: #fff; border: 1.5px solid var(--border); }
+
+        .nav__sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+
+        .nav__logout {
+            padding: 7px 16px; background: transparent; color: var(--brown);
+            border: 1.5px solid var(--border); border-radius: 8px;
+            font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--font);
+            transition: all .15s ease; letter-spacing: .01em;
         }
 
-        .nav-pill {
-            padding: 8px 20px;
-            border-radius: 999px;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-            border: 1.5px solid #5C2D1B;
-            background: #ffffff;
-            color: #5C2D1B;
-            transition: all 0.15s ease;
-            text-decoration: none;
+        .nav__logout:hover { background: var(--brown); color: var(--cream); border-color: var(--brown); }
+
+        /* ── LAYOUT ── */
+        .page {
+            max-width: 1400px; margin: 0 auto;
+            padding: 28px 32px;
+            display: grid;
+            grid-template-columns: 1fr 288px;
+            gap: 24px;
         }
 
-        .nav-pill.active {
-            background: #BC614B;
-            color: #ffffff;
-            border-color: #BC614B;
-        }
+        .main { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 
-        .nav-pill:hover { opacity: 0.85; }
+        /* ── PAGE HEADER ── */
+        .page-head { display: flex; align-items: baseline; gap: 10px; padding-bottom: 4px; }
+        .page-head__title { font-size: 22px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; }
+        .page-head__title span { display: inline-block; border-bottom: 3px solid var(--brown); padding-bottom: 2px; }
+        .page-head__role { font-size: 15px; font-weight: 400; opacity: .55; }
 
-        .navbar-right {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        /* ── Flat Inline SVGs ── */
-        .icon-btn {
-            width: 34px;
-            height: 34px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background 0.15s ease;
-            background: transparent;
-            border: none;
-        }
-
-        .icon-btn:hover { background: rgba(92, 45, 27, 0.08); }
-
-        .icon-btn.mail { background: #ffffff; border: 1.5px solid #5C2D1B; }
-        .icon-btn.gear svg { color: #4b5563; }
-
-        /* ── Main Layout (72/28 two-column) ── */
-        .main-layout {
-            display: flex;
-            gap: 20px;
-            padding: 20px 24px;
-            max-width: 1440px;
-            margin: 0 auto;
-        }
-
-        .left-column {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            min-width: 0;
-        }
-
-        .right-column {
-            width: 320px;
-            flex-shrink: 0;
-        }
-
-        /* ── Title Banner ── */
-        .title-banner {
-            background: #FDF5D6;
-            border: 1px solid #5C2D1B;
-            border-radius: 10px;
-            padding: 14px 20px;
-        }
-
-        .title-banner h1 {
-            font-size: 22px;
-            font-weight: 800;
-            color: #5C2D1B;
-            text-transform: uppercase;
-            letter-spacing: 0.02em;
-        }
-
-        .title-banner h1 span.role {
-            font-weight: 400;
-            font-size: 18px;
-        }
-
-        .title-banner h1 span.underline {
-            display: inline-block;
-            border-bottom: 3px solid #5C2D1B;
-            padding-bottom: 2px;
-        }
-
-        /* ── Card ── */
+        /* ── CARD ── */
         .card {
-            background: #FDF5D6;
-            border: 1px solid #5C2D1B;
-            border-radius: 10px;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
         }
 
-        .card-pad { padding: 16px 20px; }
-
-        /* ── Flag Summary ── */
-        .flag-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 14px;
+        .card__head {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 20px 12px;
+            border-bottom: 1px solid var(--border);
         }
 
-        .flag-header h2 {
-            font-size: 16px;
-            font-weight: 700;
-            color: #5C2D1B;
+        .card__title { font-size: 13px; font-weight: 700; letter-spacing: .02em; }
+
+        .card__body { padding: 16px 20px; }
+
+        /* ── LEGEND ── */
+        .legend { display: flex; gap: 14px; }
+        .legend__item { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; opacity: .75; }
+        .legend__dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+        /* ── FLAG GRID ── */
+        .flag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+
+        .flag-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 10px; border-radius: 8px;
+            font-size: 13px; font-weight: 500;
+            transition: background .1s ease;
         }
 
-        .legend {
-            display: flex;
-            gap: 14px;
-            align-items: center;
+        .flag-row:hover { background: rgba(92,45,27,.04); }
+
+        .flag-pip { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+        /* ── METRICS ── */
+        .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+
+        .metric {
+            background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+            box-shadow: var(--shadow); padding: 20px;
+            display: flex; flex-direction: column; gap: 4px;
         }
 
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            color: #5C2D1B;
+        .metric__label {
+            font-size: 10px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .06em; opacity: .5;
         }
 
-        .legend-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-        .legend-dot.yellow { background: #eab308; }
-        .legend-dot.orange { background: #f97316; }
-        .legend-dot.red { background: #ef4444; }
+        .metric__value { font-size: 32px; font-weight: 800; line-height: 1; margin-top: 6px; }
+        .metric__value .down { color: #e53e3e; font-size: 22px; }
+        .metric__sub { font-size: 10px; opacity: .5; margin-top: 2px; }
 
-        .flag-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
+        /* ── RANKINGS ── */
+        .rankings { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+        .rank { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+
+        .rank__head {
+            padding: 14px 20px 12px; border-bottom: 1px solid var(--border);
+            font-size: 12px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .04em; opacity: .6; text-align: center;
         }
 
-        .flag-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 10px;
+        .rank__body { padding: 4px 20px 12px; }
+
+        .rank__row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 9px 0; border-bottom: 1px solid rgba(92,45,27,.06);
             font-size: 13px;
-            font-weight: 500;
-            color: #5C2D1B;
         }
 
-        .flag-badge {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #ffffff;
-            border: 1px solid #5C2D1B;
-            flex-shrink: 0;
+        .rank__row:last-child { border-bottom: none; }
+        .rank__row .name { font-weight: 500; }
+        .rank__row .val-green { font-weight: 700; color: #16a34a; }
+        .rank__row .val-red { font-weight: 700; color: #dc2626; }
+
+        .rank__num {
+            width: 20px; height: 20px; border-radius: 50%;
+            background: rgba(92,45,27,.07); color: var(--brown);
+            font-size: 10px; font-weight: 700; display: flex;
+            align-items: center; justify-content: center; flex-shrink: 0;
         }
 
-        /* ── Key Metrics ── */
-        .metrics-row {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
+        .rank__row-left { display: flex; align-items: center; gap: 10px; }
+
+        /* ── SIDEBAR ── */
+        .sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+        .cal-card {
+            background: var(--terra); border-radius: var(--radius);
+            box-shadow: var(--shadow-md); overflow: hidden;
         }
 
-        .metric-card {
-            background: #FDF5D6;
-            border: 1px solid #5C2D1B;
-            border-radius: 10px;
-            padding: 20px 16px;
-            text-align: center;
+        .cal-card__head {
+            padding: 18px 20px 14px;
+            font-size: 11px; font-weight: 700; letter-spacing: .1em;
+            text-transform: uppercase; color: rgba(255,255,255,.7);
         }
 
-        .metric-label {
-            font-size: 11px;
-            font-weight: 700;
-            color: #5C2D1B;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            margin-bottom: 8px;
+        .cal-grid-wrap { padding: 0 16px; }
+
+        .cal-days {
+            display: grid; grid-template-columns: repeat(7, 1fr);
+            text-align: center; font-size: 9px; font-weight: 700;
+            color: rgba(255,255,255,.5); text-transform: uppercase;
+            margin-bottom: 6px; letter-spacing: .03em;
         }
 
-        .metric-value {
-            font-size: 30px;
-            font-weight: 800;
-            color: #5C2D1B;
-        }
-
-        .metric-sub {
-            font-size: 10px;
-            color: #5C2D1B;
-            opacity: 0.7;
-            margin-top: 4px;
-        }
-
-        .metric-value .down-arrow { color: #ef4444; }
-
-        /* ── Rankings Row ── */
-        .rankings-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-
-        .rank-card {
-            background: #FDF5D6;
-            border: 1px solid #5C2D1B;
-            border-radius: 10px;
-            padding: 16px 20px;
-        }
-
-        .rank-card h3 {
-            font-size: 14px;
-            font-weight: 700;
-            color: #5C2D1B;
-            text-align: center;
-            margin-bottom: 12px;
-        }
-
-        .rank-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 7px 0;
-            border-bottom: 1px solid rgba(92, 45, 27, 0.1);
-            font-size: 13px;
-            font-weight: 500;
-        }
-
-        .rank-row:last-child { border-bottom: none; }
-
-        .rank-row .green { color: #16a34a; font-weight: 700; }
-        .rank-row .red { color: #dc2626; font-weight: 700; }
-
-        /* ── Right Sidebar (Terracotta) ── */
-        .sidebar-card {
-            background: #BC614B;
-            border: 1px solid #5C2D1B;
-            border-radius: 10px;
-            padding: 20px 18px;
-            color: #ffffff;
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* Topographic wave pattern overlay */
-        .sidebar-card::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background:
-                radial-gradient(circle at 20% 30%, rgba(255,255,255,0.05) 0%, transparent 60%),
-                radial-gradient(circle at 70% 60%, rgba(255,255,255,0.05) 0%, transparent 50%),
-                radial-gradient(circle at 40% 85%, rgba(255,255,255,0.04) 0%, transparent 40%),
-                radial-gradient(circle at 85% 15%, rgba(255,255,255,0.04) 0%, transparent 40%);
-            border-radius: 6px;
-            pointer-events: none;
-        }
-
-        .sidebar-card > * { position: relative; z-index: 1; }
-
-        .sidebar-card h3 {
-            font-size: 15px;
-            font-weight: 700;
-            margin-bottom: 12px;
-            letter-spacing: 0.02em;
-        }
-
-        .sidebar-card h4 {
-            font-size: 13px;
-            font-weight: 700;
-            margin-bottom: 10px;
-            margin-top: 20px;
-        }
-
-        .calendar-days {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            text-align: center;
-            font-size: 10px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.85);
-            margin-bottom: 6px;
-            text-transform: uppercase;
-        }
-
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 2px;
-        }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 16px; }
 
         .cal-cell {
-            text-align: center;
-            padding: 5px 0;
-            font-size: 12px;
-            font-weight: 500;
-            color: #ffffff;
-            border-radius: 4px;
+            text-align: center; padding: 6px 2px; font-size: 11px;
+            font-weight: 500; color: rgba(255,255,255,.85); border-radius: 6px;
+            cursor: default;
         }
 
-        .cal-cell.faded { opacity: 0.4; }
-        .cal-cell.highlight-ring { border: 1.5px solid #ffffff; }
-        .cal-cell.highlight-solid { background: #5C2D1B; color: #ffffff; font-weight: 700; }
+        .cal-cell.faded { color: rgba(255,255,255,.25); }
+        .cal-cell.today { background: var(--brown); color: #fff; font-weight: 700; }
+        .cal-cell.event { background: rgba(255,255,255,.15); color: #fff; }
 
-        .schedule-list {
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
+        .cal-schedule { border-top: 1px solid rgba(255,255,255,.15); padding: 14px 20px 20px; }
+
+        .cal-schedule__label {
+            font-size: 10px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .07em; color: rgba(255,255,255,.5); margin-bottom: 14px;
         }
 
-        .schedule-item {
-            display: flex;
-            gap: 10px;
-            align-items: flex-start;
+        .sched-list { display: flex; flex-direction: column; gap: 14px; }
+
+        .sched-item { display: flex; gap: 12px; }
+
+        .sched-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: rgba(255,255,255,.7); flex-shrink: 0; margin-top: 5px;
         }
 
-        .schedule-bullet {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #ffffff;
-            flex-shrink: 0;
-            margin-top: 5px;
+        .sched-title { font-size: 12px; font-weight: 700; color: #fff; }
+        .sched-meta { font-size: 10px; color: rgba(255,255,255,.6); margin-top: 2px; line-height: 1.5; }
+        .sched-meta-row { display: flex; justify-content: space-between; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1100px) {
+            .page { grid-template-columns: 1fr 260px; }
         }
 
-        .schedule-content { flex: 1; }
-
-        .schedule-content .title {
-            font-size: 13px;
-            font-weight: 700;
-            color: #ffffff;
-        }
-
-        .schedule-content .meta {
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.75);
-            margin-top: 2px;
-            line-height: 1.5;
-        }
-
-        .schedule-content .meta-line {
-            display: flex;
-            justify-content: space-between;
-        }
-
-        /* ── Logout ── */
-        .logout-form { margin-left: auto; }
-
-        .logout-btn {
-            padding: 6px 14px;
-            background: transparent;
-            color: #5C2D1B;
-            border: 1.5px solid #5C2D1B;
-            border-radius: 8px;
-            font-size: 11px;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: inherit;
-            transition: all 0.15s ease;
-        }
-
-        .logout-btn:hover {
-            background: #5C2D1B;
-            color: #FDF5D6;
-        }
-
-        /* ── Responsive ── */
-        @media (max-width: 1024px) {
-            .right-column { width: 260px; }
-        }
-
-        @media (max-width: 768px) {
-            .main-layout { flex-direction: column; padding: 12px; }
-            .right-column { width: 100%; }
-            .metrics-row, .rankings-row { grid-template-columns: 1fr; }
-            .flag-grid { grid-template-columns: repeat(2, 1fr); }
-            .navbar { flex-wrap: wrap; gap: 10px; }
-            .nav-pills { order: 3; width: 100%; justify-content: center; }
-            .navbar-right { gap: 8px; }
+        @media (max-width: 880px) {
+            .page { grid-template-columns: 1fr; padding: 16px; }
+            .metrics, .rankings { grid-template-columns: 1fr; }
+            .flag-grid { grid-template-columns: repeat(2,1fr); }
         }
     </style>
 </head>
 <body>
 
-    {{-- ═══════════════════════════════════════════════════════════════ --}}
-    {{--  VIEW 1: MAIN OWNER DASHBOARD                                --}}
-    {{-- ═══════════════════════════════════════════════════════════════ --}}
-
-    {{-- ── TOP NAVIGATION BAR ── --}}
-    <nav class="navbar">
-        <div class="navbar-left">
-            <div class="logo-area">
-                <img class="logo-svg" src="{{ asset('images/logo.svg') }}" alt="NITA Logo">
-            </div>
-
-            <div class="nav-pills">
-                <a href="{{ url('/dashboard') }}" class="nav-pill active">Dashboard</a>
-                <a href="{{ url('/business/recipes') }}" class="nav-pill">Businesses</a>
-                <a href="{{ url('/logistics') }}" class="nav-pill">Logistics</a>
+<nav class="nav">
+    <div class="nav__inner">
+        <div class="nav__left">
+            <a href="{{ url('/dashboard') }}" class="nav__logo">
+                <img src="{{ asset('images/logo.svg') }}" alt="NITA">
+            </a>
+            <div class="nav__pills">
+                <a href="{{ url('/dashboard') }}"        class="nav__pill is-active">Dashboard</a>
+                <a href="{{ url('/business/recipes') }}"  class="nav__pill">Businesses</a>
+                <a href="{{ url('/logistics') }}"         class="nav__pill">Logistics</a>
             </div>
         </div>
-
-        <div class="navbar-right">
-            {{-- New Bell Icon --}}
-            <div class="icon-btn bell">
-                <svg width="22" height="22" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M 32,10 C 23.5,10 21,22 17,40 C 13,44 14,48 19,48 L 45,48 C 50,48 51,44 47,40 C 43,22 40.5,10 32,10 Z" fill="#FFAA2C"/>
-                    <path d="M 27,48 A 5,5 0 0 0 37,48" fill="#5C2D1B"/>
+        <div class="nav__right">
+            <button class="nav__icon" title="Notifications">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                 </svg>
-            </div>
-            {{-- White Rounded Mail Pill --}}
-            <div class="icon-btn mail">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5C2D1B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            </button>
+            <button class="nav__icon nav__icon--box" title="Messages">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="2" y="4" width="20" height="16" rx="2"/>
                     <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
                 </svg>
-            </div>
-            {{-- Gray Hollowed Gear (mask) --}}
-            <div class="icon-btn gear">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4b5563" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            </button>
+            <button class="nav__icon" title="Settings">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="3"/>
-                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                 </svg>
-            </div>
-
-            <form method="POST" action="{{ route('logout') }}" class="logout-form">
+            </button>
+            <div class="nav__sep"></div>
+            <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button type="submit" class="logout-btn">Logout</button>
+                <button type="submit" class="nav__logout">Logout</button>
             </form>
         </div>
-    </nav>
+    </div>
+</nav>
 
-    {{-- ── MAIN LAYOUT (TWO-COLUMN: 72/28) ── --}}
-    <div class="main-layout">
+<div class="page">
 
-        {{-- ── LEFT COLUMN (72%) ── --}}
-        <div class="left-column">
+    {{-- MAIN COLUMN --}}
+    <div class="main">
 
-            {{-- Header Text Banner --}}
-            <div class="title-banner">
-                <h1>
-                    <span class="underline">DASHBOARD</span>&nbsp;
-                    <span class="role">| {{ auth()->user()->isOwner() ? 'Owner' : 'Manager' }}</span>
-                </h1>
-            </div>
+        <div class="page-head">
+            <h1 class="page-head__title"><span>Dashboard</span></h1>
+            <span class="page-head__role">/ {{ auth()->user()->isOwner() ? 'Owner' : 'Manager' }}</span>
+        </div>
 
-            {{-- Row 1: Flag Summary Card --}}
-            <div class="card card-pad">
-                <div class="flag-header">
-                    <h2>Flag Summary</h2>
-                    <div class="legend">
-                        <span class="legend-item">
-                            <span class="legend-dot yellow"></span> Low Importance
-                        </span>
-                        <span class="legend-item">
-                            <span class="legend-dot orange"></span> Moderate Importance
-                        </span>
-                        <span class="legend-item">
-                            <span class="legend-dot red"></span> High Importance
-                        </span>
-                    </div>
+        {{-- Flag Summary --}}
+        <div class="card">
+            <div class="card__head">
+                <span class="card__title">Flag Summary</span>
+                <div class="legend">
+                    <span class="legend__item"><span class="legend__dot" style="background:#eab308"></span>Low</span>
+                    <span class="legend__item"><span class="legend__dot" style="background:#f97316"></span>Moderate</span>
+                    <span class="legend__item"><span class="legend__dot" style="background:#ef4444"></span>High</span>
                 </div>
+            </div>
+            <div class="card__body">
                 <div class="flag-grid">
-                    <div class="flag-item">
-                        <span class="flag-badge" style="border-color: #eab308;"></span>
-                        <span>Main Branch</span>
-                    </div>
-                    <div class="flag-item">
-                        <span class="flag-badge" style="border-color: #eab308;"></span>
-                        <span>Downtown Outlet</span>
-                    </div>
-                    <div class="flag-item">
-                        <span class="flag-badge" style="border-color: #f97316;"></span>
-                        <span>Uptown Mall</span>
-                    </div>
-                    <div class="flag-item">
-                        <span class="flag-badge" style="border-color: #ef4444;"></span>
-                        <span>Airport Branch</span>
-                    </div>
-                    <div class="flag-item">
-                        <span class="flag-badge" style="border-color: #eab308;"></span>
-                        <span>Harbor Side</span>
-                    </div>
-                    <div class="flag-item">
-                        <span class="flag-badge" style="border-color: #f97316;"></span>
-                        <span>University Branch</span>
-                    </div>
-                    <div class="flag-item">
-                        <span class="flag-badge" style="border-color: #eab308;"></span>
-                        <span>Business Park</span>
-                    </div>
-                    <div class="flag-item">
-                        <span class="flag-badge" style="border-color: #ef4444;"></span>
-                        <span>Residential Hub</span>
-                    </div>
-                    <div class="flag-item">
-                        <span class="flag-badge" style="border-color: #eab308;"></span>
-                        <span>Express Kiosk</span>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Row 2: Key Metrics --}}
-            <div class="metrics-row">
-                <div class="metric-card">
-                    <div class="metric-label">Total Monthly Revenue</div>
-                    <div class="metric-value">$300k</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">Overall Leakage</div>
-                    <div class="metric-value">20% <span class="down-arrow">&darr;</span></div>
-                    <div class="metric-sub">compared to last month</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">Total Value Saved</div>
-                    <div class="metric-value">$80k</div>
-                </div>
-            </div>
-
-            {{-- Row 3: Performance Rankings --}}
-            <div class="rankings-row">
-                {{-- Top Earner last Month --}}
-                <div class="rank-card">
-                    <h3>Top Earner last Month</h3>
                     @php
-                        $topEarners = [
-                            ['Main Branch', '$50,000'],
-                            ['Downtown Outlet', '$48,000'],
-                            ['Uptown Mall', '$42,000'],
-                            ['Airport Branch', '$39,000'],
-                            ['Harbor Side', '$35,000'],
-                            ['University Branch', '$25,000'],
-                            ['Business Park', '$22,000'],
-                            ['Residential Hub', '$19,000'],
+                        $flags = [
+                            ['Main Branch',       '#eab308'],
+                            ['Downtown Outlet',   '#eab308'],
+                            ['Uptown Mall',       '#f97316'],
+                            ['Airport Branch',    '#ef4444'],
+                            ['Harbor Side',       '#eab308'],
+                            ['University Branch', '#f97316'],
+                            ['Business Park',     '#eab308'],
+                            ['Residential Hub',   '#ef4444'],
+                            ['Express Kiosk',     '#eab308'],
                         ];
                     @endphp
-                    @foreach ($topEarners as [$name, $amount])
-                        <div class="rank-row">
+                    @foreach ($flags as [$name, $color])
+                        <div class="flag-row">
+                            <span class="flag-pip" style="background:{{ $color }}"></span>
                             <span>{{ $name }}</span>
-                            <span class="green">{{ $amount }}</span>
-                        </div>
-                    @endforeach
-                </div>
-
-                {{-- Least Leakage last Month --}}
-                <div class="rank-card">
-                    <h3>Least Leakage last Month</h3>
-                    @php
-                        $leastLeakage = [
-                            ['Main Branch', '$1,000'],
-                            ['Downtown Outlet', '$1,400'],
-                            ['Uptown Mall', '$1,800'],
-                            ['Airport Branch', '$2,000'],
-                            ['Harbor Side', '$2,100'],
-                            ['University Branch', '$2,300'],
-                            ['Business Park', '$2,900'],
-                            ['Residential Hub', '$3,000'],
-                        ];
-                    @endphp
-                    @foreach ($leastLeakage as [$name, $amount])
-                        <div class="rank-row">
-                            <span>{{ $name }}</span>
-                            <span class="red">{{ $amount }}</span>
                         </div>
                     @endforeach
                 </div>
             </div>
         </div>
 
-        {{-- ── RIGHT COLUMN (28%) ── --}}
-        <div class="right-column">
-            <div class="sidebar-card">
+        {{-- Key Metrics --}}
+        <div class="metrics">
+            <div class="metric">
+                <div class="metric__label">Total Monthly Revenue</div>
+                <div class="metric__value">&#8369;300k</div>
+            </div>
+            <div class="metric">
+                <div class="metric__label">Overall Leakage</div>
+                <div class="metric__value">20% <span class="down">&darr;</span></div>
+                <div class="metric__sub">vs. last month</div>
+            </div>
+            <div class="metric">
+                <div class="metric__label">Total Value Saved</div>
+                <div class="metric__value">&#8369;80k</div>
+            </div>
+        </div>
 
-                {{-- JUNE SCHEDULE --}}
-                <h3>JUNE SCHEDULE</h3>
-
-                <div class="calendar-days">
-                    <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
-                </div>
-
-                <div class="calendar-grid">
+        {{-- Rankings --}}
+        <div class="rankings">
+            <div class="rank">
+                <div class="rank__head">Top Earner — Last Month</div>
+                <div class="rank__body">
                     @php
-                        $days = [
-                            ['label' => '31', 'class' => 'faded'],
-                            ['label' => '01', 'class' => ''],
-                            ['label' => '02', 'class' => 'highlight-ring'],
-                            ['label' => '03', 'class' => ''],
-                            ['label' => '04', 'class' => ''],
-                            ['label' => '05', 'class' => ''],
-                            ['label' => '06', 'class' => ''],
-                            ['label' => '07', 'class' => ''],
-                            ['label' => '08', 'class' => ''],
-                            ['label' => '09', 'class' => 'highlight-ring'],
-                            ['label' => '10', 'class' => ''],
-                            ['label' => '11', 'class' => 'highlight-solid'],
-                            ['label' => '12', 'class' => ''],
-                            ['label' => '13', 'class' => ''],
-                            ['label' => '14', 'class' => ''],
-                            ['label' => '15', 'class' => ''],
-                            ['label' => '16', 'class' => 'highlight-solid'],
-                            ['label' => '17', 'class' => ''],
-                            ['label' => '18', 'class' => ''],
-                            ['label' => '19', 'class' => ''],
-                            ['label' => '20', 'class' => ''],
-                            ['label' => '21', 'class' => ''],
-                            ['label' => '22', 'class' => ''],
-                            ['label' => '23', 'class' => ''],
-                            ['label' => '24', 'class' => ''],
-                            ['label' => '25', 'class' => ''],
-                            ['label' => '26', 'class' => 'highlight-solid'],
-                            ['label' => '27', 'class' => ''],
-                            ['label' => '28', 'class' => ''],
-                            ['label' => '29', 'class' => ''],
-                            ['label' => '30', 'class' => ''],
-                            ['label' => '01', 'class' => 'faded'],
-                            ['label' => '02', 'class' => 'faded'],
-                            ['label' => '03', 'class' => 'faded'],
-                            ['label' => '04', 'class' => 'faded'],
+                        $earners = [
+                            'Main Branch','Downtown Outlet','Uptown Mall','Airport Branch',
+                            'Harbor Side','University Branch','Business Park','Residential Hub',
                         ];
+                        $earnAmounts = ['&#8369;50,000','&#8369;48,000','&#8369;42,000','&#8369;39,000','&#8369;35,000','&#8369;25,000','&#8369;22,000','&#8369;19,000'];
                     @endphp
-                    @foreach ($days as $day)
-                        <span class="cal-cell {{ $day['class'] }}">{{ $day['label'] }}</span>
+                    @foreach ($earners as $i => $name)
+                        <div class="rank__row">
+                            <div class="rank__row-left">
+                                <span class="rank__num">{{ $i + 1 }}</span>
+                                <span class="name">{{ $name }}</span>
+                            </div>
+                            <span class="val-green">{!! $earnAmounts[$i] !!}</span>
+                        </div>
                     @endforeach
                 </div>
+            </div>
 
-                {{-- Upcoming Schedules --}}
-                <h4>Upcoming Schedules:</h4>
+            <div class="rank">
+                <div class="rank__head">Least Leakage — Last Month</div>
+                <div class="rank__body">
+                    @php
+                        $leakBranches = [
+                            'Main Branch','Downtown Outlet','Uptown Mall','Airport Branch',
+                            'Harbor Side','University Branch','Business Park','Residential Hub',
+                        ];
+                        $leakAmounts = ['&#8369;1,000','&#8369;1,400','&#8369;1,800','&#8369;2,000','&#8369;2,100','&#8369;2,300','&#8369;2,900','&#8369;3,000'];
+                    @endphp
+                    @foreach ($leakBranches as $i => $name)
+                        <div class="rank__row">
+                            <div class="rank__row-left">
+                                <span class="rank__num">{{ $i + 1 }}</span>
+                                <span class="name">{{ $name }}</span>
+                            </div>
+                            <span class="val-red">{!! $leakAmounts[$i] !!}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
 
-                <div class="schedule-list">
-                    <div class="schedule-item">
-                        <span class="schedule-bullet"></span>
-                        <div class="schedule-content">
-                            <div class="title">Team Meeting</div>
-                            <div class="meta">
-                                <div class="meta-line">
-                                    <span>10:00 AM</span>
-                                    <span>12/06/2025</span>
-                                </div>
-                                <div>Board Room A</div>
+    </div>
+
+    {{-- SIDEBAR --}}
+    <aside class="sidebar">
+        <div class="cal-card">
+            <div class="cal-card__head">July 2026</div>
+            <div class="cal-grid-wrap">
+                <div class="cal-days">
+                    <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+                </div>
+                <div class="cal-grid">
+                    @php
+                        $cal = [
+                            ['28','faded'],['29','faded'],['30','faded'],['1',''],['2',''],['3',''],['4',''],
+                            ['5',''],['6',''],['7',''],['8',''],['9','today'],['10',''],['11',''],
+                            ['12',''],['13',''],['14',''],['15','event'],['16',''],['17',''],['18','event'],
+                            ['19',''],['20',''],['21',''],['22',''],['23',''],['24',''],['25',''],
+                            ['26',''],['27',''],['28',''],['29',''],['30',''],['31',''],['1','faded'],
+                        ];
+                    @endphp
+                    @foreach ($cal as [$d, $cls])
+                        <span class="cal-cell {{ $cls }}">{{ $d }}</span>
+                    @endforeach
+                </div>
+            </div>
+            <div class="cal-schedule">
+                <div class="cal-schedule__label">Upcoming</div>
+                <div class="sched-list">
+                    <div class="sched-item">
+                        <span class="sched-dot"></span>
+                        <div>
+                            <div class="sched-title">Inventory Audit</div>
+                            <div class="sched-meta">
+                                <div class="sched-meta-row"><span>9:00 AM</span><span>Jul 15</span></div>
+                                <div>All Branches</div>
                             </div>
                         </div>
                     </div>
-
-                    <div class="schedule-item">
-                        <span class="schedule-bullet"></span>
-                        <div class="schedule-content">
-                            <div class="title">Submit requirements</div>
-                            <div class="meta">
-                                <div class="meta-line">
-                                    <span>11:30 AM</span>
-                                    <span>15/06/2025</span>
-                                </div>
-                                <div>Compliance Office</div>
+                    <div class="sched-item">
+                        <span class="sched-dot"></span>
+                        <div>
+                            <div class="sched-title">Staff Review</div>
+                            <div class="sched-meta">
+                                <div class="sched-meta-row"><span>2:00 PM</span><span>Jul 18</span></div>
+                                <div>Main Branch</div>
                             </div>
                         </div>
                     </div>
-
-                    <div class="schedule-item">
-                        <span class="schedule-bullet"></span>
-                        <div class="schedule-content">
-                            <div class="title">Funding Handover</div>
-                            <div class="meta">
-                                <div class="meta-line">
-                                    <span>2:00 PM</span>
-                                    <span>20/06/2025</span>
-                                </div>
+                    <div class="sched-item">
+                        <span class="sched-dot"></span>
+                        <div>
+                            <div class="sched-title">Monthly Report</div>
+                            <div class="sched-meta">
+                                <div class="sched-meta-row"><span>10:00 AM</span><span>Jul 31</span></div>
                                 <div>Finance Dept</div>
                             </div>
                         </div>
@@ -736,8 +458,9 @@
                 </div>
             </div>
         </div>
+    </aside>
 
-    </div>
+</div>
 
 </body>
 </html>
