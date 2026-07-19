@@ -57,69 +57,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Businesses — NITA</title>
+    @include('partials._shared-styles')
+
     <style>
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-        :root {
-            --cream:  #FDF5D6;
-            --brown:  #5C2D1B;
-            --terra:  #BC614B;
-            --border: rgba(92,45,27,.16);
-            --shadow: 0 1px 3px rgba(92,45,27,.08), 0 4px 12px rgba(92,45,27,.06);
-            --radius: 12px;
-            --font:   -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
-
-        body { font-family: var(--font); background: var(--cream); color: var(--brown); min-height: 100vh; }
-
-        /* ── NAV ── */
-        .nav {
-            position: sticky; top: 0; z-index: 50;
-            background: rgba(253,245,214,.92); backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .nav__inner {
-            max-width: 1400px; margin: 0 auto;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 32px; height: 60px;
-        }
-
-        .nav__left { display: flex; align-items: center; gap: 36px; }
-        .nav__logo img { height: 30px; display: block; }
-        .nav__pills { display: flex; gap: 4px; }
-
-        .nav__pill {
-            padding: 7px 18px; border-radius: 999px; font-size: 13px; font-weight: 600;
-            color: var(--brown); text-decoration: none; transition: all .15s ease;
-            border: 1.5px solid transparent;
-        }
-
-        .nav__pill:hover { background: rgba(92,45,27,.06); }
-        .nav__pill.is-active { background: var(--terra); color: #fff; border-color: var(--terra); }
-
-        .nav__right { display: flex; align-items: center; gap: 8px; }
-
-        .nav__icon {
-            width: 36px; height: 36px; border-radius: 8px; display: flex;
-            align-items: center; justify-content: center;
-            background: transparent; border: none; color: var(--brown); cursor: pointer;
-            transition: background .15s ease;
-        }
-
-        .nav__icon:hover { background: rgba(92,45,27,.07); }
-        .nav__icon--box { background: #fff; border: 1.5px solid var(--border); }
-        .nav__sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
-
-        .nav__logout {
-            padding: 7px 16px; background: transparent; color: var(--brown);
-            border: 1.5px solid var(--border); border-radius: 8px;
-            font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--font);
-            transition: all .15s ease;
-        }
-
-        .nav__logout:hover { background: var(--brown); color: var(--cream); border-color: var(--brown); }
-
         /* ── LAYOUT ── */
         .workspace {
             max-width: 1400px; margin: 0 auto; padding: 24px 32px;
@@ -357,13 +297,13 @@
                     </svg>
                     Recipe
                 </a>
-                <a href="#" class="sub-tab">
+                <a href="{{ url('/business/workers') }}" class="sub-tab">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
                     </svg>
                     Staff / Profile
                 </a>
-                <a href="#" class="sub-tab">
+                <a href="{{ url('/business/verification') }}" class="sub-tab">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="20 6 9 17 4 12"/>
                     </svg>

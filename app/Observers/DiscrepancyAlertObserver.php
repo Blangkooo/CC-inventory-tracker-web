@@ -15,6 +15,11 @@ class DiscrepancyAlertObserver
     /**
      * Notify the branch's manager(s) and all super admins — in-app + email —
      * whenever a new discrepancy alert is raised.
+     *
+     * NOTE: Email delivery writes to storage/logs/laravel.log by default
+     * (MAIL_MAILER=log in .env). To actually send emails, set MAIL_MAILER=smtp
+     * with valid SMTP credentials in your .env file. In-app notifications
+     * (Notification model) are always created regardless of mail config.
      */
     public function created(DiscrepancyAlert $discrepancyAlert): void
     {
@@ -23,7 +28,10 @@ class DiscrepancyAlertObserver
                 ->where('branch_id', $discrepancyAlert->branch_id);
         })->orWhere('role', User::ROLE_SUPER_ADMIN)->get();
 
+        $mailDriver = config('mail.default');
+
         foreach ($recipients as $user) {
+            // Always create an in-app notification
             Notification::create([
                 'user_id' => $user->id,
                 'discrepancy_alert_id' => $discrepancyAlert->id,
@@ -31,24 +39,23 @@ class DiscrepancyAlertObserver
                 'message' => $discrepancyAlert->details,
             ]);
 
-            if (! $user->email) {
+            // Email is best-effort — skip if mail driver is 'log' or user has no email
+            if (! $user->email || $mailDriver === 'log') {
                 continue;
             }
 
             try {
                 Mail::to($user->email)->send(new DiscrepancyAlertMail($discrepancyAlert));
             } catch (Throwable $e) {
-                // Email delivery is best-effort — a down SMTP server must never
-                // block the checkout/shift-close flow that triggered this alert.
-                Log::error('Failed to send discrepancy alert email.', [
+                // A down SMTP server must never block the checkout/shift-close flow
+                Log::warning('Failed to send discrepancy alert email.', [
                     'user_id' => $user->id,
                     'alert_id' => $discrepancyAlert->id,
+                    'mail_driver' => $mailDriver,
                     'error' => $e->getMessage(),
                 ]);
             } finally {
-                // Drop the cached mailer so each recipient gets a fresh SMTP
-                // connection rather than one reused across the whole request.
-                Mail::purge(config('mail.default'));
+                Mail::purge($mailDriver);
             }
         }
     }

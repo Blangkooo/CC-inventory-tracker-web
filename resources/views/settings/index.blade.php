@@ -158,6 +158,49 @@
                         <span class="row-value">{{ $user->branch->name ?? '—' }}</span>
                     </div>
                 @endif
+                <div style="margin-top:12px;">
+                    <a href="{{ url('/business/workers') }}?worker={{ $user->id }}" style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(188,97,75,.08);border:1px solid rgba(188,97,75,.2);border-radius:8px;color:var(--terra);font-size:12px;font-weight:600;text-decoration:none;transition:all.12s ease;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        Edit Profile
+                    </a>
+                </div>
+            </div>
+
+            {{-- Quick Stats --}}
+            <div class="drawer-section">
+                <h3>Quick Actions</h3>
+                <div class="drawer-row" style="cursor:pointer;" onclick="window.location.href='{{ url('/alerts') }}'">
+                    <span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:6px;">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                        View Alerts
+                    </span>
+                    <span class="row-value">&rarr;</span>
+                </div>
+                <div class="drawer-row" style="cursor:pointer;" onclick="window.location.href='{{ url('/api-docs') }}'">
+                    <span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:6px;">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                        API Documentation
+                    </span>
+                    <span class="row-value">&rarr;</span>
+                </div>
+                @if ($user->isOwner())
+                <div class="drawer-row" style="cursor:pointer;" onclick="window.location.href='{{ url('/logistics') }}'">
+                    <span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:6px;">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+                        </svg>
+                        Logistics Dashboard
+                    </span>
+                    <span class="row-value">&rarr;</span>
+                </div>
+                @endif
             </div>
 
             {{-- Preferences --}}

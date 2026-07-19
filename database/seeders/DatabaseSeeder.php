@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Admin Owner',
             'email' => 'admin@inventory.ph',
-            'password' => 'password',
+            'password' => '123456789',
             'role' => User::ROLE_SUPER_ADMIN,
             'branch_id' => null,
         ]);
@@ -36,7 +36,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Owner Admin',
             'email' => 'owner@inventory.test',
-            'password' => 'password123',
+            'password' => '123456789',
             'role' => User::ROLE_SUPER_ADMIN,
             'branch_id' => null,
         ]);
@@ -56,7 +56,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Manager Branch QC',
             'email' => 'manager@inventory.test',
-            'password' => 'password123',
+            'password' => '123456789',
             'role' => User::ROLE_MANAGER,
             'branch_id' => $branches[0]->id,
         ]);
@@ -64,33 +64,132 @@ class DatabaseSeeder extends Seeder
         // Demo staff account (pin login) for role-gate testing.
         User::create([
             'name' => 'Staff Juan',
-            'pin' => '1111',
+            'pin' => '123456789',
             'role' => User::ROLE_STAFF,
             'branch_id' => $branches[0]->id,
         ]);
 
+        // ── Helper to build the demo profile for a given user ──────────
+        $profileDataMap = [
+            'Maria Santos' => [
+                'phone' => '+63 912 345 6789', 'address' => '123 Katipunan Ave, Quezon City', 'birthday' => 'March 15, 1998',
+                'senior_high' => 'Quezon City Science HS', 'college' => 'UP Diliman — BS Nutrition',
+                'partner_contact' => '+63 917 654 3210', 'mother_contact' => '+63 908 777 8888',
+                'skills' => ['Barista', 'Chef', 'Marketing'],
+                'notes' => 'Allergies: Pollen — Severe',
+                'work_schedule' => ['Mon'=>'10:00 AM — 8:00 PM','Tue'=>'10:00 AM — 8:00 PM','Wed'=>'10:00 AM — 8:00 PM','Thu'=>'10:00 AM — 8:00 PM','Fri'=>'10:00 AM — 8:00 PM'],
+                'performance_metrics' => ['Always on time','Good customer service','Fast worker','Team player','High accuracy on orders'],
+            ],
+            'Juan dela Cruz' => [
+                'phone' => '+63 923 456 7890', 'address' => '456 Shaw Blvd, Mandaluyong City', 'birthday' => 'June 10, 1997',
+                'senior_high' => 'Mandaluyong Science HS', 'college' => 'UST — BS Hotel & Restaurant Mgmt',
+                'partner_contact' => '+63 927 111 2222', 'mother_contact' => '+63 902 333 4444',
+                'skills' => ['Chef', 'Baking', 'Inventory'],
+                'notes' => 'Food handling cert. expires Dec 2026',
+                'work_schedule' => ['Mon'=>'10:00 AM — 8:00 PM','Tue'=>'10:00 AM — 8:00 PM','Wed'=>'10:00 AM — 8:00 PM','Thu'=>'10:00 AM — 8:00 PM','Fri'=>'10:00 AM — 8:00 PM'],
+                'performance_metrics' => ['Excellent cook','Good inventory management','Team player'],
+            ],
+            'Ana Reyes' => [
+                'phone' => '+63 934 567 8901', 'address' => '789 Paseo de Roxas, Makati City', 'birthday' => 'September 22, 1999',
+                'senior_high' => 'Makati Science HS', 'college' => 'DLSU — BS Accountancy',
+                'partner_contact' => '+63 917 555 6666', 'mother_contact' => '+63 905 777 8888',
+                'skills' => ['Cashiering', 'Customer Service', 'Basic Barista'],
+                'notes' => 'Cash bond on file: ₱5,000',
+                'work_schedule' => ['Mon'=>'10:00 AM — 8:00 PM','Tue'=>'10:00 AM — 8:00 PM','Wed'=>'10:00 AM — 8:00 PM','Thu'=>'10:00 AM — 8:00 PM','Fri'=>'10:00 AM — 8:00 PM'],
+                'performance_metrics' => ['Very reliable','Good with customers','Fast cashier'],
+            ],
+            'Pedro Gonzales' => [
+                'phone' => '+63 945 678 9012', 'address' => '321 Ayala Ave, Makati City', 'birthday' => 'January 5, 1996',
+                'senior_high' => 'Ateneo de Manila SHS', 'college' => 'ADMU — BS Marketing',
+                'partner_contact' => '+63 927 888 9999', 'mother_contact' => '+63 908 111 2222',
+                'skills' => ['Marketing', 'Social Media', 'Photography'],
+                'notes' => 'Handles all branch social media accounts',
+                'work_schedule' => ['Mon'=>'9:00 AM — 6:00 PM','Tue'=>'9:00 AM — 6:00 PM','Wed'=>'9:00 AM — 6:00 PM','Thu'=>'9:00 AM — 6:00 PM','Fri'=>'9:00 AM — 6:00 PM'],
+                'performance_metrics' => ['Creative campaigns','Good social media presence','Team player'],
+            ],
+            'Luisa Tan' => [
+                'phone' => '+63 956 789 0123', 'address' => '654 Bonifacio High St, BGC', 'birthday' => 'November 12, 2000',
+                'senior_high' => 'BGC International SHS', 'college' => 'UP BGC — BS Business Admin',
+                'partner_contact' => '+63 917 444 5555', 'mother_contact' => '+63 905 666 7777',
+                'skills' => ['Barista', 'Latte Art', 'Pastry'],
+                'notes' => 'Brewing competition finalist 2025',
+                'work_schedule' => ['Mon'=>'10:00 AM — 8:00 PM','Tue'=>'10:00 AM — 8:00 PM','Wed'=>'10:00 AM — 8:00 PM','Thu'=>'10:00 AM — 8:00 PM','Fri'=>'10:00 AM — 8:00 PM'],
+                'performance_metrics' => ['Award-winning barista','Fast worker','Great sales upsell'],
+            ],
+        ];
+
+        $seedProfile = function (User $user) use ($profileDataMap) {
+            $data = $profileDataMap[$user->name] ?? [];
+            if (! empty($data)) {
+                $user->profile()->create($data);
+            }
+        };
+
+        // ── Staff Accounts (PIN login, mapped to branches) ──
+
+        $staffData = [
+            ['name' => 'Maria Santos',      'pin' => '123456789', 'branch' => 0], // QC
+            ['name' => 'Juan dela Cruz',    'pin' => '123456789', 'branch' => 0], // QC
+            ['name' => 'Ana Reyes',          'pin' => '123456789', 'branch' => 1], // Makati
+            ['name' => 'Pedro Gonzales',     'pin' => '123456789', 'branch' => 1], // Makati
+            ['name' => 'Luisa Tan',          'pin' => '123456789', 'branch' => 2], // BGC
+        ];
+
+        foreach ($staffData as $staff) {
+            $u = User::create([
+                'name' => $staff['name'],
+                'pin' => $staff['pin'],
+                'role' => User::ROLE_STAFF,
+                'branch_id' => $branches[$staff['branch']]->id,
+            ]);
+            $seedProfile($u);
+        }
+
+        // ── Desktop Staff Accounts (email + password auth) ──
+        // These staff log in via the unified web form using email + shared password.
+
+        $desktopStaff = [
+            ['name' => 'Maria Santos',      'email' => 'maria.santos@nita.com',     'branch_idx' => 0], // QC
+            ['name' => 'Juan dela Cruz',    'email' => 'juan.delacruz@nita.com',   'branch_idx' => 0], // QC
+            ['name' => 'Ana Reyes',          'email' => 'ana.reyes@nita.com',       'branch_idx' => 1], // Makati
+            ['name' => 'Pedro Gonzales',     'email' => 'pedro.gonzales@nita.com',  'branch_idx' => 1], // Makati
+            ['name' => 'Luisa Tan',          'email' => 'luisa.tan@nita.com',       'branch_idx' => 2], // BGC
+        ];
+
+        foreach ($desktopStaff as $ds) {
+            $u = User::create([
+                'name' => $ds['name'],
+                'email' => $ds['email'],
+                'password' => '123456789',
+                'role' => User::ROLE_STAFF,
+                'branch_id' => $branches[$ds['branch_idx']]->id,
+            ]);
+            $seedProfile($u);
+        }
+
         // ── 10 Branch Manager Accounts (PIN login, mapped to branches) ──
 
         $managerData = [
-            ['name' => 'Juan Cruz',          'pin' => '1234', 'branch' => 0], // QC
-            ['name' => 'Maria Santos',       'pin' => '2345', 'branch' => 0], // QC
-            ['name' => 'Pedro Reyes',        'pin' => '3456', 'branch' => 1], // Makati
-            ['name' => 'Ana Gonzales',       'pin' => '4567', 'branch' => 1], // Makati
-            ['name' => 'Jose Mercado',       'pin' => '5678', 'branch' => 2], // BGC
-            ['name' => 'Luisa Fernandez',    'pin' => '6789', 'branch' => 2], // BGC
-            ['name' => 'Carlos Ramos',       'pin' => '7890', 'branch' => 3], // Cebu
-            ['name' => 'Elena Torres',       'pin' => '8901', 'branch' => 4], // Davao
-            ['name' => 'Miguel Villanueva',  'pin' => '9012', 'branch' => 4], // Davao
-            ['name' => 'Sofia Lim',          'pin' => '0123', 'branch' => 5], // Clark
+            ['name' => 'Juan Cruz',          'pin' => '123456789', 'branch' => 0], // QC
+            ['name' => 'Maria Santos',       'pin' => '123456789', 'branch' => 0], // QC
+            ['name' => 'Pedro Reyes',        'pin' => '123456789', 'branch' => 1], // Makati
+            ['name' => 'Ana Gonzales',       'pin' => '123456789', 'branch' => 1], // Makati
+            ['name' => 'Jose Mercado',       'pin' => '123456789', 'branch' => 2], // BGC
+            ['name' => 'Luisa Fernandez',    'pin' => '123456789', 'branch' => 2], // BGC
+            ['name' => 'Carlos Ramos',       'pin' => '123456789', 'branch' => 3], // Cebu
+            ['name' => 'Elena Torres',       'pin' => '123456789', 'branch' => 4], // Davao
+            ['name' => 'Miguel Villanueva',  'pin' => '123456789', 'branch' => 4], // Davao
+            ['name' => 'Sofia Lim',          'pin' => '123456789', 'branch' => 5], // Clark
         ];
 
         foreach ($managerData as $manager) {
-            User::create([
+            $u = User::create([
                 'name' => $manager['name'],
                 'pin' => $manager['pin'],
                 'role' => User::ROLE_MANAGER,
                 'branch_id' => $branches[$manager['branch']]->id,
             ]);
+            $seedProfile($u);
         }
 
         // ── 10 Desktop Branch Manager Accounts (email + password auth) ──
@@ -110,13 +209,14 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($desktopManagers as $dm) {
-            User::create([
+            $u = User::create([
                 'name' => $dm['name'],
                 'email' => $dm['email'],
-                'password' => 'password123',
+                'password' => '123456789',
                 'role' => User::ROLE_MANAGER,
                 'branch_id' => $branches[$dm['branch_idx']]->id,
             ]);
+            $seedProfile($u);
         }
 
         // ── Ingredients — raw materials master list ────────────────────

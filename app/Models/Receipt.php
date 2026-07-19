@@ -39,8 +39,9 @@ class Receipt extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function matchedTransaction(): BelongsTo
-    {
-        return $this->belongsTo(Transaction::class, 'matched_transaction_id');
-    }
+    // matchedTransaction relationship removed — not currently used
+    // public function matchedTransaction(): BelongsTo
+    // {
+    //     return $this->belongsTo(Transaction::class, 'matched_transaction_id');
+    // }
 }

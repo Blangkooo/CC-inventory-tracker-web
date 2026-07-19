@@ -1,5 +1,18 @@
 <?php
 
+// ═══════════════════════════════════════════════════════════════════════
+//  API Routes (JWT authentication via tymon/jwt-auth)
+// ═══════════════════════════════════════════════════════════════════════
+//
+//  Guard:     auth:api  →  config/auth.php 'api' guard (driver: jwt)
+//  Audience:  Mobile POS apps, external integrations, AJAX from dashboard
+//  Boundary:  Completely separate from web.php (session-based auth)
+//             DO NOT add web middleware or session auth to these routes.
+//
+//  Public routes  → token-less (login, register)
+//  Authenticated  → middleware('auth:api') — requires valid JWT
+// ═══════════════════════════════════════════════════════════════════════
+
 use App\Http\Controllers\Api\AlertController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BranchController;
@@ -19,7 +32,7 @@ use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\AuthOnboardingController;
 use Illuminate\Support\Facades\Route;
 
-// ── Public Auth Routes (JWT) ─────────────────────────────────────────
+// ── Public Auth Routes (JWT — no token required) ─────────────────────
 
 Route::post('/auth/admin-login', [AuthController::class, 'adminLogin'])->middleware('throttle:login');
 Route::post('/auth/owner-login', [AuthController::class, 'ownerLogin'])->middleware('throttle:login'); // legacy alias
@@ -35,7 +48,7 @@ Route::post('/auth/register/step-2', [AuthOnboardingController::class, 'apiRegis
 Route::post('/auth/register/manager/step-2', [AuthOnboardingController::class, 'apiRegisterManagerStep2']);
 Route::post('/auth/register/confirm', [AuthOnboardingController::class, 'apiRegisterConfirm']);
 
-// ── Authenticated Routes (JWT guard) ─────────────────────────────────
+// ── Authenticated Routes (JWT guard required) ────────────────────────
 
 Route::middleware('auth:api')->group(function () {
     // Any authenticated role.

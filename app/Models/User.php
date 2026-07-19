@@ -45,6 +45,11 @@ class User extends Authenticatable implements JWTSubject
         return $this->belongsTo(Branch::class);
     }
 
+    public function profile(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(WorkerProfile::class);
+    }
+
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);
