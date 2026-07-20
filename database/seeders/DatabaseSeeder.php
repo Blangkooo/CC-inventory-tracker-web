@@ -125,96 +125,51 @@ class DatabaseSeeder extends Seeder
             }
         };
 
-        // ── Staff Accounts (PIN login, mapped to branches) ──
+        // ── Staff Accounts (single account per person with both PIN + email) ──
 
         $staffData = [
-            ['name' => 'Maria Santos',      'pin' => '123456789', 'branch' => 0], // QC
-            ['name' => 'Juan dela Cruz',    'pin' => '123456789', 'branch' => 0], // QC
-            ['name' => 'Ana Reyes',          'pin' => '123456789', 'branch' => 1], // Makati
-            ['name' => 'Pedro Gonzales',     'pin' => '123456789', 'branch' => 1], // Makati
-            ['name' => 'Luisa Tan',          'pin' => '123456789', 'branch' => 2], // BGC
+            ['name' => 'Maria Santos',      'pin' => '123456789', 'email' => 'maria.santos@nita.com',     'branch' => 0], // QC
+            ['name' => 'Juan dela Cruz',    'pin' => '123456789', 'email' => 'juan.delacruz@nita.com',   'branch' => 0], // QC
+            ['name' => 'Ana Reyes',          'pin' => '123456789', 'email' => 'ana.reyes@nita.com',       'branch' => 1], // Makati
+            ['name' => 'Pedro Gonzales',     'pin' => '123456789', 'email' => 'pedro.gonzales@nita.com',  'branch' => 1], // Makati
+            ['name' => 'Luisa Tan',          'pin' => '123456789', 'email' => 'luisa.tan@nita.com',       'branch' => 2], // BGC
         ];
 
         foreach ($staffData as $staff) {
             $u = User::create([
                 'name' => $staff['name'],
                 'pin' => $staff['pin'],
+                'email' => $staff['email'],
+                'password' => '123456789',
                 'role' => User::ROLE_STAFF,
                 'branch_id' => $branches[$staff['branch']]->id,
             ]);
             $seedProfile($u);
         }
 
-        // ── Desktop Staff Accounts (email + password auth) ──
-        // These staff log in via the unified web form using email + shared password.
-
-        $desktopStaff = [
-            ['name' => 'Maria Santos',      'email' => 'maria.santos@nita.com',     'branch_idx' => 0], // QC
-            ['name' => 'Juan dela Cruz',    'email' => 'juan.delacruz@nita.com',   'branch_idx' => 0], // QC
-            ['name' => 'Ana Reyes',          'email' => 'ana.reyes@nita.com',       'branch_idx' => 1], // Makati
-            ['name' => 'Pedro Gonzales',     'email' => 'pedro.gonzales@nita.com',  'branch_idx' => 1], // Makati
-            ['name' => 'Luisa Tan',          'email' => 'luisa.tan@nita.com',       'branch_idx' => 2], // BGC
-        ];
-
-        foreach ($desktopStaff as $ds) {
-            $u = User::create([
-                'name' => $ds['name'],
-                'email' => $ds['email'],
-                'password' => '123456789',
-                'role' => User::ROLE_STAFF,
-                'branch_id' => $branches[$ds['branch_idx']]->id,
-            ]);
-            $seedProfile($u);
-        }
-
-        // ── 10 Branch Manager Accounts (PIN login, mapped to branches) ──
+        // ── Branch Manager Accounts (single account per person with both PIN + email) ──
 
         $managerData = [
-            ['name' => 'Juan Cruz',          'pin' => '123456789', 'branch' => 0], // QC
-            ['name' => 'Maria Santos',       'pin' => '123456789', 'branch' => 0], // QC
-            ['name' => 'Pedro Reyes',        'pin' => '123456789', 'branch' => 1], // Makati
-            ['name' => 'Ana Gonzales',       'pin' => '123456789', 'branch' => 1], // Makati
-            ['name' => 'Jose Mercado',       'pin' => '123456789', 'branch' => 2], // BGC
-            ['name' => 'Luisa Fernandez',    'pin' => '123456789', 'branch' => 2], // BGC
-            ['name' => 'Carlos Ramos',       'pin' => '123456789', 'branch' => 3], // Cebu
-            ['name' => 'Elena Torres',       'pin' => '123456789', 'branch' => 4], // Davao
-            ['name' => 'Miguel Villanueva',  'pin' => '123456789', 'branch' => 4], // Davao
-            ['name' => 'Sofia Lim',          'pin' => '123456789', 'branch' => 5], // Clark
+            ['name' => 'Juan Cruz',          'pin' => '123456789', 'email' => 'juan.cruz@nita.com',        'branch' => 0], // QC
+            ['name' => 'Maria Santos',       'pin' => '123456789', 'email' => 'maria.santos.mgr@nita.com',  'branch' => 0], // QC
+            ['name' => 'Pedro Reyes',        'pin' => '123456789', 'email' => 'pedro.reyes@nita.com',      'branch' => 1], // Makati
+            ['name' => 'Ana Gonzales',       'pin' => '123456789', 'email' => 'ana.gonzales@nita.com',     'branch' => 1], // Makati
+            ['name' => 'Jose Mercado',       'pin' => '123456789', 'email' => 'jose.mercado@nita.com',     'branch' => 2], // BGC
+            ['name' => 'Luisa Fernandez',    'pin' => '123456789', 'email' => 'luisa.fernandez@nita.com',  'branch' => 2], // BGC
+            ['name' => 'Carlos Ramos',       'pin' => '123456789', 'email' => 'carlos.ramos@nita.com',     'branch' => 3], // Cebu
+            ['name' => 'Elena Torres',       'pin' => '123456789', 'email' => 'elena.torres@nita.com',     'branch' => 4], // Davao
+            ['name' => 'Miguel Villanueva',  'pin' => '123456789', 'email' => 'miguel.villanueva@nita.com', 'branch' => 4], // Davao
+            ['name' => 'Sofia Lim',          'pin' => '123456789', 'email' => 'sofia.lim@nita.com',        'branch' => 5], // Clark
         ];
 
         foreach ($managerData as $manager) {
             $u = User::create([
                 'name' => $manager['name'],
                 'pin' => $manager['pin'],
-                'role' => User::ROLE_MANAGER,
-                'branch_id' => $branches[$manager['branch']]->id,
-            ]);
-            $seedProfile($u);
-        }
-
-        // ── 10 Desktop Branch Manager Accounts (email + password auth) ──
-        // These managers log in via the unified web form using email + shared password.
-
-        $desktopManagers = [
-            ['name' => 'Juan Cruz',          'email' => 'juan.cruz@nita.com',        'branch_idx' => 0], // QC
-            ['name' => 'Maria Santos',       'email' => 'maria.santos@nita.com',     'branch_idx' => 0], // QC
-            ['name' => 'Pedro Reyes',        'email' => 'pedro.reyes@nita.com',      'branch_idx' => 1], // Makati
-            ['name' => 'Ana Gonzales',       'email' => 'ana.gonzales@nita.com',     'branch_idx' => 1], // Makati
-            ['name' => 'Jose Mercado',       'email' => 'jose.mercado@nita.com',     'branch_idx' => 2], // BGC
-            ['name' => 'Luisa Fernandez',    'email' => 'luisa.fernandez@nita.com',  'branch_idx' => 2], // BGC
-            ['name' => 'Carlos Ramos',       'email' => 'carlos.ramos@nita.com',     'branch_idx' => 3], // Cebu
-            ['name' => 'Elena Torres',       'email' => 'elena.torres@nita.com',     'branch_idx' => 4], // Davao
-            ['name' => 'Miguel Villanueva',  'email' => 'miguel.villanueva@nita.com', 'branch_idx' => 4], // Davao
-            ['name' => 'Sofia Lim',          'email' => 'sofia.lim@nita.com',        'branch_idx' => 5], // Clark
-        ];
-
-        foreach ($desktopManagers as $dm) {
-            $u = User::create([
-                'name' => $dm['name'],
-                'email' => $dm['email'],
+                'email' => $manager['email'],
                 'password' => '123456789',
                 'role' => User::ROLE_MANAGER,
-                'branch_id' => $branches[$dm['branch_idx']]->id,
+                'branch_id' => $branches[$manager['branch']]->id,
             ]);
             $seedProfile($u);
         }

@@ -63,8 +63,15 @@ Route::middleware('auth')->group(function () {
 
     // ── Workers Page (Staff & Manager listing) ──────────────────────────
     Route::get('/business/workers', function () {
-        $workers = \App\Models\User::whereIn('role', [\App\Models\User::ROLE_STAFF, \App\Models\User::ROLE_MANAGER])
+        $user = auth()->user();
+        $isManager = $user->isManager();
+
+        $workers = \App\Models\User::whereIn('role', $isManager
+                ? [\App\Models\User::ROLE_STAFF]           // managers see only staff
+                : [\App\Models\User::ROLE_STAFF, \App\Models\User::ROLE_MANAGER]  // super_admins see all
+            )
             ->with('branch', 'profile')
+            ->when($isManager, fn ($q) => $q->where('branch_id', $user->branch_id))
             ->orderBy('name')
             ->get();
 
@@ -76,7 +83,7 @@ Route::middleware('auth')->group(function () {
             ->toArray();
 
         return view('business.workers', [
-            'branches'          => \App\Models\Branch::orderBy('name')->get(),
+            'branches'          => \App\Models\Branch::when($isManager, fn ($q) => $q->where('id', $user->branch_id))->orderBy('name')->get(),
             'workers'           => $workers,
             'openShiftUserIds'  => $openShiftUserIds,
         ]);
