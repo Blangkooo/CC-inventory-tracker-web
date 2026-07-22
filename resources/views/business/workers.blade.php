@@ -309,6 +309,11 @@
             border: 3px solid rgba(188,97,75,.2);
         }
 
+        .profile-name-wrap {
+            flex: 1; min-width: 140px;
+            word-break: keep-all;
+        }
+
         .profile-name { font-size: 18px; font-weight: 800; }
         .profile-role-tag {
             display: inline-block; margin-top: 4px;
@@ -317,15 +322,40 @@
             font-size: 11px; font-weight: 600;
         }
 
+        .profile-actions-bar {
+            display: flex; align-items: center; gap: 6px;
+            margin-left: auto; flex-shrink: 0;
+        }
+
+        .profile-actions-bar .act-btn {
+            padding: 7px 12px; border-radius: var(--radius-sm);
+            font-size: 11px; font-weight: 600; font-family: var(--font);
+            cursor: pointer; transition: all .12s ease; border: 1.5px solid var(--border);
+            background: #fff; color: var(--brown); display: flex; align-items: center; gap: 5px;
+            white-space: nowrap;
+        }
+
+        .profile-actions-bar .act-btn:hover { border-color: var(--terra); color: var(--terra); }
+        .profile-actions-bar .act-btn--danger:hover { border-color: #dc2626; color: #dc2626; }
+        .profile-actions-bar .act-btn--clock {
+            background: var(--terra); color: #fff; border-color: var(--terra);
+        }
+        .profile-actions-bar .act-btn--clock:hover { background: var(--terra-dk); border-color: var(--terra-dk); }
+        .profile-actions-bar .act-btn--clock.is-active {
+            background: #16a34a; border-color: #16a34a;
+        }
+
         .profile-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 0;
         }
 
         .profile-col {
             padding: 20px 24px;
         }
 
-        .profile-col:first-child { border-right: 1px solid var(--border); }
+        .profile-col:not(:last-child) { border-right: 1px solid var(--border); }
 
         .profile-col__title {
             font-size: 10px; font-weight: 700; text-transform: uppercase;
@@ -346,7 +376,7 @@
 
         .profile-field__value {
             font-size: 13px; font-weight: 600; color: var(--brown);
-            word-break: break-word;
+            word-break: keep-all; overflow-wrap: break-word;
         }
 
         .profile-field__value a { color: var(--terra); text-decoration: none; }
@@ -383,49 +413,80 @@
         .profile-note__body {
             font-size: 12px; font-weight: 500; color: var(--brown);
             background: rgba(253,245,214,.6);
-            padding: 10px 14px; border-radius: var(--radius-sm);
+            padding: 12px 16px; border-radius: var(--radius-sm);
             border: 1px solid rgba(92,45,27,.08);
-            line-height: 1.5;
+            line-height: 1.6; width: 100%;
         }
 
         .two-up { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
         .shift-card {
-            background: var(--terra);
+            background: #fff;
+            border: 1.5px solid var(--border);
+            border-top: 3px solid var(--terra);
             border-radius: var(--radius);
-            box-shadow: var(--shadow-md);
+            box-shadow: var(--shadow);
             padding: 20px;
-            color: #fff;
         }
 
         .shift-card__title {
             font-size: 11px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .08em; opacity: .7; margin-bottom: 16px;
+            letter-spacing: .08em; opacity: .6; margin-bottom: 16px;
+            color: var(--brown);
         }
 
-        .shift-schedule { display: flex; flex-direction: column; gap: 8px; }
+        .shift-schedule {
+            display: grid;
+            grid-template-columns: 48px 1fr;
+            gap: 2px 12px;
+        }
 
         .shift-row {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255,255,255,.12);
+            display: contents;
         }
-
-        .shift-row:last-child { border-bottom: none; }
 
         .shift-day {
             font-size: 12px; font-weight: 700; letter-spacing: .03em;
-            min-width: 36px;
+            padding: 7px 0;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--brown);
         }
 
-        .shift-hours { font-size: 12px; font-weight: 500; opacity: .9; }
-
-        .shift-weekend-note {
-            margin-top: 12px;
-            padding-top: 12px; border-top: 1px solid rgba(255,255,255,.12);
-            font-size: 11px; font-weight: 600; opacity: .6; text-align: center;
-            letter-spacing: .03em;
+        .shift-hours {
+            font-size: 12px; font-weight: 500;
+            padding: 7px 0;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--brown);
+            opacity: .75;
         }
+
+        .shift-row:last-child .shift-day,
+        .shift-row:last-child .shift-hours {
+            border-bottom: none;
+        }
+
+        .shift-card__footer {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-top: 14px; padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .shift-card__badge {
+            display: inline-block;
+            padding: 4px 12px; border-radius: 999px;
+            background: rgba(188,97,75,.08); color: var(--terra);
+            font-size: 10px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+
+        .shift-card__edit-btn {
+            padding: 5px 14px; border-radius: 6px;
+            border: 1.5px solid var(--border); background: #fff;
+            color: var(--brown); cursor: pointer;
+            font-size: 11px; font-weight: 600; font-family: var(--font);
+            transition: all .12s ease;
+        }
+        .shift-card__edit-btn:hover { border-color: var(--terra); color: var(--terra); }
 
         .perf-card {
             background: #fff;
@@ -449,27 +510,45 @@
 
         .perf-card__score {
             display: flex; align-items: center; gap: 6px;
-            font-size: 16px; font-weight: 800; color: #16a34a;
+        }
+
+        .perf-rating-pill {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 4px 12px; border-radius: 999px;
+            background: rgba(22,163,74,.1); color: #16a34a;
+            font-size: 14px; font-weight: 800;
+        }
+
+        .perf-rating-pill .stars {
+            display: inline-flex; gap: 1px;
+            color: #16a34a; font-size: 11px;
         }
 
         .perf-card__score-label {
             font-size: 9px; font-weight: 600; text-transform: uppercase;
             letter-spacing: .04em; opacity: .4; color: var(--brown);
+            margin-right: 2px;
         }
 
         .perf-list { display: flex; flex-direction: column; gap: 0; }
 
+        .perf-list {
+            display: flex; flex-direction: column; gap: 6px;
+        }
+
         .perf-item {
             display: flex; align-items: center; gap: 10px;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border-light);
+            padding: 10px 14px;
+            background: rgba(22,163,74,.04);
+            border: 1px solid rgba(22,163,74,.12);
+            border-radius: var(--radius-sm);
             font-size: 13px; font-weight: 500;
         }
 
         .perf-item:last-child { border-bottom: none; }
 
         .perf-dot {
-            width: 7px; height: 7px; border-radius: 50%;
+            width: 8px; height: 8px; border-radius: 50%;
             background: #16a34a; flex-shrink: 0;
         }
 
@@ -480,7 +559,12 @@
             .left-sidebar { width: 180px; }
             .profile-grid { grid-template-columns: 1fr; }
             .profile-col:first-child { border-right: none; border-bottom: 1px solid var(--border); }
+            .profile-col:not(:last-child) { border-right: none; border-bottom: 1px solid var(--border); }
             .profile-footer { grid-template-columns: 1fr; gap: 16px; }
+        }
+
+        @media (max-width: 880px) {
+            .profile-actions-bar { flex-wrap: wrap; justify-content: flex-end; }
         }
 
         @media (max-width: 880px) {
@@ -586,18 +670,7 @@
             to { opacity: 1; transform: translateX(0); }
         }
 
-        .profile-actions {
-            display: flex; gap: 6px; margin-left: auto;
-        }
-        .profile-actions button {
-            padding: 7px 14px; border-radius: var(--radius-sm);
-            font-size: 12px; font-weight: 600; font-family: var(--font);
-            cursor: pointer; transition: all .12s ease; border: 1.5px solid var(--border);
-            background: #fff; color: var(--brown); display: flex; align-items: center; gap: 6px;
-        }
-        .profile-actions button:hover { border-color: var(--terra); color: var(--terra); }
-        .profile-actions .btn--edit:hover { border-color: var(--terra); color: var(--terra); }
-        .profile-actions .btn--delete:hover { border-color: #dc2626; color: #dc2626; }
+
 
         /* ── Attendance / Timesheet ── */
         .badge {
@@ -606,6 +679,18 @@
         }
         .badge-open  { background: rgba(22,163,74,.1); color: #16a34a; }
         .badge-closed { background: rgba(92,45,27,.06); color: rgba(92,45,27,.5); }
+
+        /* ── Empty state ── */
+        .empty-state {
+            text-align: center; padding: 24px 20px;
+        }
+        .empty-state svg {
+            display: block; margin: 0 auto 8px;
+            opacity: .25; color: var(--brown);
+        }
+        .empty-state__text {
+            font-weight: 600; opacity: .45; font-size: 13px;
+        }
         .btn--xs { padding: 4px 10px; font-size: 11px; border-radius: 6px; }
         .btn--xs svg { display: inline; vertical-align: middle; }
 
@@ -625,10 +710,11 @@
             width: 100%; border-collapse: collapse;
         }
         .summary-table th {
-            padding: 10px 20px; font-size: 10px; font-weight: 700;
-            text-transform: uppercase; letter-spacing: .06em; opacity: .5;
+            padding: 10px 20px; font-size: 10px; font-weight: 800;
+            text-transform: uppercase; letter-spacing: .06em; opacity: .65;
             text-align: left; border-bottom: 1px solid var(--border);
-            background: rgba(253,245,214,.3);
+            background: rgba(253,245,214,.5);
+            color: var(--brown);
         }
         .summary-table td {
             padding: 10px 20px; font-size: 13px; font-weight: 500;
@@ -796,7 +882,7 @@
         <div class="profile-card">
             <div class="profile-card__header">
                 <div class="profile-avatar">{{ $initials($selectedWorker->name) }}</div>
-                <div style="flex:1">
+                <div class="profile-name-wrap">
                     <div class="profile-name">{{ $selectedWorker->name }}</div>
                     <span class="profile-role-tag">{{ $selectedWorker->role }}</span>
                 </div>
@@ -804,38 +890,35 @@
                 @php
                     $isOnShift = in_array($selectedUser->id, $openShiftUserIds);
                 @endphp
-                <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
-                    <div id="onShiftIndicator" style="display:{{ $isOnShift ? 'flex' : 'none' }};align-items:center;gap:5px;padding:4px 12px;border-radius:999px;background:rgba(22,163,74,.1);color:#16a34a;font-size:11px;font-weight:700;">
-                        <span style="width:7px;height:7px;border-radius:50%;background:#16a34a;"></span>
+                <div class="profile-actions-bar">
+                    <div id="onShiftIndicator" style="display:{{ $isOnShift ? 'flex' : 'none' }};align-items:center;gap:5px;padding:4px 10px;border-radius:999px;background:rgba(22,163,74,.1);color:#16a34a;font-size:10px;font-weight:700;">
+                        <span style="width:6px;height:6px;border-radius:50%;background:#16a34a;"></span>
                         On Shift
                     </div>
-                    <div class="profile-actions">
-                    <button type="button" class="btn--clock" id="clockBtn"
+                    <button type="button" class="act-btn act-btn--clock {{ $isOnShift ? 'is-active' : '' }}" id="clockBtn"
                         data-worker-id="{{ $selectedWorker->id }}"
                         data-on-shift="{{ $isOnShift ? 'true' : 'false' }}"
-                        onclick="toggleClock(this)"
-                        style="padding:7px 14px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;font-family:var(--font);cursor:pointer;transition:all .12s ease;border:1.5px solid;display:flex;align-items:center;gap:6px;
-                        {{ $isOnShift ? 'background:#16a34a;color:#fff;border-color:#16a34a;' : 'background:#fff;color:var(--brown);border-color:var(--border);' }}">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        onclick="toggleClock(this)">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                         </svg>
                         <span id="clockBtnText">{{ $isOnShift ? 'Clock Out' : 'Clock In' }}</span>
                     </button>
-                    <button type="button" class="btn--edit" onclick="openProfileModal({{ $selectedWorker->id }}, {{ $selectedWorker->profile_id ?? 'null' }})" title="Edit profile">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <button type="button" class="act-btn" onclick="openProfileModal({{ $selectedWorker->id }}, {{ $selectedWorker->profile_id ?? 'null' }})" title="Edit profile">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
                         </svg>
                         Profile
                     </button>
-                    <button type="button" class="btn--edit" onclick="openEditModal({{ $selectedWorker->id }})" title="Edit worker">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <button type="button" class="act-btn" onclick="openEditModal({{ $selectedWorker->id }})" title="Edit worker">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                         </svg>
                         Edit
                     </button>
-                    <button type="button" class="btn--delete" onclick="openDeleteModal({{ $selectedWorker->id }}, '{{ addslashes($selectedWorker->name) }}')" title="Delete worker">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <button type="button" class="act-btn act-btn--danger" onclick="openDeleteModal({{ $selectedWorker->id }}, '{{ addslashes($selectedWorker->name) }}')" title="Delete worker">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="3 6 5 6 21 6"/>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                         </svg>
@@ -919,9 +1002,9 @@
                         </div>
                     @endforeach
                 </div>
-                <div class="shift-weekend-note">
-                    Weekends — Off
-                    <button type="button" class="btn--xs" onclick="openScheduleModal({{ $selectedWorker->id }})" style="float:right;border:1px solid rgba(255,255,255,.25);background:transparent;color:#fff;cursor:pointer;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;">Edit</button>
+                <div class="shift-card__footer">
+                    <span class="shift-card__badge">Weekends — Off</span>
+                    <button type="button" class="shift-card__edit-btn" onclick="openScheduleModal({{ $selectedWorker->id }})">Edit</button>
                 </div>
             </div>
             <div class="perf-card">
@@ -929,10 +1012,21 @@
                     <span class="perf-card__title">Performance</span>
                     <div style="display:flex;align-items:center;gap:12px;">
                         <div class="perf-card__score">
-                            <span class="perf-card__score-label">Rating</span>
-                            {{ number_format($selectedWorker->rating, 1) }} / 5
+                            <span class="perf-rating-pill">
+                                <span class="stars">
+                                    @php
+                                        $fullStars = floor($selectedWorker->rating);
+                                        $halfStar = $selectedWorker->rating - $fullStars >= 0.5;
+                                        $emptyStars = 5 - $fullStars - ($halfStar ? 1 : 0);
+                                    @endphp
+                                    @for ($i = 0; $i < $fullStars; $i++)&#9733;@endfor
+                                    @if ($halfStar)&#9734;@endif
+                                    @for ($i = 0; $i < $emptyStars; $i++)&#9734;@endfor
+                                </span>
+                                {{ number_format($selectedWorker->rating, 1) }}
+                            </span>
                         </div>
-                        <button type="button" class="btn--xs" onclick="openPerfModal({{ $selectedWorker->id }})" style="border:1.5px solid var(--border);background:#fff;color:var(--brown);cursor:pointer;padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;">Record</button>
+                        <button type="button" class="btn--xs" onclick="openPerfModal({{ $selectedWorker->id }})" style="border:1.5px solid var(--border);background:#fff;color:var(--brown);cursor:pointer;padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;transition:all .12s ease;">Record</button>
                     </div>
                 </div>
                 <div class="perf-list">
@@ -977,7 +1071,12 @@
                         </tr>
                     </thead>
                     <tbody id="activityTableBody">
-                        <tr><td colspan="5" style="text-align:center;opacity:.4;padding:20px;">Loading activity data…</td></tr>
+                        <tr><td colspan="5" style="text-align:center;padding:24px 20px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 8px;opacity:.25;color:#5C2D1B;">
+                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <span style="font-weight:600;opacity:.45;font-size:13px;">Loading activity data…</span>
+            </td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1011,11 +1110,11 @@
                 </thead>
                 <tbody id="attendanceBody">
                     <tr>
-                        <td colspan="5" style="text-align:center;opacity:.4;padding:20px;">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 8px;opacity:.3">
+                        <td colspan="5" style="text-align:center;padding:24px 20px;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 8px;opacity:.25;color:#5C2D1B;">
                                 <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                             </svg>
-                            Loading attendance data…
+                            <span style="font-weight:600;opacity:.45;font-size:13px;">Loading attendance data…</span>
                         </td>
                     </tr>
                 </tbody>

@@ -64,6 +64,12 @@ Route::middleware('auth')->group(function () {
     // ── Workers Page (Staff & Manager listing) ──────────────────────────
     Route::get('/business/workers', function () {
         $user = auth()->user();
+
+        // Authorization: staff cannot access the workers management page.
+        if (! $user->isSuperAdmin() && ! $user->isManager()) {
+            abort(403, 'You do not have permission to manage workers.');
+        }
+
         $isManager = $user->isManager();
 
         $workers = \App\Models\User::whereIn('role', $isManager
@@ -88,6 +94,20 @@ Route::middleware('auth')->group(function () {
             'openShiftUserIds'  => $openShiftUserIds,
         ]);
     })->name('business.workers');
+
+    // ── Recipe CRUD (AJAX endpoints — session auth) ────────────────────
+    Route::get('/business/recipes/product/{product}/data', [\App\Http\Controllers\BusinessRecipesController::class, 'getProductData'])
+        ->name('business.recipes.product.data');
+    Route::put('/business/recipes/product/{product}', [\App\Http\Controllers\BusinessRecipesController::class, 'updateProduct'])
+        ->name('business.recipes.product.update');
+    Route::post('/business/recipes/product/{product}/ingredient', [\App\Http\Controllers\BusinessRecipesController::class, 'addIngredient'])
+        ->name('business.recipes.ingredient.add');
+    Route::put('/business/recipes/ingredient/{recipe}', [\App\Http\Controllers\BusinessRecipesController::class, 'updateIngredient'])
+        ->name('business.recipes.ingredient.update');
+    Route::post('/business/recipes/ingredient/{recipe}/delete', [\App\Http\Controllers\BusinessRecipesController::class, 'removeIngredient'])
+        ->name('business.recipes.ingredient.remove');
+    Route::post('/business/recipes/product/{product}/delete', [\App\Http\Controllers\BusinessRecipesController::class, 'destroyProduct'])
+        ->name('business.recipes.product.delete');
 
     // ── Workers CRUD (AJAX endpoints) ───────────────────────────────────
     Route::post('/business/workers', [\App\Http\Controllers\WorkersController::class, 'store'])
