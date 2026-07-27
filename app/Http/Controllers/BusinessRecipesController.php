@@ -119,6 +119,62 @@ class BusinessRecipesController extends Controller
     }
 
     /**
+     * Ingredient profile drill-down: full cost breakdown with supplier info.
+     */
+    public function ingredientProfile(Product $product): JsonResponse
+    {
+        $product->load('recipes.ingredient.suppliers');
+
+        $ingredients = $product->recipes->map(function ($recipe) {
+            $ingredient = $recipe->ingredient;
+            $primarySupplier = $ingredient->suppliers->firstWhere('pivot.is_primary', true);
+
+            $unitCost = $primarySupplier?->pivot?->unit_cost ?? 0;
+            $lineCost = $unitCost * (float) $recipe->quantity_required;
+
+            return [
+                'ingredient_id' => $ingredient->id,
+                'name' => $ingredient->name,
+                'unit' => $ingredient->unit,
+                'size' => $recipe->size,
+                'quantity_required' => (float) $recipe->quantity_required,
+                'unit_cost' => (float) $unitCost,
+                'line_cost' => round($lineCost, 2),
+                'supplier' => $primarySupplier ? [
+                    'id' => $primarySupplier->id,
+                    'name' => $primarySupplier->name,
+                    'contact_number' => $primarySupplier->contact_number,
+                ] : null,
+            ];
+        });
+
+        $price = (float) $product->price;
+
+        // A serving is one size or the other — never both, so cost is summed per size.
+        $sizes = $ingredients->groupBy('size')->map(function ($lines, $size) use ($price) {
+            $totalCost = round($lines->sum('line_cost'), 2);
+
+            return [
+                'size' => $size,
+                'total_cost' => $totalCost,
+                'margin_pct' => $price > 0 ? round((($price - $totalCost) / $price) * 100, 1) : 0,
+                'suggested_price_65' => $totalCost > 0 ? round($totalCost / 0.35, 2) : 0,
+            ];
+        })->values();
+
+        return response()->json([
+            'product' => [
+                'id' => $product->id,
+                'name' => $product->name,
+                'category' => $product->category,
+                'price' => $price,
+            ],
+            'ingredients' => $ingredients,
+            'sizes' => $sizes,
+        ]);
+    }
+
+    /**
      * Delete a product and its recipes (super_admin only).
      */
     public function destroyProduct(Product $product): JsonResponse

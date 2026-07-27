@@ -9,14 +9,11 @@
         ]);
     }
 @endphp
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verification — NITA</title>
-    @include('partials._shared-styles')
-    <style>
+@extends('layouts.sidebar')
+
+@section('title', 'Verification')
+
+@section('styles')
         .workspace {
             max-width: 1400px; margin: 0 auto; padding: 24px 32px;
         }
@@ -78,47 +75,9 @@
             .card-grid { grid-template-columns: 1fr; }
             .workspace { padding: 16px; }
         }
-    </style>
-</head>
-<body>
+@endsection
 
-<nav class="nav">
-    <div class="nav__inner">
-        <div class="nav__left">
-            <a href="{{ url('/dashboard') }}" class="nav__logo">
-                <img src="{{ asset('images/logo.svg') }}" alt="NITA">
-            </a>
-            <div class="nav__pills">
-                <a href="{{ url('/dashboard') }}"        class="nav__pill">Dashboard</a>
-                <a href="{{ url('/business/recipes') }}"  class="nav__pill is-active">Businesses</a>
-                <a href="{{ url('/logistics') }}"         class="nav__pill">Logistics</a>
-            </div>
-        </div>
-        <div class="nav__right">
-            <a href="{{ url('/alerts') }}" class="nav__icon" title="Alerts">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                </svg>
-            </a>
-            <a href="{{ url('/alerts') }}" class="nav__icon nav__icon--box" title="Messages">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
-                </svg>
-            </a>
-            <a href="{{ url('/settings') }}" class="nav__icon" title="Settings">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="3"/>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                </svg>
-            </a>
-            <div class="nav__sep"></div>
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="nav__logout">Logout</button>
-            </form>
-        </div>
-    </div>
-</nav>
+@section('content')
 
 <div class="workspace">
 
@@ -136,7 +95,7 @@
         </a>
         <a href="{{ url('/business/recipes') }}" class="sub-tab">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
             </svg>
             Recipe
         </a>
@@ -243,5 +202,4 @@
 
 </div>
 
-</body>
-</html>
+@endsection

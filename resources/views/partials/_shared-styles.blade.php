@@ -2,7 +2,7 @@
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-        --cream:  #FDF5D6;
+        --cream: #FFFFFF;
         --brown:  #5C2D1B;
         --terra:  #BC614B;
         --border: rgba(92,45,27,.16);
@@ -16,7 +16,7 @@
     /* ══ NAV ══ */
     .nav {
         position: sticky; top: 0; z-index: 50;
-        background: rgba(253,245,214,.92); backdrop-filter: blur(12px);
+        background: rgba(250, 249, 247,.92); backdrop-filter: blur(12px);
         border-bottom: 1px solid var(--border);
     }
 

@@ -1,26 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings — NITA</title>
-    <style>
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+@extends('layouts.sidebar')
 
-        :root {
-            --cream: #FDF5D6;
-            --brown: #5C2D1B;
-            --terra: #BC614B;
-            --border: rgba(92,45,27,.16);
-            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
+@section('title', 'Settings')
 
-        body { font-family: var(--font); background: var(--cream); color: var(--brown); min-height: 100vh; }
+@section('styles')
 
         /* ── Dimmed overlay ── */
         .overlay {
-            position: fixed; inset: 0;
-            background: rgba(92,45,27,.5); backdrop-filter: blur(3px);
+            position: fixed; top: 0; right: 0; bottom: 0; left: 250px;
+            background: rgba(26,26,46,.4); backdrop-filter: blur(3px);
             z-index: 100; display: flex; justify-content: flex-end;
             cursor: pointer;
         }
@@ -28,11 +15,11 @@
         /* ── Drawer ── */
         .drawer {
             width: 380px; max-width: 90vw; height: 100vh;
-            background: var(--cream); border-radius: 20px 0 0 20px;
+            background: var(--card, #fff); border-radius: 20px 0 0 20px;
             padding: 32px 28px; display: flex; flex-direction: column;
             box-shadow: -8px 0 40px rgba(0,0,0,.18);
             animation: slideIn .22s ease-out;
-            cursor: default;
+            cursor: default; color: var(--text, #1a1a2e);
         }
 
         @keyframes slideIn {
@@ -53,21 +40,21 @@
         .profile-card {
             display: flex; align-items: center; gap: 14px;
             padding: 16px; margin-bottom: 24px;
-            background: rgba(188,97,75,.08); border: 1px solid var(--border);
+            background: var(--accent-light, rgba(225,112,85,.08)); border: 1px solid var(--border);
             border-radius: 12px;
         }
 
         .profile-avatar {
             width: 46px; height: 46px; border-radius: 50%;
-            background: var(--terra); color: #fff;
+            background: var(--accent, #e17055); color: #fff;
             display: flex; align-items: center; justify-content: center;
             font-size: 18px; font-weight: 800; flex-shrink: 0;
             text-transform: uppercase;
         }
 
         .profile-info .name  { font-size: 15px; font-weight: 700; }
-        .profile-info .email { font-size: 12px; opacity: .55; margin-top: 2px; }
-        .profile-info .role  { font-size: 11px; font-weight: 600; color: var(--terra); margin-top: 3px; text-transform: capitalize; }
+        .profile-info .email { font-size: 12px; color: var(--text-2, #636e72); margin-top: 2px; }
+        .profile-info .role  { font-size: 11px; font-weight: 600; color: var(--accent, #e17055); margin-top: 3px; text-transform: capitalize; }
 
         /* ── Sections ── */
         .drawer-section { margin-bottom: 20px; }
@@ -105,12 +92,12 @@
         .btn-logout:hover { background: #dc2626; color: #fff; }
 
         .dismiss-hint {
-            position: fixed; bottom: 20px; left: 20px; z-index: 101;
+            position: fixed; bottom: 20px; left: 270px; z-index: 101;
             font-size: 11px; color: rgba(255,255,255,.45); cursor: default;
         }
-    </style>
-</head>
-<body>
+@endsection
+
+@section('content')
 
     {{-- Dimmed background -- click to close --}}
     <div class="overlay" onclick="window.location.href='{{ url('/dashboard') }}'">
@@ -244,5 +231,4 @@
 
     <div class="dismiss-hint">Click outside to close</div>
 
-</body>
-</html>
+@endsection

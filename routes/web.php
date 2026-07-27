@@ -18,6 +18,10 @@ Route::get('/auth/register/step-1', [AuthOnboardingController::class, 'showRegis
 Route::get('/auth/register/step-2', [AuthOnboardingController::class, 'showRegisterStep2']);
 Route::get('/auth/register/step-3', [AuthOnboardingController::class, 'showRegisterStep3']);
 
+// ── Staff / Worker PIN Login (Branch + Worker ID) ────────────────────
+Route::get('/staff/login', [\App\Http\Controllers\StaffAuthController::class, 'showLogin'])->name('staff.login');
+Route::post('/staff/login', [\App\Http\Controllers\StaffAuthController::class, 'login'])->name('staff.login.post');
+
 // ── Path A: Business Owner Onboarding ────────────────────────────────
 Route::get('/auth/register/owner/step-2', [AuthOnboardingController::class, 'showOwnerStep2']);
 Route::get('/auth/register/owner/step-3', [AuthOnboardingController::class, 'showOwnerStep3']);
@@ -36,6 +40,11 @@ Route::post('/login', function () {
 
     if (Auth::attempt($credentials, request()->boolean('remember'))) {
         request()->session()->regenerate();
+
+        if (Auth::user()->isStaff()) {
+            return redirect()->intended(route('staff.dashboard'));
+        }
+
         return redirect()->intended(route('dashboard'));
     }
 
@@ -48,6 +57,16 @@ Route::post('/login', function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // ── Staff Dashboard (self-service: clock in/out, verify stock) ─────
+    Route::get('/staff/dashboard', [\App\Http\Controllers\StaffDashboardController::class, 'index'])
+        ->name('staff.dashboard');
+    Route::post('/staff/clock-in', [\App\Http\Controllers\StaffDashboardController::class, 'clockIn'])
+        ->name('staff.clock-in');
+    Route::post('/staff/clock-out', [\App\Http\Controllers\StaffDashboardController::class, 'clockOut'])
+        ->name('staff.clock-out');
+    Route::post('/staff/verify-stock', [\App\Http\Controllers\StaffDashboardController::class, 'verifyStock'])
+        ->name('staff.verify-stock');
     Route::get('/recipes', [RecipesController::class, 'index'])->name('recipes');
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory');
     Route::get('/branches', [BranchesController::class, 'index'])->name('branches');
@@ -98,6 +117,8 @@ Route::middleware('auth')->group(function () {
     // ── Recipe CRUD (AJAX endpoints — session auth) ────────────────────
     Route::get('/business/recipes/product/{product}/data', [\App\Http\Controllers\BusinessRecipesController::class, 'getProductData'])
         ->name('business.recipes.product.data');
+    Route::get('/business/recipes/product/{product}/profile', [\App\Http\Controllers\BusinessRecipesController::class, 'ingredientProfile'])
+        ->name('business.recipes.product.profile');
     Route::put('/business/recipes/product/{product}', [\App\Http\Controllers\BusinessRecipesController::class, 'updateProduct'])
         ->name('business.recipes.product.update');
     Route::post('/business/recipes/product/{product}/ingredient', [\App\Http\Controllers\BusinessRecipesController::class, 'addIngredient'])
@@ -233,6 +254,30 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings', function () {
         return view('settings.index');
     })->name('settings');
+
+    // ── Pricing Simulator ─────────────────────────────────────────────
+    Route::get('/pricing', [\App\Http\Controllers\PricingController::class, 'index'])
+        ->name('pricing.index');
+    Route::get('/pricing/simulate', [\App\Http\Controllers\PricingController::class, 'simulate'])
+        ->name('pricing.simulate');
+
+    // ── Supplier Directory ──────────────────────────────────────────────
+    Route::get('/suppliers', [\App\Http\Controllers\SupplierController::class, 'index'])
+        ->name('suppliers.index');
+    Route::post('/suppliers', [\App\Http\Controllers\SupplierController::class, 'store'])
+        ->name('suppliers.store');
+    Route::get('/suppliers/{supplier}', [\App\Http\Controllers\SupplierController::class, 'show'])
+        ->name('suppliers.show');
+    Route::put('/suppliers/{supplier}', [\App\Http\Controllers\SupplierController::class, 'update'])
+        ->name('suppliers.update');
+    Route::delete('/suppliers/{supplier}', [\App\Http\Controllers\SupplierController::class, 'destroy'])
+        ->name('suppliers.destroy');
+    Route::post('/suppliers/{supplier}/ingredients', [\App\Http\Controllers\SupplierController::class, 'linkIngredient'])
+        ->name('suppliers.link-ingredient');
+    Route::delete('/suppliers/{supplier}/ingredients/{ingredient}', [\App\Http\Controllers\SupplierController::class, 'unlinkIngredient'])
+        ->name('suppliers.unlink-ingredient');
+    Route::post('/suppliers/{supplier}/purchases', [\App\Http\Controllers\SupplierController::class, 'addPurchase'])
+        ->name('suppliers.add-purchase');
 });
 
 // ── Logout ───────────────────────────────────────────────────────────

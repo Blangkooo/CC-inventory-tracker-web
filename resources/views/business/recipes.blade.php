@@ -88,15 +88,11 @@
         ];
     })->values();
 @endphp
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Businesses — NITA</title>
-    @include('partials._shared-styles')
+@extends('layouts.sidebar')
 
-    <style>
+@section('title', 'Recipes')
+
+@section('styles')
         /* ── LAYOUT ── */
         .workspace {
             max-width: 1400px; margin: 0 auto; padding: 24px 32px;
@@ -128,7 +124,7 @@
 
         .branch-dot {
             width: 42px; height: 42px; border-radius: 50%;
-            background: rgba(253,245,214,.85); border: 1.5px solid rgba(92,45,27,.3);
+            background: rgba(250, 249, 247,.85); border: 1.5px solid rgba(92,45,27,.3);
             display: flex; align-items: center; justify-content: center;
             font-size: 10px; font-weight: 700; color: var(--brown);
             cursor: pointer; text-decoration: none; transition: all .15s ease;
@@ -220,7 +216,7 @@
             background: rgba(92,45,27,.02);
         }
 
-        .recipe-card__foot-label { font-size: 12px; font-weight: 600; opacity: .6; }
+        .recipe-card__foot-label { font-size: 12px; font-weight: 600; opacity: .6; margin-right: auto; }
 
         .btn-edit {
             padding: 7px 20px; background: #fff; color: var(--brown);
@@ -230,6 +226,60 @@
         }
 
         .btn-edit:hover { background: var(--brown); color: var(--cream); border-color: var(--brown); }
+
+        .btn-profile {
+            padding: 7px 20px; background: var(--accent, #e17055); color: #fff;
+            border: 1.5px solid var(--accent, #e17055); border-radius: 8px;
+            font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--font);
+            transition: all .15s ease;
+        }
+
+        .btn-profile:hover { filter: brightness(.92); }
+
+        /* ── PROFILE DRILL-DOWN ── */
+        .profile-size-label {
+            font-size: 10px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .06em; opacity: .5; margin-bottom: 6px;
+        }
+
+        .profile-summary {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+            padding: 18px; margin-bottom: 20px;
+            background: var(--accent-light, rgba(225,112,85,.08));
+            border: 1px solid var(--border); border-radius: 12px;
+        }
+
+        .profile-metric { text-align: center; }
+        .profile-metric__value { font-size: 20px; font-weight: 800; }
+        .profile-metric__label {
+            font-size: 10px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .05em; opacity: .55; margin-top: 3px;
+        }
+
+        .margin-good  .profile-metric__value { color: #00b894; }
+        .margin-warn  .profile-metric__value { color: #e17055; }
+        .margin-bad   .profile-metric__value { color: #d63031; }
+
+        .profile-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .profile-table th {
+            text-align: left; padding: 9px 12px; font-size: 10px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: .05em; opacity: .5;
+            border-bottom: 1.5px solid var(--border);
+        }
+        .profile-table td { padding: 11px 12px; border-bottom: 1px solid var(--border); }
+        .profile-table tr:last-child td { border-bottom: none; }
+        .profile-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+        .supplier-cell { font-size: 12px; }
+        .supplier-cell__name { font-weight: 600; }
+        .supplier-cell__contact { opacity: .5; font-size: 11px; }
+        .supplier-cell--none { opacity: .4; font-style: italic; }
+
+        .profile-hint {
+            margin-top: 16px; padding: 10px 14px; border-radius: 8px;
+            background: rgba(0,184,148,.07); border: 1px solid rgba(0,184,148,.2);
+            font-size: 12px; font-weight: 600; color: #00b894;
+        }
 
         /* ── MODAL OVERLAY ── */
         .modal-overlay {
@@ -416,47 +466,9 @@
             .ingredient-row { grid-template-columns: 1fr 1fr; }
             .ingredient-headers { display: none; }
         }
-    </style>
-</head>
-<body>
+@endsection
 
-<nav class="nav">
-    <div class="nav__inner">
-        <div class="nav__left">
-            <a href="{{ url('/dashboard') }}" class="nav__logo">
-                <img src="{{ asset('images/logo.svg') }}" alt="NITA">
-            </a>
-            <div class="nav__pills">
-                <a href="{{ url('/dashboard') }}"        class="nav__pill">Dashboard</a>
-                <a href="{{ url('/business/recipes') }}"  class="nav__pill is-active">Businesses</a>
-                <a href="{{ url('/logistics') }}"         class="nav__pill">Logistics</a>
-            </div>
-        </div>
-        <div class="nav__right">
-            <button class="nav__icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                </svg>
-            </button>
-            <button class="nav__icon nav__icon--box">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
-                </svg>
-            </button>
-            <button class="nav__icon">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="3"/>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                </svg>
-            </button>
-            <div class="nav__sep"></div>
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="nav__logout">Logout</button>
-            </form>
-        </div>
-    </div>
-</nav>
+@section('content')
 
 <div class="workspace">
 
@@ -500,8 +512,7 @@
                 </a>
                 <a href="{{ url('/business/recipes') }}" class="sub-tab is-active">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-                        <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
                     </svg>
                     Recipe
                 </a>
@@ -596,6 +607,7 @@
 
             <div class="recipe-card__foot">
                 <span class="recipe-card__foot-label">{{ $product->recipes->count() }} ingredient{{ $product->recipes->count() !== 1 ? 's' : '' }}</span>
+                <button class="btn-profile" onclick="openProfile({{ $product->id }})">Profile</button>
                 <button class="btn-edit" data-product-id="{{ $product->id }}">Edit</button>
             </div>
         </div>
@@ -710,6 +722,26 @@
             </button>
             <button class="btn-cancel" onclick="closeModal()">Cancel</button>
             <button class="btn-save" id="btn-save" onclick="saveRecipe()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+{{-- ═══════════════════════════════════════════════════════════════════
+     INGREDIENT PROFILE DRILL-DOWN MODAL
+     ═══════════════════════════════════════════════════════════════════ --}}
+<div class="modal-overlay" id="profile-modal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h2 id="profile-title">Ingredient Profile</h2>
+            <button class="modal-close" onclick="closeProfile()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="modal-body" id="profile-body">
+            <div style="text-align:center;padding:40px;opacity:.4;font-size:13px">Loading…</div>
         </div>
     </div>
 </div>
@@ -1064,7 +1096,128 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // ── Embed product data from server-side render ──
 var PRODUCTS_DATA = @json($productsData);
+
+// ═══════════════════════════════════════════════════════════════════
+// INGREDIENT PROFILE DRILL-DOWN
+// ═══════════════════════════════════════════════════════════════════
+function openProfile(productId) {
+    var modal = document.getElementById('profile-modal');
+    var body  = document.getElementById('profile-body');
+
+    document.getElementById('profile-title').textContent = 'Ingredient Profile';
+    body.innerHTML = '<div style="text-align:center;padding:40px;opacity:.4;font-size:13px">Loading…</div>';
+    modal.classList.add('is-open');
+
+    fetch('/business/recipes/product/' + productId + '/profile', {
+        headers: { 'Accept': 'application/json' }
+    })
+    .then(function (res) {
+        if (!res.ok) throw new Error('Failed to load profile (' + res.status + ')');
+        return res.json();
+    })
+    .then(renderProfile)
+    .catch(function (err) {
+        body.innerHTML = '<div style="text-align:center;padding:40px;opacity:.5;font-size:13px">'
+            + escapeHtml(err.message) + '</div>';
+    });
+}
+
+function closeProfile() {
+    document.getElementById('profile-modal').classList.remove('is-open');
+}
+
+function renderProfile(data) {
+    var p = data.product;
+    document.getElementById('profile-title').textContent = p.name;
+
+    var html = '';
+
+    data.sizes.forEach(function (s) {
+        var marginClass = s.margin_pct >= 60 ? 'margin-good'
+                        : s.margin_pct >= 40 ? 'margin-warn'
+                        : 'margin-bad';
+
+        html += '<div class="profile-size-label">' + escapeHtml(s.size) + '</div>'
+             +  '<div class="profile-summary ' + marginClass + '">'
+             +    '<div class="profile-metric">'
+             +      '<div class="profile-metric__value">' + peso(p.price) + '</div>'
+             +      '<div class="profile-metric__label">Selling Price</div>'
+             +    '</div>'
+             +    '<div class="profile-metric">'
+             +      '<div class="profile-metric__value">' + peso(s.total_cost) + '</div>'
+             +      '<div class="profile-metric__label">Ingredient Cost</div>'
+             +    '</div>'
+             +    '<div class="profile-metric">'
+             +      '<div class="profile-metric__value">' + s.margin_pct + '%</div>'
+             +      '<div class="profile-metric__label">Gross Margin</div>'
+             +    '</div>'
+             +  '</div>';
+    });
+
+    if (!data.ingredients.length) {
+        html += '<div style="text-align:center;padding:30px;opacity:.4;font-size:13px">'
+             +  'No recipe ingredients defined yet.</div>';
+    } else {
+        html += '<table class="profile-table"><thead><tr>'
+             +  '<th>Ingredient</th><th>Size</th><th style="text-align:right">Qty</th>'
+             +  '<th style="text-align:right">Unit Cost</th><th style="text-align:right">Line Cost</th>'
+             +  '<th>Primary Supplier</th>'
+             +  '</tr></thead><tbody>';
+
+        data.ingredients.forEach(function (ing) {
+            var supplier = ing.supplier
+                ? '<div class="supplier-cell">'
+                +   '<div class="supplier-cell__name">' + escapeHtml(ing.supplier.name) + '</div>'
+                +   (ing.supplier.contact_number
+                        ? '<div class="supplier-cell__contact">' + escapeHtml(ing.supplier.contact_number) + '</div>'
+                        : '')
+                + '</div>'
+                : '<span class="supplier-cell supplier-cell--none">Not linked</span>';
+
+            html += '<tr>'
+                 +  '<td><strong>' + escapeHtml(ing.name) + '</strong></td>'
+                 +  '<td>' + escapeHtml(ing.size) + '</td>'
+                 +  '<td class="num">' + trimNum(ing.quantity_required) + ' ' + escapeHtml(ing.unit) + '</td>'
+                 +  '<td class="num">' + peso(ing.unit_cost) + '</td>'
+                 +  '<td class="num"><strong>' + peso(ing.line_cost) + '</strong></td>'
+                 +  '<td>' + supplier + '</td>'
+                 +  '</tr>';
+        });
+
+        html += '</tbody></table>';
+    }
+
+    var hints = data.sizes.filter(function (s) { return s.suggested_price_65 > 0; });
+    if (hints.length) {
+        html += '<div class="profile-hint">Suggested price at 65% margin — '
+             +  hints.map(function (s) {
+                    return escapeHtml(s.size) + ': ' + peso(s.suggested_price_65);
+                }).join(' &middot; ')
+             +  '</div>';
+    }
+
+    document.getElementById('profile-body').innerHTML = html;
+}
+
+function peso(n) {
+    return '₱' + Number(n).toLocaleString('en-PH', {
+        minimumFractionDigits: 2, maximumFractionDigits: 2
+    });
+}
+
+function trimNum(n) {
+    return parseFloat(Number(n).toFixed(3)).toString();
+}
+
+function escapeHtml(s) {
+    var div = document.createElement('div');
+    div.textContent = s == null ? '' : String(s);
+    return div.innerHTML;
+}
+
+document.getElementById('profile-modal').addEventListener('click', function (e) {
+    if (e.target === this) closeProfile();
+});
 </script>
 
-</body>
-</html>
+@endsection

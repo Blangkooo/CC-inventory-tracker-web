@@ -1,354 +1,140 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard — NITA</title>
-    <style>
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+@extends('layouts.sidebar')
 
-        :root {
-            --cream:   #FDF5D6;
-            --cream-2: #F7ECC0;
-            --brown:   #5C2D1B;
-            --terra:   #BC614B;
-            --terra-dk:#A8523E;
-            --border:  rgba(92, 45, 27, 0.18);
-            --shadow:  0 1px 3px rgba(92,45,27,.08), 0 4px 12px rgba(92,45,27,.06);
-            --shadow-md: 0 2px 8px rgba(92,45,27,.1), 0 8px 24px rgba(92,45,27,.07);
-            --radius:  12px;
-            --font:    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
+@section('title', 'Dashboard')
 
-        body { font-family: var(--font); background: var(--cream); color: var(--brown); min-height: 100vh; }
+@section('styles')
+    /* ═══ METRICS ═══ */
+    .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
 
-        /* ── NAV ── */
-        .nav {
-            position: sticky; top: 0; z-index: 50;
-            background: rgba(253,245,214,.92);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border);
-        }
+    .m-card {
+        border-radius: var(--radius); padding: 22px; position: relative; overflow: hidden;
+        color: #fff; box-shadow: var(--shadow-md);
+    }
+    .m-card.grad-1 { background: linear-gradient(135deg, #e17055, #fd79a8); }
+    .m-card.grad-2 { background: linear-gradient(135deg, #6c5ce7, #a29bfe); }
+    .m-card.grad-3 { background: linear-gradient(135deg, #00b894, #55efc4); }
+    .m-card.grad-4 { background: linear-gradient(135deg, #fdcb6e, #e17055); }
 
-        .nav__inner {
-            max-width: 1400px; margin: 0 auto;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 32px; height: 60px;
-        }
+    .m-card__icon {
+        width: 42px; height: 42px; border-radius: 12px;
+        background: rgba(255,255,255,.2); display: flex;
+        align-items: center; justify-content: center; margin-bottom: 14px;
+    }
+    .m-card__label { font-size: 11px; font-weight: 600; opacity: .85; text-transform: uppercase; letter-spacing: .04em; }
+    .m-card__value { font-size: 28px; font-weight: 900; margin-top: 4px; letter-spacing: -.02em; }
+    .m-card__sub { font-size: 11px; opacity: .75; margin-top: 6px; font-weight: 500; }
+    .m-card__decor {
+        position: absolute; right: -20px; bottom: -20px; width: 100px; height: 100px;
+        border-radius: 50%; background: rgba(255,255,255,.08);
+    }
+    .m-card__decor2 {
+        position: absolute; right: 30px; bottom: 30px; width: 60px; height: 60px;
+        border-radius: 50%; background: rgba(255,255,255,.05);
+    }
 
-        .nav__left { display: flex; align-items: center; gap: 36px; }
+    /* ═══ GRID LAYOUTS ═══ */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .grid-3-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
 
-        .nav__logo img { height: 30px; display: block; }
+    /* ═══ BRANCH STATUS ═══ */
+    .branch-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .branch-item {
+        display: flex; align-items: center; gap: 8px;
+        padding: 10px 12px; border-radius: 10px; font-size: 13px; font-weight: 500;
+        background: rgba(0,0,0,.015); transition: background .1s;
+    }
+    .branch-item:hover { background: rgba(0,0,0,.03); }
+    .branch-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
-        .nav__pills { display: flex; gap: 4px; }
+    /* ═══ SHIFTS ═══ */
+    .shift-item {
+        display: flex; align-items: center; gap: 12px;
+        padding: 10px 0; border-bottom: 1px solid var(--border);
+    }
+    .shift-item:last-child { border-bottom: none; }
+    .shift-dot { width: 8px; height: 8px; border-radius: 50%; background: #00b894; flex-shrink: 0; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+    .shift-info { font-size: 12px; line-height: 1.5; }
+    .shift-info strong { font-weight: 700; }
+    .shift-info span { color: var(--text-2); }
 
-        .nav__pill {
-            padding: 7px 18px; border-radius: 999px; font-size: 13px; font-weight: 600;
-            color: var(--brown); text-decoration: none; letter-spacing: .01em;
-            transition: all .15s ease; border: 1.5px solid transparent;
-        }
+    /* ═══ RANKINGS ═══ */
+    .rank-row {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 10px 0; border-bottom: 1px solid var(--border);
+        font-size: 13px;
+    }
+    .rank-row:last-child { border-bottom: none; }
+    .rank-left { display: flex; align-items: center; gap: 10px; }
+    .rank-num {
+        width: 24px; height: 24px; border-radius: 8px;
+        background: var(--accent-light); color: var(--accent);
+        font-size: 10px; font-weight: 800; display: flex;
+        align-items: center; justify-content: center;
+    }
+    .val-green { font-weight: 700; color: #00b894; }
+    .val-red { font-weight: 700; color: #d63031; }
 
-        .nav__pill:hover { background: rgba(92,45,27,.06); }
-        .nav__pill.is-active { background: var(--terra); color: #fff; border-color: var(--terra); }
+    /* ═══ ALERT TABLE ═══ */
+    .alert-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .alert-table thead th {
+        text-align: left; padding: 10px 16px; font-size: 10px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .04em; color: var(--text-2);
+        background: rgba(0,0,0,.02); border-bottom: 1px solid var(--border);
+    }
+    .alert-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    .alert-table tr:last-child td { border-bottom: none; }
 
-        .nav__right { display: flex; align-items: center; gap: 8px; }
+    .sev-badge {
+        padding: 3px 10px; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+    }
+    .sev-high { background: rgba(214,48,49,.08); color: #d63031; }
+    .sev-medium { background: rgba(225,112,85,.08); color: #e17055; }
+    .sev-low { background: rgba(108,92,231,.08); color: #6c5ce7; }
 
-        .nav__icon {
-            width: 36px; height: 36px; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            background: transparent; border: none; color: var(--brown);
-            cursor: pointer; transition: background .15s ease;
-        }
+    /* ═══ ALERT BREAKDOWN ═══ */
+    .breakdown-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 12px 0; border-bottom: 1px solid var(--border);
+    }
+    .breakdown-row:last-child { border-bottom: none; }
+    .breakdown-row span:last-child { font-size: 20px; font-weight: 900; }
 
-        .nav__icon:hover { background: rgba(92,45,27,.07); }
-        .nav__icon--box { background: #fff; border: 1.5px solid var(--border); }
+    /* ═══ QUICK STATS ROW ═══ */
+    .quick-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+    .qs-card {
+        background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+        border: 1px solid var(--border); padding: 18px 20px;
+        display: flex; align-items: center; gap: 14px;
+    }
+    .qs-icon {
+        width: 44px; height: 44px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .qs-icon.purple { background: rgba(108,92,231,.08); color: #6c5ce7; }
+    .qs-icon.teal { background: rgba(0,184,148,.08); color: #00b894; }
+    .qs-icon.rose { background: rgba(253,121,168,.08); color: #fd79a8; }
+    .qs-value { font-size: 22px; font-weight: 900; }
+    .qs-label { font-size: 11px; color: var(--text-2); font-weight: 600; }
 
-        .nav__sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+    @media (max-width: 1100px) {
+        .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+        .grid-2, .grid-3-1 { grid-template-columns: 1fr; }
+        .branch-grid { grid-template-columns: repeat(2, 1fr); }
+        .quick-stats { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+        .metrics-grid { grid-template-columns: 1fr; }
+    }
+@endsection
 
-        .nav__logout {
-            padding: 7px 16px; background: transparent; color: var(--brown);
-            border: 1.5px solid var(--border); border-radius: 8px;
-            font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--font);
-            transition: all .15s ease; letter-spacing: .01em;
-        }
-
-        .nav__logout:hover { background: var(--brown); color: var(--cream); border-color: var(--brown); }
-
-        /* ── LAYOUT ── */
-        .page {
-            max-width: 1400px; margin: 0 auto;
-            padding: 28px 32px;
-            display: grid;
-            grid-template-columns: 1fr 288px;
-            gap: 24px;
-        }
-
-        .main { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
-
-        /* ── PAGE HEADER ── */
-        .page-head { display: flex; align-items: baseline; gap: 10px; padding-bottom: 4px; }
-        .page-head__title { font-size: 22px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; }
-        .page-head__title span { display: inline-block; border-bottom: 3px solid var(--brown); padding-bottom: 2px; }
-        .page-head__role { font-size: 15px; font-weight: 400; opacity: .55; }
-
-        /* ── CARD ── */
-        .card {
-            background: #fff;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-        }
-
-        .card__head {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 16px 20px 12px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .card__title { font-size: 13px; font-weight: 700; letter-spacing: .02em; }
-
-        .card__body { padding: 16px 20px; }
-
-        /* ── LEGEND ── */
-        .legend { display: flex; gap: 14px; }
-        .legend__item { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; opacity: .75; }
-        .legend__dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-
-        /* ── FLAG GRID ── */
-        .flag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
-
-        .flag-row {
-            display: flex; align-items: center; gap: 10px;
-            padding: 9px 10px; border-radius: 8px;
-            font-size: 13px; font-weight: 500;
-            transition: background .1s ease;
-        }
-
-        .flag-row:hover { background: rgba(92,45,27,.04); }
-
-        .flag-pip { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-
-        /* ── METRICS ── */
-        .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-
-        .metric {
-            background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
-            box-shadow: var(--shadow); padding: 20px;
-            display: flex; flex-direction: column; gap: 4px;
-        }
-
-        .metric__label {
-            font-size: 10px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .06em; opacity: .5;
-        }
-
-        .metric__value { font-size: 32px; font-weight: 800; line-height: 1; margin-top: 6px; }
-        .metric__value .down { color: #e53e3e; font-size: 22px; }
-        .metric__sub { font-size: 10px; opacity: .5; margin-top: 2px; }
-
-        /* ── RANKINGS ── */
-        .rankings { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-
-        .rank { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
-
-        .rank__head {
-            padding: 14px 20px 12px; border-bottom: 1px solid var(--border);
-            font-size: 12px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .04em; opacity: .6; text-align: center;
-        }
-
-        .rank__body { padding: 4px 20px 12px; }
-
-        .rank__row {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 9px 0; border-bottom: 1px solid rgba(92,45,27,.06);
-            font-size: 13px;
-        }
-
-        .rank__row:last-child { border-bottom: none; }
-        .rank__row .name { font-weight: 500; }
-        .rank__row .val-green { font-weight: 700; color: #16a34a; }
-        .rank__row .val-red { font-weight: 700; color: #dc2626; }
-
-        .rank__num {
-            width: 20px; height: 20px; border-radius: 50%;
-            background: rgba(92,45,27,.07); color: var(--brown);
-            font-size: 10px; font-weight: 700; display: flex;
-            align-items: center; justify-content: center; flex-shrink: 0;
-        }
-
-        .rank__row-left { display: flex; align-items: center; gap: 10px; }
-
-        /* ── SIDEBAR ── */
-        .sidebar { display: flex; flex-direction: column; gap: 16px; }
-
-        .cal-card {
-            background: var(--terra); border-radius: var(--radius);
-            box-shadow: var(--shadow-md); overflow: hidden;
-        }
-
-        .cal-card__head {
-            padding: 18px 20px 14px;
-            font-size: 11px; font-weight: 700; letter-spacing: .1em;
-            text-transform: uppercase; color: rgba(255,255,255,.7);
-        }
-
-        .cal-grid-wrap { padding: 0 16px; }
-
-        .cal-days {
-            display: grid; grid-template-columns: repeat(7, 1fr);
-            text-align: center; font-size: 9px; font-weight: 700;
-            color: rgba(255,255,255,.5); text-transform: uppercase;
-            margin-bottom: 6px; letter-spacing: .03em;
-        }
-
-        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 16px; }
-
-        .cal-cell {
-            text-align: center; padding: 6px 2px; font-size: 11px;
-            font-weight: 500; color: rgba(255,255,255,.85); border-radius: 6px;
-            cursor: default;
-        }
-
-        .cal-cell.faded { color: rgba(255,255,255,.25); }
-        .cal-cell.today { background: var(--brown); color: #fff; font-weight: 700; }
-        .cal-cell.event { background: rgba(255,255,255,.15); color: #fff; }
-
-        .cal-schedule { border-top: 1px solid rgba(255,255,255,.15); padding: 14px 20px 20px; }
-
-        .cal-schedule__label {
-            font-size: 10px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .07em; color: rgba(255,255,255,.5); margin-bottom: 14px;
-        }
-
-        .sched-list { display: flex; flex-direction: column; gap: 14px; }
-
-        .sched-item { display: flex; gap: 12px; }
-
-        .sched-dot {
-            width: 6px; height: 6px; border-radius: 50%;
-            background: rgba(255,255,255,.7); flex-shrink: 0; margin-top: 5px;
-        }
-
-        .sched-title { font-size: 12px; font-weight: 700; color: #fff; }
-        .sched-meta { font-size: 10px; color: rgba(255,255,255,.6); margin-top: 2px; line-height: 1.5; }
-        .sched-meta-row { display: flex; justify-content: space-between; }
-
-        /* ── RESPONSIVE ── */
-        @media (max-width: 1100px) {
-            .page { grid-template-columns: 1fr 260px; }
-        }
-
-        @media (max-width: 880px) {
-            .page { grid-template-columns: 1fr; padding: 16px; }
-            .metrics, .rankings { grid-template-columns: 1fr; }
-            .flag-grid { grid-template-columns: repeat(2,1fr); }
-        }
-    </style>
-</head>
-<body>
-
-<nav class="nav">
-    <div class="nav__inner">
-        <div class="nav__left">
-            <a href="{{ url('/dashboard') }}" class="nav__logo">
-                <img src="{{ asset('images/logo.svg') }}" alt="NITA">
-            </a>
-            <div class="nav__pills">
-                <a href="{{ url('/dashboard') }}"        class="nav__pill is-active">Dashboard</a>
-                <a href="{{ url('/business/recipes') }}"  class="nav__pill">Businesses</a>
-                <a href="{{ url('/logistics') }}"         class="nav__pill">Logistics</a>
-            </div>
-        </div>
-        <div class="nav__right">
-            <a href="{{ url('/alerts') }}" class="nav__icon" title="Alerts">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                </svg>
-            </a>
-            <a href="{{ url('/alerts') }}" class="nav__icon nav__icon--box" title="Messages" style="text-decoration:none">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="4" width="20" height="16" rx="2"/>
-                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
-                </svg>
-            </a>
-            <a href="{{ url('/settings') }}" class="nav__icon" title="Settings" style="text-decoration:none">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="3"/>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                </svg>
-            </a>
-            <div class="nav__sep"></div>
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="nav__logout">Logout</button>
-            </form>
-        </div>
-    </div>
-</nav>
-
+@section('content')
 @php
-    // ── Placeholder fallbacks for empty DB (presentation mode) ────────
-    if (empty($branches_with_sales) || (is_object($branches_with_sales) && $branches_with_sales->isEmpty())) {
-        $branches_with_sales = collect([
-            ['name' => 'QC Main Branch',      'has_sales' => true,  'today_sales' => 12500],
-            ['name' => 'Makati Outlet',        'has_sales' => true,  'today_sales' => 9800],
-            ['name' => 'BGC Branch',           'has_sales' => false, 'today_sales' => 0],
-            ['name' => 'Cebu City Branch',     'has_sales' => true,  'today_sales' => 7300],
-            ['name' => 'Davao Branch',         'has_sales' => true,  'today_sales' => 4100],
-            ['name' => 'Clark Pampanga',       'has_sales' => false, 'today_sales' => 0],
-        ]);
-    }
-    if (!isset($annual_revenue) || $annual_revenue == 0)  $annual_revenue  = 1_240_000;
-    if (!isset($total_sales)    || $total_sales == 0)     $total_sales     = 33_700;
-    if (!isset($leakage_pct)    || $leakage_pct == 0)     $leakage_pct     = 8.4;
-    if (!isset($value_saved)    || $value_saved == 0)     $value_saved     = 92_000;
-    if (!isset($total_branches) || $total_branches == 0)  $total_branches  = 6;
-    if (!isset($pending_alerts) || $pending_alerts == 0)  $pending_alerts  = 3;
-    if (!isset($low_stock_count)|| $low_stock_count == 0) $low_stock_count = 5;
-    if (!isset($flag_counts)    || empty($flag_counts))   $flag_counts     = ['high' => 1, 'medium' => 2, 'low' => 3];
-
-    if (!isset($top_earners) || (is_object($top_earners) && $top_earners->isEmpty())) {
-        $top_earners = collect([
-            (object)['name' => 'QC Main Branch',  'revenue' => 380000],
-            (object)['name' => 'Makati Outlet',   'revenue' => 295000],
-            (object)['name' => 'BGC Branch',       'revenue' => 210000],
-            (object)['name' => 'Cebu City Branch', 'revenue' => 188000],
-            (object)['name' => 'Davao Branch',     'revenue' => 142000],
-            (object)['name' => 'Clark Pampanga',   'revenue' => 25000],
-        ]);
-    }
-    if (!isset($least_leakage) || (is_object($least_leakage) && $least_leakage->isEmpty())) {
-        $least_leakage = collect([
-            ['name' => 'BGC Branch',       'leak' => 0.4],
-            ['name' => 'Cebu City Branch', 'leak' => 0.9],
-            ['name' => 'Clark Pampanga',   'leak' => 1.2],
-            ['name' => 'QC Main Branch',   'leak' => 2.1],
-            ['name' => 'Makati Outlet',    'leak' => 3.5],
-            ['name' => 'Davao Branch',     'leak' => 5.0],
-        ]);
-    }
-    if (!isset($ongoing_shifts) || (is_object($ongoing_shifts) && $ongoing_shifts->isEmpty())) {
-        $ongoing_shifts = collect([
-            (object)['branch' => (object)['name' => 'QC Main Branch'],  'shift_start' => now()->setTime(7,0),  'user' => (object)['name' => 'Maria Santos']],
-            (object)['branch' => (object)['name' => 'Makati Outlet'],   'shift_start' => now()->setTime(8,30), 'user' => (object)['name' => 'Juan dela Cruz']],
-            (object)['branch' => (object)['name' => 'Cebu City Branch'],'shift_start' => now()->setTime(9,0),  'user' => (object)['name' => 'Ana Reyes']],
-        ]);
-    }
-    if (!isset($recent_flags) || (is_object($recent_flags) && $recent_flags->isEmpty())) {
-        $recent_flags = collect([]);
-    }
-@endphp
-
-@php
-    // ── Metric formatting helper ──────────────────────────────────────
     $fmt = fn($n) => $n >= 1_000_000
-        ? '&#8369;' . number_format($n / 1_000_000, 1) . 'M'
-        : ($n >= 1_000 ? '&#8369;' . number_format($n / 1_000, 1) . 'k' : '&#8369;' . number_format($n));
+        ? '₱' . number_format($n / 1_000_000, 1) . 'M'
+        : ($n >= 1_000 ? '₱' . number_format($n / 1_000, 1) . 'k' : '₱' . number_format($n));
 
-    // ── Branch alert severity map ─────────────────────────────────────
-    $sevMap   = []; // branch_id => worst severity
+    $sevMap = [];
     $sevOrder = ['high' => 3, 'medium' => 2, 'low' => 1];
     foreach ($recent_flags as $f) {
         $bid = $f->branch_id;
@@ -356,251 +142,208 @@
             $sevMap[$bid] = $f->severity;
         }
     }
-    $sevColors = ['high' => '#ef4444', 'medium' => '#f97316', 'low' => '#eab308'];
-
-    // ── Dynamic calendar ─────────────────────────────────────────────
-    $calNow    = now();
-    $firstDow  = $calNow->copy()->startOfMonth()->dayOfWeek; // 0=Sun
-    $daysInMon = $calNow->daysInMonth;
-    $todayDay  = $calNow->day;
-    $prevMonth = $calNow->copy()->subMonth();
-    $daysInPrev= $prevMonth->daysInMonth;
+    $sevColors = ['high' => '#d63031', 'medium' => '#e17055', 'low' => '#fdcb6e'];
 @endphp
 
-<div class="page">
-
-    {{-- MAIN COLUMN --}}
-    <div class="main">
-
-        <div class="page-head">
-            <h1 class="page-head__title"><span>Dashboard</span></h1>
-            <span class="page-head__role">/ {{ auth()->user()->isOwner() ? 'Owner' : 'Manager' }}</span>
-        </div>
-
-        {{-- Branch Flag Summary --}}
-        <div class="card">
-            <div class="card__head">
-                <span class="card__title">Branch Status — Today</span>
-                <div class="legend">
-                    <span class="legend__item"><span class="legend__dot" style="background:#16a34a"></span>Active</span>
-                    <span class="legend__item"><span class="legend__dot" style="background:#eab308"></span>Low Alert</span>
-                    <span class="legend__item"><span class="legend__dot" style="background:#f97316"></span>Med Alert</span>
-                    <span class="legend__item"><span class="legend__dot" style="background:#ef4444"></span>High Alert</span>
-                </div>
-            </div>
-            <div class="card__body">
-                @if ($branches_with_sales->isEmpty())
-                    <div style="font-size:13px;opacity:.4;text-align:center;padding:12px 0;">No branch data yet.</div>
-                @else
-                    <div class="flag-grid">
-                        @foreach ($branches_with_sales as $b)
-                            @php
-                                // Find this branch's worst alert severity
-                                // branches_with_sales has no ID, match by name via recent_flags
-                                $flagMatch = $recent_flags->first(fn($f) => $f->branch?->name === $b['name']);
-                                $branchSev = $flagMatch ? ($sevMap[$flagMatch->branch_id] ?? null) : null;
-                                $pip = $branchSev ? ($sevColors[$branchSev] ?? '#eab308') : ($b['has_sales'] ? '#16a34a' : 'rgba(92,45,27,.25)');
-                            @endphp
-                            <div class="flag-row">
-                                <span class="flag-pip" style="background:{{ $pip }}"></span>
-                                <span>{{ $b['name'] }}</span>
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
-            </div>
-        </div>
-
-        {{-- Key Metrics --}}
-        <div class="metrics">
-            <div class="metric">
-                <div class="metric__label">Annual Revenue ({{ now()->year }})</div>
-                <div class="metric__value">{!! $fmt($annual_revenue) !!}</div>
-                <div class="metric__sub">Today: {!! $fmt($total_sales) !!}</div>
-            </div>
-            <div class="metric">
-                <div class="metric__label">Overall Leakage</div>
-                <div class="metric__value">
-                    {{ number_format($leakage_pct, 1) }}%
-                    @if ($leakage_pct > 0)<span class="down">&darr;</span>@endif
-                </div>
-                <div class="metric__sub">Based on shift count variances</div>
-            </div>
-            <div class="metric">
-                <div class="metric__label">Est. Value Saved</div>
-                <div class="metric__value">{!! $fmt($value_saved) !!}</div>
-                <div class="metric__sub">From reviewed alerts</div>
-            </div>
-        </div>
-
-        {{-- Stats row --}}
-        <div class="metrics">
-            <div class="metric">
-                <div class="metric__label">Total Branches</div>
-                <div class="metric__value" style="font-size:28px">{{ $total_branches }}</div>
-            </div>
-            <div class="metric">
-                <div class="metric__label">Pending Alerts</div>
-                <div class="metric__value" style="font-size:28px;color:{{ $pending_alerts > 0 ? '#dc2626' : '#16a34a' }}">{{ $pending_alerts }}</div>
-            </div>
-            <div class="metric">
-                <div class="metric__label">Low Stock Items</div>
-                <div class="metric__value" style="font-size:28px;color:{{ $low_stock_count > 0 ? '#d97706' : '#16a34a' }}">{{ $low_stock_count }}</div>
-            </div>
-        </div>
-
-        {{-- Rankings --}}
-        <div class="rankings">
-            <div class="rank">
-                <div class="rank__head">Top Earners — {{ now()->year }}</div>
-                <div class="rank__body">
-                    @forelse ($top_earners as $i => $branch)
-                        <div class="rank__row">
-                            <div class="rank__row-left">
-                                <span class="rank__num">{{ $i + 1 }}</span>
-                                <span class="name">{{ $branch->name }}</span>
-                            </div>
-                            <span class="val-green">&#8369;{{ number_format($branch->revenue ?? 0) }}</span>
-                        </div>
-                    @empty
-                        <div style="font-size:13px;opacity:.4;padding:12px 0;">No transaction data yet.</div>
-                    @endforelse
-                </div>
-            </div>
-
-            <div class="rank">
-                <div class="rank__head">Least Leakage (Units)</div>
-                <div class="rank__body">
-                    @forelse ($least_leakage->take(8) as $i => $item)
-                        <div class="rank__row">
-                            <div class="rank__row-left">
-                                <span class="rank__num">{{ $i + 1 }}</span>
-                                <span class="name">{{ $item['name'] }}</span>
-                            </div>
-                            <span class="{{ $item['leak'] > 0 ? 'val-red' : 'val-green' }}">
-                                {{ $item['leak'] > 0 ? '−' . number_format($item['leak'], 2) . 'u' : 'Clean' }}
-                            </span>
-                        </div>
-                    @empty
-                        <div style="font-size:13px;opacity:.4;padding:12px 0;">No leakage data yet.</div>
-                    @endforelse
-                </div>
-            </div>
-        </div>
-
-        {{-- Recent Pending Flags --}}
-        @if ($recent_flags->isNotEmpty())
-        <div class="card">
-            <div class="card__head">
-                <span class="card__title">Recent Pending Alerts</span>
-                <a href="{{ url('/alerts') }}" style="font-size:12px;font-weight:600;color:var(--terra);text-decoration:none;">View All &rarr;</a>
-            </div>
-            <div style="overflow-x:auto">
-                <table style="width:100%;border-collapse:collapse">
-                    <thead>
-                        <tr style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:.4;background:rgba(92,45,27,.03);">
-                            <th style="text-align:left;padding:10px 20px;border-bottom:1px solid var(--border)">Branch</th>
-                            <th style="text-align:left;padding:10px 20px;border-bottom:1px solid var(--border)">Ingredient</th>
-                            <th style="text-align:left;padding:10px 20px;border-bottom:1px solid var(--border)">Severity</th>
-                            <th style="text-align:left;padding:10px 20px;border-bottom:1px solid var(--border)">Variance</th>
-                            <th style="text-align:left;padding:10px 20px;border-bottom:1px solid var(--border)">Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($recent_flags as $flag)
-                        @php
-                            $sc = ['high'=>'#fee2e2','medium'=>'#fef3c7','low'=>'#dbeafe'];
-                            $tc = ['high'=>'#991b1b','medium'=>'#92400e','low'=>'#1e40af'];
-                        @endphp
-                        <tr style="font-size:13px;border-bottom:1px solid rgba(92,45,27,.06)">
-                            <td style="padding:11px 20px;font-weight:600">{{ $flag->branch->name ?? '—' }}</td>
-                            <td style="padding:11px 20px">{{ $flag->ingredient->name ?? '—' }}</td>
-                            <td style="padding:11px 20px">
-                                <span style="padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;background:{{ $sc[$flag->severity] ?? '#f3f4f6' }};color:{{ $tc[$flag->severity] ?? '#374151' }}">
-                                    {{ ucfirst($flag->severity) }}
-                                </span>
-                            </td>
-                            <td style="padding:11px 20px;color:#dc2626;font-weight:700">{{ $flag->variance !== null ? '−' . number_format(abs($flag->variance), 2) : '—' }}</td>
-                            <td style="padding:11px 20px;opacity:.5">{{ $flag->created_at->format('M d, g:iA') }}</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        @endif
-
-    </div>
-
-    {{-- SIDEBAR --}}
-    <aside class="sidebar">
-        <div class="cal-card">
-            <div class="cal-card__head">{{ now()->format('F Y') }}</div>
-            <div class="cal-grid-wrap">
-                <div class="cal-days">
-                    <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
-                </div>
-                <div class="cal-grid">
-                    {{-- Leading faded days from previous month --}}
-                    @for ($i = $firstDow - 1; $i >= 0; $i--)
-                        <span class="cal-cell faded">{{ $daysInPrev - $i }}</span>
-                    @endfor
-                    {{-- Current month days --}}
-                    @for ($d = 1; $d <= $daysInMon; $d++)
-                        <span class="cal-cell {{ $d === $todayDay ? 'today' : '' }}">{{ $d }}</span>
-                    @endfor
-                    {{-- Trailing faded days --}}
-                    @php $cellsUsed = $firstDow + $daysInMon; $trail = (7 - ($cellsUsed % 7)) % 7; @endphp
-                    @for ($d = 1; $d <= $trail; $d++)
-                        <span class="cal-cell faded">{{ $d }}</span>
-                    @endfor
-                </div>
-            </div>
-            <div class="cal-schedule">
-                <div class="cal-schedule__label">
-                    {{ $ongoing_shifts->isNotEmpty() ? 'Open Shifts' : 'No Active Shifts' }}
-                </div>
-                <div class="sched-list">
-                    @forelse ($ongoing_shifts as $shift)
-                        <div class="sched-item">
-                            <span class="sched-dot"></span>
-                            <div>
-                                <div class="sched-title">{{ $shift->branch->name ?? 'Unknown Branch' }}</div>
-                                <div class="sched-meta">
-                                    <div class="sched-meta-row">
-                                        <span>{{ $shift->shift_start->format('g:i A') }}</span>
-                                        <span>{{ $shift->shift_start->format('M d') }}</span>
-                                    </div>
-                                    <div>{{ $shift->user->name ?? 'Unknown Staff' }}</div>
-                                </div>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="sched-meta" style="opacity:.5;font-size:12px">All shifts closed</div>
-                    @endforelse
-                </div>
-            </div>
-        </div>
-
-        {{-- Quick stats --}}
-        <div class="card" style="padding:16px 20px">
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:.4;margin-bottom:12px">Alert Breakdown</div>
-            @foreach (['high' => '#dc2626', 'medium' => '#d97706', 'low' => '#2563eb'] as $sev => $color)
-                <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(92,45,27,.06)">
-                    <span style="font-size:13px;font-weight:500">{{ ucfirst($sev) }}</span>
-                    <span style="font-size:16px;font-weight:800;color:{{ $color }}">{{ $flag_counts[$sev] ?? 0 }}</span>
-                </div>
-            @endforeach
-            <div style="margin-top:12px">
-                <a href="{{ url('/alerts') }}" style="display:block;text-align:center;padding:9px;background:var(--terra);color:#fff;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none">
-                    View All Alerts
-                </a>
-            </div>
-        </div>
-
-    </aside>
-
+<div class="content-header">
+    <h1 class="content-title">Dashboard</h1>
+    <span class="content-date">{{ now()->format('l, F j, Y') }}</span>
 </div>
 
-</body>
-</html>
+{{-- Gradient Metric Cards --}}
+<div class="metrics-grid">
+    <div class="m-card grad-1">
+        <div class="m-card__icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <div class="m-card__label">Annual Revenue</div>
+        <div class="m-card__value">{!! $fmt($annual_revenue) !!}</div>
+        <div class="m-card__sub">Today: {!! $fmt($total_sales) !!}</div>
+        <div class="m-card__decor"></div><div class="m-card__decor2"></div>
+    </div>
+    <div class="m-card grad-2">
+        <div class="m-card__icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        </div>
+        <div class="m-card__label">Value Saved</div>
+        <div class="m-card__value">{!! $fmt($value_saved) !!}</div>
+        <div class="m-card__sub">From reviewed alerts</div>
+        <div class="m-card__decor"></div><div class="m-card__decor2"></div>
+    </div>
+    <div class="m-card grad-3">
+        <div class="m-card__icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div class="m-card__label">Leakage Rate</div>
+        <div class="m-card__value">{{ number_format($leakage_pct, 1) }}%</div>
+        <div class="m-card__sub">Based on shift variances</div>
+        <div class="m-card__decor"></div><div class="m-card__decor2"></div>
+    </div>
+    <div class="m-card grad-4">
+        <div class="m-card__icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </div>
+        <div class="m-card__label">Pending Alerts</div>
+        <div class="m-card__value">{{ $pending_alerts }}</div>
+        <div class="m-card__sub">{{ $low_stock_count }} low stock items</div>
+        <div class="m-card__decor"></div><div class="m-card__decor2"></div>
+    </div>
+</div>
+
+{{-- Quick Stats --}}
+<div class="quick-stats">
+    <div class="qs-card">
+        <div class="qs-icon purple">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/></svg>
+        </div>
+        <div>
+            <div class="qs-value">{{ $total_branches }}</div>
+            <div class="qs-label">Total Branches</div>
+        </div>
+    </div>
+    <div class="qs-card">
+        <div class="qs-icon teal">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        </div>
+        <div>
+            <div class="qs-value">{{ $ongoing_shifts->count() }}</div>
+            <div class="qs-label">Active Shifts</div>
+        </div>
+    </div>
+    <div class="qs-card">
+        <div class="qs-icon rose">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        </div>
+        <div>
+            <div class="qs-value">{{ $low_stock_count }}</div>
+            <div class="qs-label">Low Stock Items</div>
+        </div>
+    </div>
+</div>
+
+{{-- Branch Status + Open Shifts --}}
+<div class="grid-3-1">
+    <div class="card">
+        <div class="card__head">
+            <span class="card__title">Branch Status — Today</span>
+            <span style="font-size:12px;font-weight:600;color:var(--text-2);">{{ $total_branches }} branches</span>
+        </div>
+        <div class="card__body">
+            @if ($branches_with_sales->isEmpty())
+                <div class="empty-state">No branch data yet.</div>
+            @else
+                <div class="branch-grid">
+                    @foreach ($branches_with_sales as $b)
+                        @php
+                            $flagMatch = $recent_flags->first(fn($f) => $f->branch?->name === $b['name']);
+                            $branchSev = $flagMatch ? ($sevMap[$flagMatch->branch_id] ?? null) : null;
+                            $pip = $branchSev ? ($sevColors[$branchSev]) : ($b['has_sales'] ? '#00b894' : 'rgba(0,0,0,.12)');
+                        @endphp
+                        <div class="branch-item">
+                            <span class="branch-dot" style="background:{{ $pip }}"></span>
+                            <span>{{ $b['name'] }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card__head"><span class="card__title">Open Shifts</span></div>
+        <div class="card__body">
+            @forelse ($ongoing_shifts as $shift)
+                <div class="shift-item">
+                    <span class="shift-dot"></span>
+                    <div class="shift-info">
+                        <strong>{{ $shift->branch->name ?? '—' }}</strong><br>
+                        <span>{{ $shift->user->name ?? '—' }} · {{ $shift->shift_start->format('g:i A') }}</span>
+                    </div>
+                </div>
+            @empty
+                <div class="empty-state">No active shifts</div>
+            @endforelse
+        </div>
+    </div>
+</div>
+
+{{-- Rankings --}}
+<div class="grid-2">
+    <div class="card">
+        <div class="card__head"><span class="card__title">Top Earners — {{ now()->year }}</span></div>
+        <div class="card__body">
+            @forelse ($top_earners as $i => $branch)
+                <div class="rank-row">
+                    <div class="rank-left">
+                        <span class="rank-num">{{ $i + 1 }}</span>
+                        <span style="font-weight:500">{{ $branch->name }}</span>
+                    </div>
+                    <span class="val-green">&#8369;{{ number_format($branch->revenue ?? 0) }}</span>
+                </div>
+            @empty
+                <div class="empty-state">No transaction data yet.</div>
+            @endforelse
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card__head"><span class="card__title">Least Leakage (Units)</span></div>
+        <div class="card__body">
+            @forelse ($least_leakage->take(6) as $i => $item)
+                <div class="rank-row">
+                    <div class="rank-left">
+                        <span class="rank-num">{{ $i + 1 }}</span>
+                        <span style="font-weight:500">{{ $item['name'] }}</span>
+                    </div>
+                    <span class="{{ $item['leak'] > 0 ? 'val-red' : 'val-green' }}">
+                        {{ $item['leak'] > 0 ? '−' . number_format($item['leak'], 2) . 'u' : 'Clean' }}
+                    </span>
+                </div>
+            @empty
+                <div class="empty-state">No leakage data yet.</div>
+            @endforelse
+        </div>
+    </div>
+</div>
+
+{{-- Recent Alerts --}}
+@if ($recent_flags->isNotEmpty())
+<div class="card" style="margin-bottom:24px;">
+    <div class="card__head">
+        <span class="card__title">Recent Pending Alerts</span>
+        <a href="{{ route('alerts') }}" class="card__link">View All &rarr;</a>
+    </div>
+    <div style="overflow-x:auto;">
+        <table class="alert-table">
+            <thead>
+                <tr><th>Branch</th><th>Ingredient</th><th>Severity</th><th>Variance</th><th>Date</th></tr>
+            </thead>
+            <tbody>
+                @foreach ($recent_flags as $flag)
+                <tr>
+                    <td style="font-weight:600">{{ $flag->branch->name ?? '—' }}</td>
+                    <td>{{ $flag->ingredient->name ?? '—' }}</td>
+                    <td><span class="sev-badge sev-{{ $flag->severity }}">{{ ucfirst($flag->severity) }}</span></td>
+                    <td class="val-red">{{ $flag->variance !== null ? '−' . number_format(abs($flag->variance), 2) : '—' }}</td>
+                    <td style="color:var(--text-2)">{{ $flag->created_at->format('M d, g:iA') }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
+
+{{-- Alert Breakdown --}}
+<div class="card" style="max-width:380px;">
+    <div class="card__head"><span class="card__title">Alert Breakdown</span></div>
+    <div class="card__body">
+        @foreach (['high' => '#d63031', 'medium' => '#e17055', 'low' => '#6c5ce7'] as $sev => $color)
+            <div class="breakdown-row">
+                <span style="font-size:13px;font-weight:500">{{ ucfirst($sev) }}</span>
+                <span style="color:{{ $color }}">{{ $flag_counts[$sev] ?? 0 }}</span>
+            </div>
+        @endforeach
+    </div>
+</div>
+@endsection
