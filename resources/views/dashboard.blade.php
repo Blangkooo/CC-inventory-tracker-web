@@ -4,34 +4,54 @@
 
 @section('content')
 @php
-    $fmt = fn($n) => $n >= 1_000_000
-        ? '₱' . number_format($n / 1_000_000, 1) . 'M'
-        : ($n >= 1_000 ? '₱' . number_format($n / 1_000, 1) . 'k' : '₱' . number_format($n));
+    $peso = fn ($n) => '₱' . number_format((float) $n, 2);
 
-    $sevMap = [];
-    $sevOrder = ['high' => 3, 'medium' => 2, 'low' => 1];
+    $roleName = auth()->user()->isSuperAdmin() ? 'Owner' : (auth()->user()->isManager() ? 'Manager' : 'Staff');
+
+    // Severity → dot colour, matching the legend on the flag summary.
+    $sevTone  = ['high' => 'high', 'medium' => 'med', 'low' => 'low'];
+
+    // One entry per branch carrying its worst pending severity.
+    $sevRank  = ['low' => 1, 'medium' => 2, 'high' => 3];
+    $flagged  = [];
     foreach ($recent_flags as $f) {
-        $bid = $f->branch_id;
-        if (!isset($sevMap[$bid]) || ($sevOrder[$f->severity] ?? 0) > ($sevOrder[$sevMap[$bid]] ?? 0)) {
-            $sevMap[$bid] = $f->severity;
+        $name = $f->branch->name ?? 'Unassigned';
+        $sev  = $f->severity ?? 'low';
+        if (! isset($flagged[$name]) || ($sevRank[$sev] ?? 0) > ($sevRank[$flagged[$name]] ?? 0)) {
+            $flagged[$name] = $sev;
         }
     }
-    $sevColors = ['high' => '#d63031', 'medium' => '#e17055', 'low' => '#fdcb6e'];
-    $sevBadge  = ['high' => 'badge-red', 'medium' => 'badge-amber', 'low' => 'badge-blue'];
 
-    $metrics = [
-        ['from-accent to-pink',   'Annual Revenue', $fmt($annual_revenue),                 'Today: ' . $fmt($total_sales)],
-        ['from-blue to-[#a29bfe]', 'Value Saved',    $fmt($value_saved),                    'From reviewed alerts'],
-        ['from-green to-[#55efc4]', 'Leakage Rate',  number_format($leakage_pct, 1) . '%',  'Based on shift variances'],
-        ['from-orange to-accent', 'Pending Alerts', $pending_alerts,                        $low_stock_count . ' low stock items'],
-    ];
+    // Top earners, tallest bar first, used for both the bars and the share pie.
+    $earners      = $top_earners->filter(fn ($b) => (float) ($b->revenue ?? 0) > 0)->values();
+    $maxRevenue   = (float) ($earners->max('revenue') ?? 0);
+    $topEarner    = $earners->first();
+    $topShare     = $annual_revenue > 0 && $topEarner ? ((float) $topEarner->revenue / $annual_revenue) : 0;
+
+    // Least leakage: already sorted ascending, so the first entry is cleanest.
+    $leakRows     = collect($least_leakage);
+    $maxLeak      = (float) ($leakRows->max('leak') ?? 0);
+    $cleanest     = $leakRows->first();
+
+    // Donut shows how many branches are running clean, which is real data —
+    // there is no "value saved vs lost" split to plot.
+    $cleanCount   = $leakRows->where('leak', '<=', 0)->count();
+    $cleanShare   = $leakRows->count() > 0 ? $cleanCount / $leakRows->count() : 0;
+
+    // Worst-leaking branch drives the Leakage History breakdown.
+    $worstLeak    = $leakRows->sortByDesc('leak')->first();
+    $worstFlags   = $recent_flags
+        ->filter(fn ($f) => ($f->branch->name ?? null) === ($worstLeak['name'] ?? null))
+        ->take(3);
+
+    $circumference = 2 * M_PI * 42;   // r = 42 on the donut/pie circles
 @endphp
 
 {{-- Search + primary action --}}
 <div class="mb-5 flex items-center gap-3">
     <label class="search-bar">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="search" id="dashSearch" placeholder="Search…" autocomplete="off">
+        <input type="search" placeholder="Search…" autocomplete="off">
         <kbd>⌘K</kbd>
     </label>
     <span class="ml-auto text-xs font-medium text-ink-2">{{ now()->format('l, F j, Y') }}</span>
@@ -41,147 +61,189 @@
     </a>
 </div>
 
-{{-- Gradient Metric Cards --}}
-<div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-    @foreach ($metrics as $i => [$gradient, $label, $value, $sub])
-        <div class="relative overflow-hidden rounded-card p-[22px] text-white shadow-card-md bg-linear-to-br {{ $gradient }}">
-            <div class="mb-3.5 flex h-[42px] w-[42px] items-center justify-center rounded-xl bg-white/20">
-                @switch($i)
-                    @case(0)
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                        @break
-                    @case(1)
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-                        @break
-                    @case(2)
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                        @break
-                    @default
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                @endswitch
-            </div>
-            <div class="text-[11px] font-semibold uppercase tracking-[.04em] opacity-85">{{ $label }}</div>
-            <div class="mt-1 text-[28px] font-black tracking-[-.02em]">{!! $value !!}</div>
-            <div class="mt-1.5 text-[11px] font-medium opacity-75">{!! $sub !!}</div>
-            <div class="pointer-events-none absolute -right-5 -bottom-5 h-25 w-25 rounded-full bg-white/8"></div>
-            <div class="pointer-events-none absolute right-[30px] bottom-[30px] h-15 w-15 rounded-full bg-white/5"></div>
+{{-- ══ Recent Flag Summary ══ --}}
+<div class="panel mb-6">
+    <div class="panel__head">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+        <span class="panel__title">Recent Flag Summary</span>
+        <span class="panel__aside legend">
+            <span class="dot-item dot-item--low">Low Importance</span>
+            <span class="dot-item dot-item--med">Moderate Importance</span>
+            <span class="dot-item dot-item--high">High Importance</span>
+        </span>
+    </div>
+
+    @if (empty($flagged))
+        <div class="all-clear">No pending flags — every branch is reconciled.</div>
+    @else
+        <div class="grid grid-cols-1 gap-x-6 gap-y-2.5 sm:grid-cols-2 lg:grid-cols-3">
+            @foreach ($flagged as $branchName => $sev)
+                <a href="{{ route('alerts') }}" class="dot-item dot-item--{{ $sevTone[$sev] ?? 'low' }} hover:text-accent">
+                    {{ $branchName }}
+                </a>
+            @endforeach
         </div>
-    @endforeach
+    @endif
 </div>
 
-{{-- Quick Stats --}}
-@php
-    $quickStats = [
-        ['Total Branches',  $total_branches,          null,                'across all locations'],
-        ['Active Shifts',   $ongoing_shifts->count(), null,                'clocked in right now'],
-        ['Low Stock Items', $low_stock_count,         $low_stock_count > 0, 'at or below threshold'],
-    ];
-@endphp
-<div class="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-    @foreach ($quickStats as [$label, $value, $isWarning, $note])
-        <div class="rounded-card border border-line bg-card p-5 shadow-card">
-            <div class="text-[13px] font-medium text-ink-2">{{ $label }}</div>
-            <div class="mt-1.5 text-[32px] font-extrabold tracking-[-.02em]">{{ $value }}</div>
-            <div class="mt-2.5 flex items-center">
-                @isset($isWarning)
-                    <span class="delta {{ $isWarning ? 'delta--down' : 'delta--up' }}">
-                        {{ $isWarning ? 'Needs restock' : 'All stocked' }}
-                    </span>
-                @endisset
-                <span class="delta-note {{ isset($isWarning) ? '' : 'ml-0' }}">{{ $note }}</span>
-            </div>
-        </div>
-    @endforeach
+{{-- ══ Performance Summary ══ --}}
+<div class="section-title mb-4">
+    <span class="section-title__main">Performance Summary</span>
+    <span class="section-title__pipe">|</span>
+    <span class="section-title__sub">{{ now()->format('F') }}</span>
 </div>
 
-{{-- Branch Status + Open Shifts --}}
-<div class="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">
-    <div class="card">
-        <div class="card__head">
-            <span class="card__title">Branch Status — Today</span>
-            <span class="text-xs font-semibold text-ink-2">{{ $total_branches }} branches</span>
-        </div>
-        <div class="card__body">
-            @if ($branches_with_sales->isEmpty())
-                <div class="empty-state">No branch data yet.</div>
+<div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+
+    {{-- ── Left column ── --}}
+    <div class="flex flex-col gap-4">
+
+        {{-- Top Earner --}}
+        <div class="panel">
+            <div class="panel__head">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+                <span class="panel__title">Top Earner</span>
+                <span class="panel__aside figure-value">{{ $peso($annual_revenue) }}</span>
+            </div>
+
+            @if ($earners->isEmpty())
+                <div class="empty-state">No revenue recorded yet.</div>
             @else
-                <div class="grid grid-cols-2 gap-2 lg:grid-cols-3">
-                    @foreach ($branches_with_sales as $b)
-                        @php
-                            $flagMatch = $recent_flags->first(fn($f) => $f->branch?->name === $b['name']);
-                            $branchSev = $flagMatch ? ($sevMap[$flagMatch->branch_id] ?? null) : null;
-                            $pip = $branchSev ? ($sevColors[$branchSev]) : ($b['has_sales'] ? '#00b894' : 'rgba(0,0,0,.12)');
-                        @endphp
-                        <div class="flex items-center gap-2 rounded-[10px] bg-black/[.015] px-3 py-2.5 text-[13px] font-medium transition-colors hover:bg-black/[.03]">
-                            <span class="h-2 w-2 shrink-0 rounded-full" style="background:{{ $pip }}"></span>
-                            <span>{{ $b['name'] }}</span>
+                <div class="grid grid-cols-2 items-center gap-4">
+                    {{-- Bars: tallest branch highlighted --}}
+                    <div>
+                        @if ($topEarner)
+                            <div class="chart-callout mb-2">
+                                <div class="chart-callout__value text-green">{{ $peso($topEarner->revenue) }}</div>
+                                <div class="chart-callout__label">{{ $topEarner->name }}</div>
+                            </div>
+                        @endif
+                        <div class="flex h-[110px] items-end gap-1.5">
+                            @foreach ($earners as $i => $b)
+                                @php $h = $maxRevenue > 0 ? max(6, ((float) $b->revenue / $maxRevenue) * 100) : 6; @endphp
+                                <div class="flex-1 rounded-t-[3px] {{ $i === 0 ? 'bg-accent' : 'bg-cream' }}"
+                                     style="height: {{ $h }}%"
+                                     title="{{ $b->name }} — {{ $peso($b->revenue) }}"></div>
+                            @endforeach
                         </div>
-                    @endforeach
+                    </div>
+
+                    {{-- Share of total revenue --}}
+                    <div class="flex flex-col items-center gap-2 border-l border-line pl-4">
+                        <svg viewBox="0 0 100 100" class="h-[104px] w-[104px] -rotate-90">
+                            <circle cx="50" cy="50" r="42" fill="none" stroke="var(--color-cream)" stroke-width="16"/>
+                            <circle cx="50" cy="50" r="42" fill="none" stroke="var(--color-accent)" stroke-width="16"
+                                    stroke-dasharray="{{ $topShare * $circumference }} {{ $circumference }}"/>
+                        </svg>
+                        <div class="figure-label">Total Revenue</div>
+                    </div>
+                </div>
+            @endif
+        </div>
+
+        {{-- Least Leakage --}}
+        <div class="panel">
+            <div class="panel__head">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>
+                <span class="panel__title">Least Leakage</span>
+                <span class="panel__aside figure-value">{{ $peso($value_saved) }}</span>
+            </div>
+
+            @if ($leakRows->isEmpty())
+                <div class="empty-state">No branches to compare yet.</div>
+            @else
+                <div class="grid grid-cols-2 items-center gap-4">
+                    <div>
+                        @if ($cleanest)
+                            <div class="chart-callout mb-2">
+                                <div class="chart-callout__value text-accent">
+                                    {{ $cleanest['leak'] > 0 ? number_format($cleanest['leak'], 2) . 'u lost' : 'No loss' }}
+                                </div>
+                                <div class="chart-callout__label">{{ $cleanest['name'] }} — cleanest</div>
+                            </div>
+                        @endif
+                        <div class="flex h-[110px] items-end gap-1.5">
+                            @foreach ($leakRows->take(6) as $i => $row)
+                                @php $h = $maxLeak > 0 ? max(6, ($row['leak'] / $maxLeak) * 100) : 6; @endphp
+                                <div class="flex-1 rounded-t-[3px] {{ $i === 0 ? 'bg-accent' : 'bg-cream' }}"
+                                     style="height: {{ $h }}%"
+                                     title="{{ $row['name'] }} — {{ number_format($row['leak'], 2) }}u"></div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col items-center gap-2 border-l border-line pl-4">
+                        <svg viewBox="0 0 100 100" class="h-[104px] w-[104px] -rotate-90">
+                            <circle cx="50" cy="50" r="42" fill="none" stroke="var(--color-cream)" stroke-width="13"/>
+                            <circle cx="50" cy="50" r="42" fill="none" stroke="var(--color-accent)" stroke-width="13"
+                                    stroke-dasharray="{{ $cleanShare * $circumference }} {{ $circumference }}"/>
+                        </svg>
+                        <div class="figure-label">
+                            Total Value Saved
+                            <span class="block text-ink-3">{{ $cleanCount }}/{{ $leakRows->count() }} branches clean</span>
+                        </div>
+                    </div>
                 </div>
             @endif
         </div>
     </div>
 
-    <div class="card">
-        <div class="card__head"><span class="card__title">Open Shifts</span></div>
-        <div class="card__body">
-            @forelse ($ongoing_shifts as $shift)
-                <div class="flex items-center gap-3 border-b border-line py-2.5 last:border-b-0">
-                    <span class="h-2 w-2 shrink-0 animate-pulse rounded-full bg-green"></span>
-                    <div class="text-xs/relaxed">
-                        <strong class="font-bold">{{ $shift->branch->name ?? '—' }}</strong><br>
-                        <span class="text-ink-2">{{ $shift->user->name ?? '—' }} · {{ $shift->shift_start->format('g:i A') }}</span>
-                    </div>
+    {{-- ── Right column ── --}}
+    <div class="flex flex-col gap-4">
+
+        {{-- Leakage History --}}
+        <div class="panel flex-1">
+            <div class="panel__head">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                <span class="panel__title">Leakage History</span>
+            </div>
+
+            <div class="flex items-center justify-center gap-5">
+                <svg viewBox="0 0 100 100" class="h-[112px] w-[112px] -rotate-90">
+                    <circle cx="50" cy="50" r="42" fill="none" stroke="var(--color-cream)" stroke-width="16"/>
+                    <circle cx="50" cy="50" r="42" fill="none" stroke="var(--color-accent)" stroke-width="16"
+                            stroke-dasharray="{{ min($leakage_pct, 100) / 100 * $circumference }} {{ $circumference }}"/>
+                </svg>
+                <div class="text-[26px] font-extrabold">{{ number_format($leakage_pct, 1) }}%</div>
+            </div>
+
+            @if ($worstLeak && $worstFlags->isNotEmpty())
+                <div class="mt-4 border-t border-line pt-3">
+                    <div class="mb-2 text-[15px] font-extrabold">{{ $worstLeak['name'] }}</div>
+                    @foreach ($worstFlags as $f)
+                        <div class="flex items-baseline justify-between py-0.5 text-[13px]">
+                            <span>{{ $f->ingredient->name ?? '—' }}</span>
+                            <span class="font-semibold text-accent">
+                                {{ $f->variance !== null ? number_format(abs($f->variance), 0) : '—' }}
+                                {{ $f->ingredient->unit ?? '' }}
+                            </span>
+                        </div>
+                    @endforeach
                 </div>
-            @empty
-                <div class="empty-state">No active shifts</div>
-            @endforelse
+            @endif
+        </div>
+
+        {{-- Overall Leakage --}}
+        <div class="panel">
+            <div class="panel__head">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/></svg>
+                <span class="panel__title">Overall Leakage</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-[38px] font-extrabold {{ $leakage_pct > 10 ? 'text-accent-2' : 'text-green' }}">
+                    {{ number_format($leakage_pct, 1) }}%
+                </span>
+                <span class="text-[11px] leading-tight text-ink-3">
+                    of expected stock<br>unaccounted for
+                </span>
+            </div>
         </div>
     </div>
 </div>
 
-{{-- Rankings --}}
-<div class="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-    <div class="card">
-        <div class="card__head"><span class="card__title">Top Earners — {{ now()->year }}</span></div>
-        <div class="card__body">
-            @forelse ($top_earners as $i => $branch)
-                <div class="flex items-center justify-between border-b border-line py-2.5 text-[13px] last:border-b-0">
-                    <div class="flex items-center gap-2.5">
-                        <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-accent-light text-[10px] font-extrabold text-accent">{{ $i + 1 }}</span>
-                        <span class="font-medium">{{ $branch->name }}</span>
-                    </div>
-                    <span class="font-bold text-green">&#8369;{{ number_format($branch->revenue ?? 0) }}</span>
-                </div>
-            @empty
-                <div class="empty-state">No transaction data yet.</div>
-            @endforelse
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card__head"><span class="card__title">Least Leakage (Units)</span></div>
-        <div class="card__body">
-            @forelse ($least_leakage->take(6) as $i => $item)
-                <div class="flex items-center justify-between border-b border-line py-2.5 text-[13px] last:border-b-0">
-                    <div class="flex items-center gap-2.5">
-                        <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-accent-light text-[10px] font-extrabold text-accent">{{ $i + 1 }}</span>
-                        <span class="font-medium">{{ $item['name'] }}</span>
-                    </div>
-                    <span class="font-bold {{ $item['leak'] > 0 ? 'text-accent-2' : 'text-green' }}">
-                        {{ $item['leak'] > 0 ? '−' . number_format($item['leak'], 2) . 'u' : 'Clean' }}
-                    </span>
-                </div>
-            @empty
-                <div class="empty-state">No leakage data yet.</div>
-            @endforelse
-        </div>
-    </div>
-</div>
-
-{{-- Recent Alerts --}}
+{{-- ══ Recent Pending Alerts ══ --}}
 @if ($recent_flags->isNotEmpty())
-<div class="card mb-6">
+<div class="card mt-6">
     <div class="card__head">
         <span class="card__title">Recent Pending Alerts</span>
         <a href="{{ route('alerts') }}" class="card__link">View All &rarr;</a>
@@ -192,6 +254,7 @@
                 <tr><th>Branch</th><th>Ingredient</th><th>Severity</th><th>Variance</th><th>Date</th></tr>
             </thead>
             <tbody>
+                @php $sevBadge = ['high' => 'badge-red', 'medium' => 'badge-amber', 'low' => 'badge-blue']; @endphp
                 @foreach ($recent_flags as $flag)
                 <tr>
                     <td class="cell-primary">{{ $flag->branch->name ?? '—' }}</td>
@@ -206,17 +269,4 @@
     </div>
 </div>
 @endif
-
-{{-- Alert Breakdown --}}
-<div class="card max-w-[380px]">
-    <div class="card__head"><span class="card__title">Alert Breakdown</span></div>
-    <div class="card__body">
-        @foreach (['high' => 'text-accent-2', 'medium' => 'text-accent', 'low' => 'text-blue'] as $sev => $textColor)
-            <div class="flex items-center justify-between border-b border-line py-3 last:border-b-0">
-                <span class="text-[13px] font-medium">{{ ucfirst($sev) }}</span>
-                <span class="text-xl font-black {{ $textColor }}">{{ $flag_counts[$sev] ?? 0 }}</span>
-            </div>
-        @endforeach
-    </div>
-</div>
 @endsection

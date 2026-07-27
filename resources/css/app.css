@@ -39,6 +39,15 @@
     --color-surface-2: #f4f4f6;
     --color-surface-3: #ebebef;
 
+    /* Butter yellow pairs with the terracotta accent across the charts. */
+    --color-cream: #fae5b0;
+    --color-cream-deep: #f3d488;
+
+    /* Severity dots on the flag summary. */
+    --color-sev-high: #e63946;
+    --color-sev-med: #f5a623;
+    --color-sev-low: #fbbf24;
+
     /* Near-black used for high-emphasis buttons (Export) and the brand mark. */
     --color-ink-strong: #16161a;
 
@@ -407,6 +416,67 @@
     .delta--up   { background: rgba(0, 184, 148, 0.1); color: var(--color-green); }
     .delta--down { background: rgba(214, 48, 49, 0.08); color: var(--color-accent-2); }
     .delta-note  { font-size: 11px; color: var(--color-ink-3); margin-left: 6px; }
+
+    /* ── Outlined panels ────────────────────────────────────────────────
+       The reporting surfaces use a terracotta outline rather than a shadow,
+       which keeps the cream/terracotta charts readable on a white page. */
+    .panel {
+        background: var(--color-card);
+        border: 1.5px solid var(--color-accent);
+        border-radius: 16px;
+        padding: 18px 20px;
+    }
+
+    .panel__head {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding-bottom: 10px;
+        margin-bottom: 14px;
+        border-bottom: 1.5px solid var(--color-line);
+    }
+    .panel__head svg { width: 19px; height: 19px; flex-shrink: 0; color: var(--color-ink); }
+    .panel__title { font-size: 15px; font-weight: 800; letter-spacing: -0.01em; }
+    .panel__aside { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+
+    /* Section heading: "Performance Summary | May" */
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 21px;
+        font-weight: 800;
+        color: var(--color-accent);
+        letter-spacing: -0.02em;
+    }
+    .section-title__main { color: var(--color-accent); }
+    .section-title__pipe { color: var(--color-accent); opacity: 0.45; font-weight: 400; }
+    .section-title__sub  { color: var(--color-accent); opacity: 0.8; }
+
+    /* Legend / status dots */
+    .dot-item { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; }
+    .dot-item::before {
+        content: '';
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        background: var(--dot, var(--color-ink-3));
+    }
+    .dot-item--high { --dot: var(--color-sev-high); }
+    .dot-item--med  { --dot: var(--color-sev-med); }
+    .dot-item--low  { --dot: var(--color-sev-low); }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 14px; }
+    .legend .dot-item { font-size: 10.5px; font-weight: 600; color: var(--color-ink-2); }
+
+    /* Callout used to annotate a chart's leading value */
+    .chart-callout { line-height: 1.25; }
+    .chart-callout__value { font-size: 13px; font-weight: 800; }
+    .chart-callout__label { font-size: 9.5px; font-weight: 600; color: var(--color-ink-3); }
+
+    .figure-value { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+    .figure-label { font-size: 11px; font-weight: 600; color: var(--color-ink-3); text-align: center; }
 }
 
 /*
