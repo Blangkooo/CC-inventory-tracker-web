@@ -477,6 +477,144 @@
 
     .figure-value { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
     .figure-label { font-size: 11px; font-weight: 600; color: var(--color-ink-3); text-align: center; }
+
+    /* ── Tiles ──────────────────────────────────────────────────────────
+       The dashboard surfaces: white, hairline border, barely-there shadow. */
+    .tile {
+        background: var(--color-card);
+        border: 1px solid var(--color-line);
+        border-radius: 14px;
+        padding: 20px 22px;
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.03);
+    }
+    .tile__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+    .tile__title { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+
+    .tile__label { font-size: 14px; font-weight: 500; color: var(--color-ink-2); }
+    .tile__figure { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; margin-top: 8px; }
+
+    /* Bordered control pills: "Last Year ⌄", "See All" */
+    .pill-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        height: 34px;
+        padding: 0 13px;
+        background: var(--color-card);
+        border: 1px solid var(--color-line);
+        border-radius: 9px;
+        font-family: var(--font-sans);
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--color-ink);
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.15s;
+    }
+    .pill-btn:hover { background: var(--color-surface-2); }
+    .pill-btn svg { width: 14px; height: 14px; color: var(--color-ink-2); }
+
+    .icon-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        background: var(--color-card);
+        border: 1px solid var(--color-line);
+        border-radius: 9px;
+        color: var(--color-ink-2);
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .icon-btn:hover { background: var(--color-surface-2); color: var(--color-ink); }
+
+    /* Underline tabs */
+    .utabs { display: flex; gap: 4px; border-bottom: 1px solid var(--color-line); }
+    .utab {
+        padding: 9px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--color-ink-3);
+        text-decoration: none;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+        cursor: pointer;
+        font-family: var(--font-sans);
+        transition: all 0.15s;
+    }
+    .utab:hover { color: var(--color-ink); }
+    .utab.is-active { color: var(--color-ink); border-bottom-color: var(--color-accent); }
+
+    /* Calendar day strip */
+    .daystrip { display: flex; align-items: center; gap: 2px; }
+    .daystrip__day {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1px;
+        flex: 1;
+        min-width: 42px;
+        padding: 7px 0;
+        border-radius: 10px;
+        text-decoration: none;
+        color: var(--color-ink);
+        transition: background 0.15s;
+    }
+    .daystrip__day:hover { background: var(--color-surface-2); }
+    .daystrip__num { font-size: 15px; font-weight: 700; line-height: 1.1; }
+    .daystrip__dow { font-size: 10.5px; font-weight: 500; color: var(--color-ink-3); }
+    .daystrip__day.is-today { background: var(--color-accent); color: #fff; }
+    .daystrip__day.is-today .daystrip__dow { color: rgb(255 255 255 / 0.85); }
+
+    /* Soft category tag */
+    .tag {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 7px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    .tag--accent { background: var(--color-accent-light); color: var(--color-accent); }
+    .tag--red    { background: rgb(230 57 70 / 0.09); color: var(--color-sev-high); }
+    .tag--amber  { background: rgb(245 166 35 / 0.13); color: #b45309; }
+    .tag--blue   { background: rgb(108 92 231 / 0.09); color: var(--color-blue); }
+
+    /* Overlapping avatar stack */
+    .avatar-stack { display: flex; align-items: center; }
+    .avatar-stack__item {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        border: 2px solid var(--color-card);
+        margin-left: -8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 9.5px;
+        font-weight: 800;
+        color: #fff;
+        text-transform: uppercase;
+    }
+    .avatar-stack__item:first-child { margin-left: 0; }
+    .avatar-stack__more { font-size: 12px; font-weight: 700; color: var(--color-ink-2); margin-left: 6px; }
+
+    /* Striped density bar (share of a whole, drawn as thin ticks) */
+    .density { display: flex; align-items: stretch; gap: 3px; height: 46px; }
+    .density__seg {
+        background-image: repeating-linear-gradient(90deg, currentColor 0 2px, transparent 2px 5px);
+        border-radius: 3px;
+        min-width: 2px;
+    }
+    .density__scale { display: flex; justify-content: space-between; font-size: 11px; color: var(--color-ink-3); margin-top: 8px; }
+
+    .legend-stat__top { display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 500; color: var(--color-ink-2); }
+    .legend-stat__swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+    .legend-stat__value { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+    .legend-stat__pct { font-size: 12px; font-weight: 500; color: var(--color-ink-3); margin-left: 4px; }
 }
 
 /*

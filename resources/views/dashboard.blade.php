@@ -1,272 +1,267 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Dashboard')
+@section('title', 'Overview')
 
 @section('content')
 @php
     $peso = fn ($n) => '₱' . number_format((float) $n, 2);
 
-    $roleName = auth()->user()->isSuperAdmin() ? 'Owner' : (auth()->user()->isManager() ? 'Manager' : 'Staff');
+    // ── KPI chart: stepped area across Jan–Dec ──────────────────────────
+    $months   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    $series   = collect($monthly_revenue)->values();
+    $peak     = max((float) $series->max(), 1);          // avoid /0 on an empty year
+    $W        = 720;  $H = 190;  $step = $W / 12;
 
-    // Severity → dot colour, matching the legend on the flag summary.
-    $sevTone  = ['high' => 'high', 'medium' => 'med', 'low' => 'low'];
-
-    // One entry per branch carrying its worst pending severity.
-    $sevRank  = ['low' => 1, 'medium' => 2, 'high' => 3];
-    $flagged  = [];
-    foreach ($recent_flags as $f) {
-        $name = $f->branch->name ?? 'Unassigned';
-        $sev  = $f->severity ?? 'low';
-        if (! isset($flagged[$name]) || ($sevRank[$sev] ?? 0) > ($sevRank[$flagged[$name]] ?? 0)) {
-            $flagged[$name] = $sev;
-        }
+    // Build the step path: flat top per month, vertical joins between them.
+    $top = '';
+    foreach ($series as $i => $v) {
+        $y  = $H - (((float) $v / $peak) * ($H - 20));
+        $x0 = $i * $step;
+        $top .= ($i === 0 ? "M {$x0} {$y}" : " L {$x0} {$y}") . ' L ' . ($x0 + $step) . " {$y}";
     }
+    $areaPath = $top . " L {$W} {$H} L 0 {$H} Z";
 
-    // Top earners, tallest bar first, used for both the bars and the share pie.
-    $earners      = $top_earners->filter(fn ($b) => (float) ($b->revenue ?? 0) > 0)->values();
-    $maxRevenue   = (float) ($earners->max('revenue') ?? 0);
-    $topEarner    = $earners->first();
-    $topShare     = $annual_revenue > 0 && $topEarner ? ((float) $topEarner->revenue / $annual_revenue) : 0;
+    $monthsWithRevenue = $series->filter(fn ($v) => $v > 0)->count();
+    $bestMonthIndex    = $series->search($series->max());
 
-    // Least leakage: already sorted ascending, so the first entry is cleanest.
-    $leakRows     = collect($least_leakage);
-    $maxLeak      = (float) ($leakRows->max('leak') ?? 0);
-    $cleanest     = $leakRows->first();
+    // ── Trend line: daily sales over the last 7 days ────────────────────
+    $daily     = collect($daily_sales);
+    $dailyPeak = max((float) $daily->max('total'), 1);
+    $lw = 640; $lh = 90;
+    $points = $daily->count() > 1
+        ? $daily->values()->map(function ($d, $i) use ($daily, $dailyPeak, $lw, $lh) {
+            $x = ($i / max($daily->count() - 1, 1)) * $lw;
+            $y = $lh - (((float) $d->total / $dailyPeak) * ($lh - 10));
+            return round($x, 1) . ',' . round($y, 1);
+          })->implode(' ')
+        : null;
 
-    // Donut shows how many branches are running clean, which is real data —
-    // there is no "value saved vs lost" split to plot.
-    $cleanCount   = $leakRows->where('leak', '<=', 0)->count();
-    $cleanShare   = $leakRows->count() > 0 ? $cleanCount / $leakRows->count() : 0;
+    // ── Alert breakdown: real severity counts ───────────────────────────
+    $sevMeta = [
+        'high'   => ['High',     'var(--color-sev-high)'],
+        'medium' => ['Moderate', 'var(--color-sev-med)'],
+        'low'    => ['Low',      'var(--color-blue)'],
+    ];
+    $sevTotal = collect($flag_counts)->sum();
 
-    // Worst-leaking branch drives the Leakage History breakdown.
-    $worstLeak    = $leakRows->sortByDesc('leak')->first();
-    $worstFlags   = $recent_flags
-        ->filter(fn ($f) => ($f->branch->name ?? null) === ($worstLeak['name'] ?? null))
-        ->take(3);
-
-    $circumference = 2 * M_PI * 42;   // r = 42 on the donut/pie circles
+    // ── Activity rail ───────────────────────────────────────────────────
+    $tagFor = ['high' => 'tag--red', 'medium' => 'tag--amber', 'low' => 'tag--blue'];
 @endphp
 
 {{-- Search + primary action --}}
-<div class="mb-5 flex items-center gap-3">
+<div class="mb-4 flex items-center gap-3">
     <label class="search-bar">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="search" placeholder="Search…" autocomplete="off">
         <kbd>⌘K</kbd>
     </label>
-    <span class="ml-auto text-xs font-medium text-ink-2">{{ now()->format('l, F j, Y') }}</span>
-    <a href="{{ route('alerts') }}" class="btn-dark">
+    <a href="{{ route('alerts') }}" class="btn-dark ml-auto">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Export
     </a>
 </div>
 
-{{-- ══ Recent Flag Summary ══ --}}
-<div class="panel mb-6">
-    <div class="panel__head">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-        <span class="panel__title">Recent Flag Summary</span>
-        <span class="panel__aside legend">
-            <span class="dot-item dot-item--low">Low Importance</span>
-            <span class="dot-item dot-item--med">Moderate Importance</span>
-            <span class="dot-item dot-item--high">High Importance</span>
-        </span>
+<div class="grid grid-cols-1 gap-4 xl:grid-cols-[2fr_1fr]">
+
+    {{-- ══════════ Left column ══════════ --}}
+    <div class="flex flex-col gap-4">
+
+        {{-- Stat tiles --}}
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div class="tile">
+                <div class="tile__label">Total Branches</div>
+                <div class="tile__figure">{{ $total_branches }}</div>
+                <div class="mt-2.5"><span class="delta-note ml-0">{{ $branches_with_sales->where('has_sales', true)->count() }} trading today</span></div>
+            </div>
+            <div class="tile">
+                <div class="tile__label">Active Shifts</div>
+                <div class="tile__figure">{{ $ongoing_shifts->count() }}</div>
+                <div class="mt-2.5"><span class="delta-note ml-0">clocked in right now</span></div>
+            </div>
+            <div class="tile">
+                <div class="tile__label">Pending Alerts</div>
+                <div class="tile__figure">{{ $pending_alerts }}</div>
+                <div class="mt-2.5">
+                    @if ($pending_alerts > 0)
+                        <span class="delta delta--down">Needs review</span>
+                    @else
+                        <span class="delta delta--up">All clear</span>
+                    @endif
+                    <span class="delta-note">{{ $low_stock_count }} low stock</span>
+                </div>
+            </div>
+        </div>
+
+        {{-- Revenue performance --}}
+        <div class="tile">
+            <div class="tile__head">
+                <span class="tile__title">Revenue Performance</span>
+                <span class="pill-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    {{ now()->year }}
+                </span>
+            </div>
+
+            <div class="text-[30px] font-bold tracking-[-.02em]">{{ $peso($annual_revenue) }}</div>
+            <div class="mt-2">
+                <span class="delta delta--up">{{ $monthsWithRevenue }}/12 months</span>
+                <span class="delta-note">with recorded sales</span>
+            </div>
+
+            <svg viewBox="0 0 {{ $W }} {{ $H }}" class="mt-5 w-full" preserveAspectRatio="none" style="height:190px">
+                <defs>
+                    <linearGradient id="kpiFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%"   stop-color="var(--color-accent)" stop-opacity=".28"/>
+                        <stop offset="100%" stop-color="var(--color-accent)" stop-opacity=".02"/>
+                    </linearGradient>
+                </defs>
+                <path d="{{ $areaPath }}" fill="url(#kpiFill)"/>
+                <path d="{{ $top }}" fill="none" stroke="var(--color-accent)" stroke-width="2" vector-effect="non-scaling-stroke"/>
+            </svg>
+            <div class="mt-1.5 flex text-[11px] text-ink-3">
+                @foreach ($months as $i => $m)
+                    <span class="flex-1 text-center {{ $i === $bestMonthIndex && $peak > 1 ? 'font-bold text-accent' : '' }}">{{ $m }}</span>
+                @endforeach
+            </div>
+        </div>
+
+        {{-- Bottom row: trend + alert breakdown --}}
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+
+            <div class="tile">
+                <div class="tile__head">
+                    <span class="tile__title">Sales Trend</span>
+                    <span class="pill-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        Last 7 days
+                    </span>
+                </div>
+
+                <div class="text-[26px] font-bold tracking-[-.02em]">{{ $peso($total_sales) }}</div>
+                <div class="mt-1.5"><span class="delta-note ml-0">today's sales</span></div>
+
+                @if ($points)
+                    <svg viewBox="0 0 {{ $lw }} {{ $lh }}" class="mt-4 w-full" preserveAspectRatio="none" style="height:90px">
+                        <polyline points="{{ $points }}" fill="none" stroke="var(--color-accent)" stroke-width="2"
+                                  stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+                    </svg>
+                @else
+                    <div class="empty-state !py-8">Not enough days recorded to plot a trend.</div>
+                @endif
+
+                <div class="mt-3 flex justify-between border-t border-line pt-3 text-[11px] text-ink-3">
+                    <span>{{ now()->subDays(7)->format('M d, Y') }}</span>
+                    <span>{{ $peso($daily->sum('total')) }} over 7 days</span>
+                </div>
+            </div>
+
+            <div class="tile">
+                <div class="tile__head"><span class="tile__title">Alert Breakdown</span></div>
+
+                @if ($sevTotal === 0)
+                    <div class="all-clear">No pending alerts.</div>
+                @else
+                    <div class="density">
+                        @foreach ($sevMeta as $key => [$label, $color])
+                            @php $count = (int) ($flag_counts[$key] ?? 0); @endphp
+                            @if ($count > 0)
+                                <div class="density__seg" style="flex:{{ $count }};color:{{ $color }}"></div>
+                            @endif
+                        @endforeach
+                    </div>
+                    <div class="density__scale"><span>0%</span><span>100%</span></div>
+
+                    <div class="mt-4 grid grid-cols-3 gap-2 border-t border-line pt-4">
+                        @foreach ($sevMeta as $key => [$label, $color])
+                            @php
+                                $count = (int) ($flag_counts[$key] ?? 0);
+                                $pct   = $sevTotal > 0 ? round($count / $sevTotal * 100) : 0;
+                            @endphp
+                            <div>
+                                <div class="legend-stat__top">
+                                    <span class="legend-stat__swatch" style="background:{{ $color }}"></span>
+                                    {{ $label }}
+                                </div>
+                                <div class="mt-1">
+                                    <span class="legend-stat__value">{{ $count }}</span>
+                                    <span class="legend-stat__pct">{{ $pct }}%</span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        </div>
     </div>
 
-    @if (empty($flagged))
-        <div class="all-clear">No pending flags — every branch is reconciled.</div>
-    @else
-        <div class="grid grid-cols-1 gap-x-6 gap-y-2.5 sm:grid-cols-2 lg:grid-cols-3">
-            @foreach ($flagged as $branchName => $sev)
-                <a href="{{ route('alerts') }}" class="dot-item dot-item--{{ $sevTone[$sev] ?? 'low' }} hover:text-accent">
-                    {{ $branchName }}
+    {{-- ══════════ Right rail: Activity ══════════ --}}
+    <div class="tile flex flex-col">
+        <div class="tile__head">
+            <span class="tile__title">Activity</span>
+            <span class="flex items-center gap-2">
+                <a href="{{ route('alerts') }}" class="icon-btn" title="Search alerts">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 </a>
+                <a href="{{ route('alerts') }}" class="pill-btn">See All</a>
+            </span>
+        </div>
+
+        {{-- Month + day strip --}}
+        <div class="mb-3 flex items-center justify-between px-1">
+            <span class="text-ink-3">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </span>
+            <span class="text-[13px] font-semibold">{{ now()->format('F Y') }}</span>
+            <span class="text-ink-3">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </span>
+        </div>
+
+        <div class="daystrip mb-4">
+            @foreach (range(-2, 2) as $offset)
+                @php $d = now()->addDays($offset); @endphp
+                <span class="daystrip__day {{ $offset === 0 ? 'is-today' : '' }}">
+                    <span class="daystrip__num">{{ $d->format('d') }}</span>
+                    <span class="daystrip__dow">{{ $d->format('D') }}</span>
+                </span>
             @endforeach
         </div>
-    @endif
-</div>
 
-{{-- ══ Performance Summary ══ --}}
-<div class="section-title mb-4">
-    <span class="section-title__main">Performance Summary</span>
-    <span class="section-title__pipe">|</span>
-    <span class="section-title__sub">{{ now()->format('F') }}</span>
-</div>
-
-<div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-
-    {{-- ── Left column ── --}}
-    <div class="flex flex-col gap-4">
-
-        {{-- Top Earner --}}
-        <div class="panel">
-            <div class="panel__head">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
-                <span class="panel__title">Top Earner</span>
-                <span class="panel__aside figure-value">{{ $peso($annual_revenue) }}</span>
-            </div>
-
-            @if ($earners->isEmpty())
-                <div class="empty-state">No revenue recorded yet.</div>
-            @else
-                <div class="grid grid-cols-2 items-center gap-4">
-                    {{-- Bars: tallest branch highlighted --}}
-                    <div>
-                        @if ($topEarner)
-                            <div class="chart-callout mb-2">
-                                <div class="chart-callout__value text-green">{{ $peso($topEarner->revenue) }}</div>
-                                <div class="chart-callout__label">{{ $topEarner->name }}</div>
-                            </div>
-                        @endif
-                        <div class="flex h-[110px] items-end gap-1.5">
-                            @foreach ($earners as $i => $b)
-                                @php $h = $maxRevenue > 0 ? max(6, ((float) $b->revenue / $maxRevenue) * 100) : 6; @endphp
-                                <div class="flex-1 rounded-t-[3px] {{ $i === 0 ? 'bg-accent' : 'bg-cream' }}"
-                                     style="height: {{ $h }}%"
-                                     title="{{ $b->name }} — {{ $peso($b->revenue) }}"></div>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    {{-- Share of total revenue --}}
-                    <div class="flex flex-col items-center gap-2 border-l border-line pl-4">
-                        <svg viewBox="0 0 100 100" class="h-[104px] w-[104px] -rotate-90">
-                            <circle cx="50" cy="50" r="42" fill="none" stroke="var(--color-cream)" stroke-width="16"/>
-                            <circle cx="50" cy="50" r="42" fill="none" stroke="var(--color-accent)" stroke-width="16"
-                                    stroke-dasharray="{{ $topShare * $circumference }} {{ $circumference }}"/>
-                        </svg>
-                        <div class="figure-label">Total Revenue</div>
-                    </div>
-                </div>
-            @endif
+        {{-- Tabs --}}
+        <div class="utabs mb-3">
+            <span class="utab is-active">Alerts</span>
+            <a href="{{ route('business.workers') }}" class="utab">Shifts</a>
         </div>
 
-        {{-- Least Leakage --}}
-        <div class="panel">
-            <div class="panel__head">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>
-                <span class="panel__title">Least Leakage</span>
-                <span class="panel__aside figure-value">{{ $peso($value_saved) }}</span>
-            </div>
-
-            @if ($leakRows->isEmpty())
-                <div class="empty-state">No branches to compare yet.</div>
-            @else
-                <div class="grid grid-cols-2 items-center gap-4">
-                    <div>
-                        @if ($cleanest)
-                            <div class="chart-callout mb-2">
-                                <div class="chart-callout__value text-accent">
-                                    {{ $cleanest['leak'] > 0 ? number_format($cleanest['leak'], 2) . 'u lost' : 'No loss' }}
-                                </div>
-                                <div class="chart-callout__label">{{ $cleanest['name'] }} — cleanest</div>
-                            </div>
-                        @endif
-                        <div class="flex h-[110px] items-end gap-1.5">
-                            @foreach ($leakRows->take(6) as $i => $row)
-                                @php $h = $maxLeak > 0 ? max(6, ($row['leak'] / $maxLeak) * 100) : 6; @endphp
-                                <div class="flex-1 rounded-t-[3px] {{ $i === 0 ? 'bg-accent' : 'bg-cream' }}"
-                                     style="height: {{ $h }}%"
-                                     title="{{ $row['name'] }} — {{ number_format($row['leak'], 2) }}u"></div>
-                            @endforeach
-                        </div>
+        {{-- Alert cards --}}
+        <div class="flex flex-col gap-3">
+            @forelse ($recent_flags->take(4) as $flag)
+                <a href="{{ route('alerts') }}" class="rounded-xl border border-line p-3.5 transition-colors hover:bg-surface-2">
+                    <div class="mb-2 flex items-center justify-between">
+                        <span class="tag {{ $tagFor[$flag->severity] ?? 'tag--accent' }}">{{ ucfirst($flag->severity) }} importance</span>
+                        <span class="text-ink-3">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                        </span>
                     </div>
-
-                    <div class="flex flex-col items-center gap-2 border-l border-line pl-4">
-                        <svg viewBox="0 0 100 100" class="h-[104px] w-[104px] -rotate-90">
-                            <circle cx="50" cy="50" r="42" fill="none" stroke="var(--color-cream)" stroke-width="13"/>
-                            <circle cx="50" cy="50" r="42" fill="none" stroke="var(--color-accent)" stroke-width="13"
-                                    stroke-dasharray="{{ $cleanShare * $circumference }} {{ $circumference }}"/>
-                        </svg>
-                        <div class="figure-label">
-                            Total Value Saved
-                            <span class="block text-ink-3">{{ $cleanCount }}/{{ $leakRows->count() }} branches clean</span>
-                        </div>
+                    <div class="text-[13.5px] font-bold">{{ $flag->ingredient->name ?? 'Stock variance' }}</div>
+                    <div class="mt-0.5 text-[11.5px] text-ink-3">
+                        {{ $flag->branch->name ?? '—' }} · {{ $flag->created_at->format('M d, g:iA') }}
                     </div>
-                </div>
-            @endif
-        </div>
-    </div>
-
-    {{-- ── Right column ── --}}
-    <div class="flex flex-col gap-4">
-
-        {{-- Leakage History --}}
-        <div class="panel flex-1">
-            <div class="panel__head">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                <span class="panel__title">Leakage History</span>
-            </div>
-
-            <div class="flex items-center justify-center gap-5">
-                <svg viewBox="0 0 100 100" class="h-[112px] w-[112px] -rotate-90">
-                    <circle cx="50" cy="50" r="42" fill="none" stroke="var(--color-cream)" stroke-width="16"/>
-                    <circle cx="50" cy="50" r="42" fill="none" stroke="var(--color-accent)" stroke-width="16"
-                            stroke-dasharray="{{ min($leakage_pct, 100) / 100 * $circumference }} {{ $circumference }}"/>
-                </svg>
-                <div class="text-[26px] font-extrabold">{{ number_format($leakage_pct, 1) }}%</div>
-            </div>
-
-            @if ($worstLeak && $worstFlags->isNotEmpty())
-                <div class="mt-4 border-t border-line pt-3">
-                    <div class="mb-2 text-[15px] font-extrabold">{{ $worstLeak['name'] }}</div>
-                    @foreach ($worstFlags as $f)
-                        <div class="flex items-baseline justify-between py-0.5 text-[13px]">
-                            <span>{{ $f->ingredient->name ?? '—' }}</span>
-                            <span class="font-semibold text-accent">
-                                {{ $f->variance !== null ? number_format(abs($f->variance), 0) : '—' }}
-                                {{ $f->ingredient->unit ?? '' }}
+                    <div class="mt-2.5 flex items-center justify-between">
+                        <span class="text-[11.5px] text-ink-2">
+                            Short by <span class="font-bold text-accent-2">{{ $flag->variance !== null ? number_format(abs($flag->variance), 0) : '—' }}{{ $flag->ingredient->unit ?? '' }}</span>
+                        </span>
+                        @if ($flag->shiftLog?->user)
+                            <span class="avatar-stack">
+                                <span class="avatar-stack__item bg-accent">{{ mb_substr($flag->shiftLog->user->name, 0, 1) }}</span>
                             </span>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-        </div>
-
-        {{-- Overall Leakage --}}
-        <div class="panel">
-            <div class="panel__head">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/></svg>
-                <span class="panel__title">Overall Leakage</span>
-            </div>
-            <div class="flex items-center gap-4">
-                <span class="text-[38px] font-extrabold {{ $leakage_pct > 10 ? 'text-accent-2' : 'text-green' }}">
-                    {{ number_format($leakage_pct, 1) }}%
-                </span>
-                <span class="text-[11px] leading-tight text-ink-3">
-                    of expected stock<br>unaccounted for
-                </span>
-            </div>
+                        @endif
+                    </div>
+                </a>
+            @empty
+                <div class="all-clear">Nothing flagged — all branches reconciled.</div>
+            @endforelse
         </div>
     </div>
 </div>
-
-{{-- ══ Recent Pending Alerts ══ --}}
-@if ($recent_flags->isNotEmpty())
-<div class="card mt-6">
-    <div class="card__head">
-        <span class="card__title">Recent Pending Alerts</span>
-        <a href="{{ route('alerts') }}" class="card__link">View All &rarr;</a>
-    </div>
-    <div class="overflow-x-auto">
-        <table class="data-table">
-            <thead>
-                <tr><th>Branch</th><th>Ingredient</th><th>Severity</th><th>Variance</th><th>Date</th></tr>
-            </thead>
-            <tbody>
-                @php $sevBadge = ['high' => 'badge-red', 'medium' => 'badge-amber', 'low' => 'badge-blue']; @endphp
-                @foreach ($recent_flags as $flag)
-                <tr>
-                    <td class="cell-primary">{{ $flag->branch->name ?? '—' }}</td>
-                    <td>{{ $flag->ingredient->name ?? '—' }}</td>
-                    <td><span class="badge {{ $sevBadge[$flag->severity] ?? 'badge-gray' }}">{{ ucfirst($flag->severity) }}</span></td>
-                    <td class="variance-cell">{{ $flag->variance !== null ? '−' . number_format(abs($flag->variance), 2) : '—' }}</td>
-                    <td class="text-ink-2">{{ $flag->created_at->format('M d, g:iA') }}</td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-</div>
-@endif
 @endsection

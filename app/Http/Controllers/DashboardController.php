@@ -54,6 +54,17 @@ class DashboardController extends Controller
                 ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
                 ->latest()->take(10)->get(),
 
+            // Revenue for each month of the current year, zero-filled so the
+            // chart always plots a full Jan–Dec axis.
+            'monthly_revenue' => collect(range(1, 12))->mapWithKeys(fn ($m) => [$m => 0.0])->merge(
+                Transaction::selectRaw('MONTH(created_at) as m, SUM(total_amount) as total')
+                    ->whereYear('created_at', now()->year)
+                    ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
+                    ->groupBy('m')
+                    ->pluck('total', 'm')
+                    ->map(fn ($v) => (float) $v)
+            ),
+
             'annual_revenue' => Transaction::whereYear('created_at', now()->year)
                 ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
                 ->sum('total_amount'),
