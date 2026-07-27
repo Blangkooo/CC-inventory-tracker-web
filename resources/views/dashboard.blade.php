@@ -28,41 +28,32 @@
     $peak   = max((float) $series->max(), 1);
     $bestIx = $series->search($series->max());
 
-    // ── Alert severity split, drives the status chart ───────────────────
-    $sevBars = [
-        'High'     => (int) ($flag_counts['high'] ?? 0),
-        'Moderate' => (int) ($flag_counts['medium'] ?? 0),
-        'Low'      => (int) ($flag_counts['low'] ?? 0),
-    ];
-    $sevPeak = max(max($sevBars), 1);
-
     $circumference = 2 * M_PI * 42;
 @endphp
 
 {{-- ══ Headline figures ══ --}}
 <div class="ncard ncard--split mb-4 grid-cols-1 sm:grid-cols-3">
     <div>
-        <div class="nstat__label">Total Branches</div>
-        <div class="nstat__value">{{ $total_branches }}</div>
-        <span class="trend__note ml-0">{{ $branches_with_sales->where('has_sales', true)->count() }} trading today</span>
+        <div class="nstat__label">Total Employees</div>
+        <div class="nstat__value">{{ $employees_total }}</div>
+        <span class="trend__note ml-0">staff &amp; managers</span>
     </div>
     <div>
-        <div class="nstat__label">Pending Alerts</div>
-        <div class="nstat__value">{{ $pending_alerts }}</div>
-        @if ($delta_alerts)
-            {{-- Fewer new alerts than last month is the good direction. --}}
-            <span class="trend trend--{{ $delta_alerts['direction'] === 'up' ? 'down' : 'up' }}">
-                {{ $delta_alerts['pct'] }}%{{ $delta_alerts['direction'] === 'up' ? '↑' : '↓' }}
+        <div class="nstat__label">New This Month</div>
+        <div class="nstat__value">{{ $employees_new }}</div>
+        @if ($delta_employees)
+            <span class="trend trend--{{ $delta_employees['direction'] }}">
+                {{ $delta_employees['pct'] }}%{{ $delta_employees['direction'] === 'up' ? '↑' : '↓' }}
             </span>
             <span class="trend__note">vs last month</span>
         @else
-            <span class="trend__note ml-0">no prior month to compare</span>
+            <span class="trend__note ml-0">joined this month</span>
         @endif
     </div>
     <div>
-        <div class="nstat__label">Low Stock Items</div>
-        <div class="nstat__value">{{ $low_stock_count }}</div>
-        <span class="trend__note ml-0">at or below threshold</span>
+        <div class="nstat__label">On Shift Now</div>
+        <div class="nstat__value">{{ $employees_on_shift }}</div>
+        <span class="trend__note ml-0">clocked in today</span>
     </div>
 </div>
 
@@ -208,28 +199,35 @@
     {{-- ══════════ Right column ══════════ --}}
     <div class="flex flex-col gap-4">
 
-        {{-- Alert Status --}}
+        {{-- Employee Status --}}
+        @php $rolePeak = max(max($employees_by_role), 1); @endphp
         <div class="ncard">
             <div class="flex items-start justify-between">
-                <span class="text-[15px] font-extrabold">Alert Status</span>
+                <span class="text-[15px] font-extrabold">Employee Status</span>
                 <div class="text-right">
-                    <div class="text-[30px] font-extrabold leading-none text-accent">{{ array_sum($sevBars) }}</div>
-                    <div class="text-[10px] leading-tight text-ink-3">pending across<br>all branches</div>
+                    <div class="text-[30px] font-extrabold leading-none text-accent">{{ $employees_total }}</div>
+                    @if ($delta_employees)
+                        <div class="text-[10px] leading-tight text-ink-3">
+                            {{ $delta_employees['pct'] }}% {{ $delta_employees['direction'] === 'up' ? 'more' : 'fewer' }} joined<br>vs last month
+                        </div>
+                    @else
+                        <div class="text-[10px] leading-tight text-ink-3">staff &amp;<br>managers</div>
+                    @endif
                 </div>
             </div>
 
-            @if (array_sum($sevBars) === 0)
-                <div class="all-clear">No pending alerts.</div>
+            @if ($employees_total === 0)
+                <div class="all-clear">No employees on record.</div>
             @else
                 <div class="mt-4 flex h-[130px] items-end gap-4 px-2">
-                    @foreach ($sevBars as $label => $count)
-                        <div class="flex flex-1 flex-col items-center gap-2">
-                            <div class="gbar w-full" style="height: {{ max(4, ($count / $sevPeak) * 110) }}px" title="{{ $count }}"></div>
+                    @foreach ($employees_by_role as $label => $count)
+                        <div class="flex flex-1 flex-col items-center">
+                            <div class="gbar w-full" style="height: {{ max(4, ($count / $rolePeak) * 110) }}px" title="{{ $count }}"></div>
                         </div>
                     @endforeach
                 </div>
                 <div class="mt-2 flex gap-4 px-2 text-center text-[11.5px] font-semibold text-ink-2">
-                    @foreach ($sevBars as $label => $count)
+                    @foreach ($employees_by_role as $label => $count)
                         <span class="flex-1">{{ $label }}</span>
                     @endforeach
                 </div>

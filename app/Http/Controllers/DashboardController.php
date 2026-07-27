@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\ShiftLog;
 use App\Models\ShiftStockCount;
 use App\Models\Transaction;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -58,7 +59,32 @@ class DashboardController extends Controller
             ->groupBy('m')
             ->pluck('total', 'm');
 
+        // ── Workforce ───────────────────────────────────────────────────
+        // "Employees" are the staff and managers; the owner is excluded.
+        $staffRoles = [User::ROLE_STAFF, User::ROLE_MANAGER];
+        $employees  = User::whereIn('role', $staffRoles)
+            ->when($isManager, fn ($q) => $q->where('branch_id', $branchId));
+
+        $employeesTotal = (clone $employees)->count();
+        $employeesNew   = (clone $employees)->where('created_at', '>=', $thisMonth)->count();
+        $employeesLast  = (clone $employees)->whereBetween('created_at', [$lastMonth, $thisMonth])->count();
+        $onShift        = ShiftLog::where('status', 'open')
+            ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
+            ->distinct('user_id')->count('user_id');
+
         return view('dashboard', [
+            // Workforce headline. Resignations and employment type (full/part
+            // time) are not in the schema, so the third tile and the status
+            // chart use role — the workforce split we can actually report.
+            'employees_total' => $employeesTotal,
+            'employees_new' => $employeesNew,
+            'employees_on_shift' => $onShift,
+            'delta_employees' => $this->delta($employeesNew, $employeesLast),
+            'employees_by_role' => [
+                'Managers' => (clone $employees)->where('role', User::ROLE_MANAGER)->count(),
+                'Staff' => (clone $employees)->where('role', User::ROLE_STAFF)->count(),
+                'On Shift' => $onShift,
+            ],
             // Each delta is [percent change, has_baseline]. Without a prior
             // period there is no honest percentage, so the view shows nothing.
             'delta_revenue' => $this->delta($revenueThis, $revenueLast),
