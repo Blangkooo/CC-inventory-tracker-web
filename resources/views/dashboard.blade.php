@@ -27,9 +27,18 @@
     ];
 @endphp
 
-<div class="content-header">
-    <h1 class="content-title">Dashboard</h1>
-    <span class="content-date">{{ now()->format('l, F j, Y') }}</span>
+{{-- Search + primary action --}}
+<div class="mb-5 flex items-center gap-3">
+    <label class="search-bar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="search" id="dashSearch" placeholder="Search…" autocomplete="off">
+        <kbd>⌘K</kbd>
+    </label>
+    <span class="ml-auto text-xs font-medium text-ink-2">{{ now()->format('l, F j, Y') }}</span>
+    <a href="{{ route('alerts') }}" class="btn-dark">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export
+    </a>
 </div>
 
 {{-- Gradient Metric Cards --}}
@@ -63,20 +72,23 @@
 {{-- Quick Stats --}}
 @php
     $quickStats = [
-        ['bg-blue/8 text-blue',   $total_branches,           'Total Branches', '<path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/>'],
-        ['bg-green/8 text-green', $ongoing_shifts->count(),  'Active Shifts',  '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>'],
-        ['bg-pink/8 text-pink',   $low_stock_count,          'Low Stock Items', '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>'],
+        ['Total Branches',  $total_branches,          null,                'across all locations'],
+        ['Active Shifts',   $ongoing_shifts->count(), null,                'clocked in right now'],
+        ['Low Stock Items', $low_stock_count,         $low_stock_count > 0, 'at or below threshold'],
     ];
 @endphp
 <div class="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-    @foreach ($quickStats as [$iconClass, $value, $label, $path])
-        <div class="flex items-center gap-3.5 rounded-card border border-line bg-card px-5 py-[18px] shadow-card">
-            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl {{ $iconClass }}">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">{!! $path !!}</svg>
-            </div>
-            <div>
-                <div class="text-[22px] font-black">{{ $value }}</div>
-                <div class="text-[11px] font-semibold text-ink-2">{{ $label }}</div>
+    @foreach ($quickStats as [$label, $value, $isWarning, $note])
+        <div class="rounded-card border border-line bg-card p-5 shadow-card">
+            <div class="text-[13px] font-medium text-ink-2">{{ $label }}</div>
+            <div class="mt-1.5 text-[32px] font-extrabold tracking-[-.02em]">{{ $value }}</div>
+            <div class="mt-2.5 flex items-center">
+                @isset($isWarning)
+                    <span class="delta {{ $isWarning ? 'delta--down' : 'delta--up' }}">
+                        {{ $isWarning ? 'Needs restock' : 'All stocked' }}
+                    </span>
+                @endisset
+                <span class="delta-note {{ isset($isWarning) ? '' : 'ml-0' }}">{{ $note }}</span>
             </div>
         </div>
     @endforeach

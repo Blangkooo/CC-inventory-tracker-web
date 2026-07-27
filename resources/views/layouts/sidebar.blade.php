@@ -38,11 +38,14 @@
             font-size: 13px; font-weight: 500; color: var(--text-2);
             text-decoration: none; transition: all .15s;
         }
-        .sidebar__link:hover { color: var(--text); background: rgba(0,0,0,.03); }
+        .sidebar__link:hover { color: var(--text); background: var(--color-surface-2); }
+        /* Active nav reads as a soft neutral pill; the accent is reserved for
+           primary actions so the sidebar stays quiet. */
         .sidebar__link.is-active {
-            color: var(--accent); background: var(--accent-light);
+            color: var(--text); background: var(--color-surface-2);
             font-weight: 700;
         }
+        .sidebar__link.is-active svg { color: var(--accent); }
         .sidebar__link svg { width: 18px; height: 18px; flex-shrink: 0; }
         .sidebar__link .badge-count {
             margin-left: auto; background: var(--accent-2); color: #fff;
@@ -81,7 +84,8 @@
         .sidebar__logout svg { width: 16px; height: 16px; }
 
         /* ═══ MAIN ═══ */
-        .content { margin-left: var(--sidebar-w); flex: 1; padding: 28px 32px; min-height: 100vh; }
+        .main { margin-left: var(--sidebar-w); flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 100vh; }
+        .content { flex: 1; padding: 24px 32px; }
 
         .content-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
         .content-title { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
@@ -97,7 +101,10 @@
         /* ═══ RESPONSIVE ═══ */
         @media (max-width: 768px) {
             .sidebar { display: none; }
-            .content { margin-left: 0; padding: 16px; }
+            .main { margin-left: 0; }
+            .content { padding: 16px; }
+            .topbar { padding: 0 16px; }
+            .topbar__user-name, .topbar__user-email { display: none; }
         }
 
         /* ═══ PAGE-SPECIFIC ═══ */
@@ -168,11 +175,12 @@
         </a>
     </nav>
 
+    {{-- The signed-in user now lives in the top bar; the footer keeps sign-out
+         plus the role, which is the one piece of identity worth showing twice. --}}
     <div class="sidebar__footer">
         <div class="sidebar__user">
-            <div class="sidebar__avatar">{{ $initials }}</div>
             <div>
-                <div class="sidebar__user-name">{{ $user->name }}</div>
+                <div class="sidebar__user-name">Signed in as</div>
                 <div class="sidebar__user-role">{{ $roleName }}</div>
             </div>
         </div>
@@ -186,19 +194,45 @@
     </div>
 </aside>
 
-<div class="content">
-    {{-- Pages that declare a subtitle let the layout render their header;
-         the rest supply their own heading markup inside @section('content'). --}}
-    @hasSection('subtitle')
-        <div class="content-header">
-            <div>
-                <h1 class="content-title">@yield('title', 'Dashboard')</h1>
-                <div class="content-subtitle">@yield('subtitle')</div>
-            </div>
-        </div>
-    @endif
+<div class="main">
+    <header class="topbar">
+        <div class="topbar__title">@yield('title', 'Dashboard')</div>
 
-    @yield('content')
+        <div class="topbar__actions">
+            <a href="{{ route('alerts') }}" class="topbar__icon" title="Help">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </a>
+            <a href="{{ route('alerts') }}" class="topbar__icon" title="{{ $pendingAlertCount }} pending alerts">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                @if ($pendingAlertCount > 0)<span class="dot"></span>@endif
+            </a>
+
+            <span class="topbar__divider"></span>
+
+            <a href="{{ route('settings') }}" class="topbar__user">
+                <span class="avatar">{{ $initials }}</span>
+                <span>
+                    <span class="topbar__user-name">{{ $user->name }}</span><br>
+                    <span class="topbar__user-email">{{ $user->email }}</span>
+                </span>
+            </a>
+        </div>
+    </header>
+
+    <div class="content">
+        {{-- Pages that declare a subtitle let the layout render their header;
+             the rest supply their own heading markup inside @section('content'). --}}
+        @hasSection('subtitle')
+            <div class="content-header">
+                <div>
+                    <h1 class="content-title">@yield('title', 'Dashboard')</h1>
+                    <div class="content-subtitle">@yield('subtitle')</div>
+                </div>
+            </div>
+        @endif
+
+        @yield('content')
+    </div>
 </div>
 
 </body>

@@ -269,19 +269,6 @@
         .content-head__title { font-size: 22px; font-weight: 800; letter-spacing: .02em; }
         .content-head__role { font-size: 15px; font-weight: 400; opacity: .5; }
 
-        .sub-tabs { display: flex; gap: 6px; }
-
-        .sub-tab {
-            display: flex; align-items: center; gap: 6px;
-            padding: 7px 16px; border-radius: 999px; font-size: 12px; font-weight: 600;
-            border: 1.5px solid var(--border); background: #fff; color: var(--brown);
-            text-decoration: none; transition: all .15s ease; cursor: pointer;
-        }
-
-        .sub-tab:hover { border-color: var(--terra); color: var(--terra); }
-        .sub-tab.is-active { background: var(--terra); color: #fff; border-color: var(--terra); }
-        .sub-tab.is-active svg { stroke: #fff; }
-
         .profile-card {
             background: #fff;
             border: 1.5px solid var(--border);
@@ -568,7 +555,6 @@
             .branch-card { flex: 1; min-height: 80px; }
             .employees-card { flex: 2; }
             .two-up { grid-template-columns: 1fr; }
-            .sub-tabs { flex-wrap: wrap; }
         }
 
         @media (max-width: 640px) {
@@ -664,8 +650,6 @@
             from { opacity: 0; transform: translateX(40px); }
             to { opacity: 1; transform: translateX(0); }
         }
-
-
 
         /* ── Attendance / Timesheet ── */
         .badge {
@@ -806,32 +790,7 @@
                 <h1 class="content-head__title">Businesses</h1>
                 <span class="content-head__role">/ Owner</span>
             </div>
-            <div class="sub-tabs">
-                <a href="{{ url('/business/summary') }}" class="sub-tab">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
-                    </svg>
-                    Summary
-                </a>
-                <a href="{{ url('/business/recipes') }}" class="sub-tab">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-                    </svg>
-                    Recipe
-                </a>
-                <a href="{{ url('/business/workers') }}" class="sub-tab is-active">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                    </svg>
-                    Workers
-                </a>
-                <a href="{{ url('/business/verification') }}" class="sub-tab">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                    Verification
-                </a>
-            </div>
+            @include('partials._business-tabs', ['active' => 'workers'])
         </div>
 
         {{-- Worker Profile Card --}}
@@ -1010,9 +969,9 @@
                 </svg>
                 <span class="summary-table-wrap__title">Activity — <span id="activityName">{{ $selectedWorker->name }}</span></span>
                 <div style="margin-left:auto;display:flex;gap:4px;">
-                    <button type="button" class="sub-tab is-active" id="actTabTransactions" onclick="switchActivity({{ $selectedWorker->id }}, 'transactions')" style="padding:4px 12px;font-size:11px;">Orders</button>
-                    <button type="button" class="sub-tab" id="actTabShifts" onclick="switchActivity({{ $selectedWorker->id }}, 'shifts')" style="padding:4px 12px;font-size:11px;">Shifts</button>
-                    <button type="button" class="sub-tab" id="actTabDiscrepancies" onclick="switchActivity({{ $selectedWorker->id }}, 'discrepancies')" style="padding:4px 12px;font-size:11px;">Variances</button>
+                    <button type="button" class="tab active !px-3 !py-1 !text-[11px]" id="actTabTransactions" onclick="switchActivity({{ $selectedWorker->id }}, 'transactions')">Orders</button>
+                    <button type="button" class="tab !px-3 !py-1 !text-[11px]" id="actTabShifts" onclick="switchActivity({{ $selectedWorker->id }}, 'shifts')">Shifts</button>
+                    <button type="button" class="tab !px-3 !py-1 !text-[11px]" id="actTabDiscrepancies" onclick="switchActivity({{ $selectedWorker->id }}, 'discrepancies')">Variances</button>
                 </div>
             </div>
             <div id="activityBody">
@@ -1884,10 +1843,10 @@
         currentActivityWorker = workerId;
         currentActivityType = type;
 
-        document.querySelectorAll('[id^="actTab"]').forEach(t => t.classList.remove('is-active'));
+        document.querySelectorAll('[id^="actTab"]').forEach(t => t.classList.remove('active'));
         const tabId = 'actTab' + type.charAt(0).toUpperCase() + type.slice(1);
         const tabEl = document.getElementById(tabId);
-        if (tabEl) tabEl.classList.add('is-active');
+        if (tabEl) tabEl.classList.add('active');
 
         const thead = document.querySelector('#activityTable thead tr');
         if (type === 'shifts') {

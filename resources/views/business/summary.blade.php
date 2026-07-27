@@ -90,18 +90,6 @@
         .page-header h1 { font-size: 22px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; }
         .page-header h1 .pipe { font-weight: 400; opacity: .5; }
 
-        .sub-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-
-        .sub-tab {
-            display: flex; align-items: center; gap: 6px;
-            padding: 7px 16px; border-radius: 999px; font-size: 12px; font-weight: 600;
-            color: var(--brown); border: 1.5px solid var(--border); background: #fff;
-            text-decoration: none; transition: all .15s ease;
-        }
-
-        .sub-tab:hover { border-color: var(--terra); color: var(--terra); }
-        .sub-tab.active { background: var(--terra); color: #fff; border-color: var(--terra); }
-
         /* ══ SUMMARY GRID ══ */
         .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
@@ -206,32 +194,7 @@
 
         <div class="page-header">
             <h1>Businesses <span class="pipe">|</span> {{ $isOwner ? 'Owner' : 'Manager' }}</h1>
-            <div class="sub-tabs">
-                <a href="{{ url('/business/summary') }}" class="sub-tab active">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
-                    </svg>
-                    Summary
-                </a>
-                <a href="{{ url('/business/recipes') }}" class="sub-tab">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-                    </svg>
-                    Recipe
-                </a>
-                <a href="{{ url('/business/workers') }}" class="sub-tab">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                    </svg>
-                    Staff
-                </a>
-                <a href="{{ url('/business/verification') }}" class="sub-tab">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                    Verification
-                </a>
-            </div>
+            @include('partials._business-tabs', ['active' => 'summary'])
         </div>
 
         {{-- 2-Column Grid --}}
