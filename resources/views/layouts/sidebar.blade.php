@@ -5,30 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') — NITA</title>
+    @vite(['resources/css/app.css'])
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-        :root {
-            --sidebar-w: 250px;
-            --bg: #f0f2f5;
-            --card: #ffffff;
-            --text: #1a1a2e;
-            --text-2: #636e72;
-            --text-3: #b2bec3;
-            --accent: #e17055;
-            --accent-2: #d63031;
-            --accent-light: rgba(225,112,85,.08);
-            --blue: #6c5ce7;
-            --green: #00b894;
-            --orange: #fdcb6e;
-            --pink: #fd79a8;
-            --border: rgba(0,0,0,.06);
-            --shadow: 0 1px 3px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.03);
-            --shadow-md: 0 4px 20px rgba(0,0,0,.08);
-            --radius: 14px;
-            --font: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
 
         body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
 
@@ -106,38 +85,14 @@
 
         .content-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
         .content-title { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
+        .content-subtitle { font-size: 13px; color: var(--text-2); margin-top: 2px; }
         .content-date { font-size: 13px; color: var(--text-2); font-weight: 500; }
 
-        /* ═══ SHARED COMPONENTS ═══ */
-        .card {
-            background: var(--card); border-radius: var(--radius);
-            box-shadow: var(--shadow); border: 1px solid var(--border);
-        }
-        .card__head {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 16px 20px; border-bottom: 1px solid var(--border);
-        }
-        .card__title { font-size: 13px; font-weight: 700; }
-        .card__body { padding: 16px 20px; }
+        /* Shared components (.card, .badge, .btn-primary, .data-table, …)
+           now live in resources/css/app.css. */
         .card__link { font-size: 12px; font-weight: 600; color: var(--accent); text-decoration: none; }
         .card__link:hover { text-decoration: underline; }
-
-        .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 999px; text-transform: uppercase; }
-        .badge-green { background: rgba(0,184,148,.1); color: #00b894; }
-        .badge-amber { background: rgba(253,203,110,.15); color: #e17055; }
-        .badge-red { background: rgba(214,48,49,.08); color: #d63031; }
-        .badge-gray { background: rgba(0,0,0,.04); color: var(--text-2); }
-        .badge-blue { background: rgba(108,92,231,.08); color: #6c5ce7; }
-
-        .empty-state { text-align: center; padding: 32px; font-size: 13px; color: var(--text-3); }
-
-        .btn-primary {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 10px 20px; background: var(--accent); color: #fff;
-            border: none; border-radius: 10px; font-size: 13px; font-weight: 700;
-            font-family: var(--font); cursor: pointer; transition: all .15s;
-        }
-        .btn-primary:hover { background: #d35e47; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(225,112,85,.3); }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(225,112,85,.3); }
 
         /* ═══ RESPONSIVE ═══ */
         @media (max-width: 768px) {
@@ -232,6 +187,17 @@
 </aside>
 
 <div class="content">
+    {{-- Pages that declare a subtitle let the layout render their header;
+         the rest supply their own heading markup inside @section('content'). --}}
+    @hasSection('subtitle')
+        <div class="content-header">
+            <div>
+                <h1 class="content-title">@yield('title', 'Dashboard')</h1>
+                <div class="content-subtitle">@yield('subtitle')</div>
+            </div>
+        </div>
+    @endif
+
     @yield('content')
 </div>
 

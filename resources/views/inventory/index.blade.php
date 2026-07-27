@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.sidebar')
 
 @section('title', 'Inventory Levels')
 @section('subtitle', 'Live stock across all branches &middot; updated per transaction')

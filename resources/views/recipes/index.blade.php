@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.sidebar')
 
 @section('title', 'Recipes & Formulas')
 @section('subtitle', 'Ingredient-to-product mappings &middot; controls auto-deduction')

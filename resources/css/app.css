@@ -1,9 +1,290 @@
 @import 'tailwindcss';
 
+@source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
+/*
+ * NITA design tokens.
+ *
+ * Tailwind v4 emits every @theme entry as a real CSS variable on :root, so
+ * these double as the source of truth for both utility classes (bg-card,
+ * text-ink-2, rounded-card) and the hand-written CSS still left in the
+ * blade files. The legacy --accent / --text / --border aliases below bridge
+ * the two while pages are migrated one at a time.
+ */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --color-bg: #f0f2f5;
+    --color-card: #ffffff;
+
+    --color-ink: #1a1a2e;
+    --color-ink-2: #636e72;
+    --color-ink-3: #b2bec3;
+
+    --color-accent: #e17055;
+    --color-accent-2: #d63031;
+    --color-accent-light: rgba(225, 112, 85, 0.08);
+
+    --color-blue: #6c5ce7;
+    --color-green: #00b894;
+    --color-orange: #fdcb6e;
+    --color-pink: #fd79a8;
+
+    --color-line: rgba(0, 0, 0, 0.06);
+
+    --radius-card: 14px;
+
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.03);
+    --shadow-card-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+
+    --spacing-sidebar: 250px;
+}
+
+/*
+ * Shared component classes.
+ *
+ * These were duplicated across the two sidebar layouts that used to exist.
+ * They live here so there is one definition, and so Tailwind utilities can be
+ * mixed into the same markup. Page-specific styling stays in its blade file.
+ */
+@layer components {
+    .card {
+        background: var(--color-card);
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-card);
+    }
+    .card__head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--color-line);
+    }
+    .card__title { font-size: 13px; font-weight: 700; }
+    .card__body { padding: 16px 20px; }
+
+    .card-panel {
+        background: var(--color-card);
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+    }
+
+    .badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 999px;
+        text-transform: uppercase;
+    }
+    .badge.green, .badge-green { background: rgba(0, 184, 148, 0.1); color: var(--color-green); }
+    .badge.amber, .badge-amber { background: rgba(253, 203, 110, 0.15); color: var(--color-accent); }
+    .badge.red,   .badge-red   { background: rgba(214, 48, 49, 0.08); color: var(--color-accent-2); }
+    .badge.gray,  .badge-gray  { background: rgba(0, 0, 0, 0.04); color: var(--color-ink-2); }
+    .badge.blue,  .badge-blue  { background: rgba(108, 92, 231, 0.08); color: var(--color-blue); }
+
+    .empty-state { text-align: center; padding: 32px; font-size: 13px; color: var(--color-ink-3); }
+    .all-clear {
+        color: var(--color-green);
+        font-size: 13px;
+        font-weight: 600;
+        text-align: center;
+        padding: 36px 8px;
+    }
+
+    .filter-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+    .tab {
+        padding: 7px 16px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--color-ink-2);
+        cursor: pointer;
+        border: 1.5px solid transparent;
+        background: transparent;
+        transition: all 0.15s;
+        text-decoration: none;
+        font-family: var(--font-sans);
+    }
+    .tab:hover  { color: var(--color-ink); background: rgba(0, 0, 0, 0.03); }
+    .tab.active { background: var(--color-accent-light); color: var(--color-accent); border-color: var(--color-accent); }
+
+    .toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+    }
+    .select-filter {
+        height: 38px;
+        padding: 0 14px;
+        background: var(--color-card);
+        border: 1.5px solid var(--color-line);
+        border-radius: 10px;
+        font-size: 13px;
+        color: var(--color-ink);
+        font-family: var(--font-sans);
+        cursor: pointer;
+    }
+
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table thead th {
+        text-align: left;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--color-ink-3);
+        padding: 12px 16px;
+        background: rgba(0, 0, 0, 0.01);
+        border-bottom: 1px solid var(--color-line);
+    }
+    .data-table tbody td { padding: 13px 16px; font-size: 13px; border-bottom: 1px solid var(--color-line); }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+    .data-table tbody tr:hover { background: var(--color-accent-light); }
+    .cell-primary  { font-weight: 600; }
+    .variance-cell { color: var(--color-accent-2); font-weight: 700; }
+
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 20px;
+        background: var(--color-accent);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 700;
+        font-family: var(--font-sans);
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .btn-primary:hover { background: #d35e47; }
+
+    .btn-pill {
+        padding: 5px 14px;
+        background: var(--color-accent-light);
+        color: var(--color-accent);
+        border: 1px solid rgba(225, 112, 85, 0.3);
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: var(--font-sans);
+        transition: all 0.15s;
+        text-decoration: none;
+    }
+    .btn-pill:hover { background: var(--color-accent); color: #fff; }
+
+    .summary-cards { display: flex; gap: 16px; margin-bottom: 20px; }
+    .summary-card {
+        flex: 1;
+        background: var(--color-card);
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-card);
+        padding: 20px;
+        text-align: center;
+    }
+    .summary-count { font-size: 32px; font-weight: 800; }
+    .summary-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-ink-3);
+        margin-top: 4px;
+    }
+    .summary-card.green .summary-count { color: var(--color-green); }
+    .summary-card.amber .summary-count { color: var(--color-accent); }
+    .summary-card.red   .summary-count { color: var(--color-accent-2); }
+
+    .master-detail { display: grid; grid-template-columns: 200px 1fr; gap: 20px; }
+    .widget {
+        background: var(--color-card);
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
+    .widget-head { padding: 14px 20px; border-bottom: 1px solid var(--color-line); }
+    .widget-head h2 { font-size: 13px; font-weight: 700; }
+
+    .biz-list { display: flex; flex-direction: column; padding: 6px; }
+    .biz-list a {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        color: var(--color-ink-2);
+        transition: background 0.12s;
+    }
+    .biz-list a:hover  { background: rgba(0, 0, 0, 0.03); }
+    .biz-list a.active { background: var(--color-accent-light); color: var(--color-accent); font-weight: 700; }
+    .biz-list .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .biz-list .dot.green { background: var(--color-green); }
+    .biz-list .dot.red   { background: var(--color-accent-2); }
+
+    .detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .detail-header h2 { font-size: 18px; font-weight: 800; }
+    .detail-sub { font-size: 12px; color: var(--color-ink-3); margin-left: auto; }
+
+    .dash-main { display: flex; flex-direction: column; gap: 16px; }
+    .two-up { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .stat-card {
+        background: var(--color-card);
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-card);
+        padding: 20px;
+    }
+    .stat-label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--color-ink-3);
+    }
+    .stat-value { font-size: 30px; font-weight: 800; margin: 6px 0 4px; }
+    .stat-note  { font-size: 11px; color: var(--color-ink-3); }
+}
+
+/*
+ * Legacy aliases. Page CSS written before the Tailwind migration references
+ * these names directly; they now resolve to the tokens above so there is a
+ * single place to change a colour. Remove an alias once no blade file uses it.
+ */
+:root {
+    --sidebar-w: var(--spacing-sidebar);
+    --bg: var(--color-bg);
+    --card: var(--color-card);
+    --text: var(--color-ink);
+    --text-2: var(--color-ink-2);
+    --text-3: var(--color-ink-3);
+    --accent: var(--color-accent);
+    --accent-2: var(--color-accent-2);
+    --accent-light: var(--color-accent-light);
+    --blue: var(--color-blue);
+    --green: var(--color-green);
+    --orange: var(--color-orange);
+    --pink: var(--color-pink);
+    --border: var(--color-line);
+    --shadow: var(--shadow-card);
+    --shadow-md: var(--shadow-card-md);
+    --radius: var(--radius-card);
+    --font: var(--font-sans);
 }

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.sidebar')
 
 @section('title', $branch->name)
 @section('subtitle', ($branch->location ? $branch->location . ' &middot; ' : '') . ucfirst($branch->status))

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.sidebar')
 
 @section('title', 'Businesses')
 @section('subtitle', 'All franchise locations')

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.sidebar')
 
 @section('title', 'Discrepancy Alerts')
 @section('subtitle', 'Stock mismatches and shift variances requiring review')
