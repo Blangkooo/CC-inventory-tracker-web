@@ -24,7 +24,48 @@ class DashboardController extends Controller
             'shiftLog', fn ($q2) => $q2->where('branch_id', $branchId)
         ))->sum('closing_quantity_expected');
 
+        // ── Month-over-month comparisons ────────────────────────────────
+        // The design labels most figures "vs last month". Nothing is stored
+        // per-period, so each pair is recomputed from its source table.
+        $thisMonth = now()->startOfMonth();
+        $lastMonth = now()->subMonthNoOverflow()->startOfMonth();
+
+        $revenueFor = fn ($from, $to) => (float) Transaction::whereBetween('created_at', [$from, $to])
+            ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
+            ->sum('total_amount');
+
+        $revenueThis = $revenueFor($thisMonth, now());
+        $revenueLast = $revenueFor($lastMonth, $thisMonth);
+
+        $alertsFor = fn ($from, $to) => DiscrepancyAlert::whereBetween('created_at', [$from, $to])
+            ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
+            ->count();
+
+        $alertsThis = $alertsFor($thisMonth, now());
+        $alertsLast = $alertsFor($lastMonth, $thisMonth);
+
+        $leakFor = fn ($from, $to) => (float) ShiftStockCount::where('variance', '<', 0)
+            ->whereHas('shiftLog', fn ($q) => $q->whereBetween('shift_start', [$from, $to])
+                ->when($isManager, fn ($q2) => $q2->where('branch_id', $branchId)))
+            ->sum(DB::raw('ABS(variance)'));
+
+        $leakThis = $leakFor($thisMonth, now());
+        $leakLast = $leakFor($lastMonth, $thisMonth);
+
+        $monthlyTotals = Transaction::selectRaw('MONTH(created_at) as m, SUM(total_amount) as total')
+            ->whereYear('created_at', now()->year)
+            ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
+            ->groupBy('m')
+            ->pluck('total', 'm');
+
         return view('dashboard', [
+            // Each delta is [percent change, has_baseline]. Without a prior
+            // period there is no honest percentage, so the view shows nothing.
+            'delta_revenue' => $this->delta($revenueThis, $revenueLast),
+            'delta_alerts' => $this->delta($alertsThis, $alertsLast),
+            'delta_leakage' => $this->delta($leakThis, $leakLast),
+            'revenue_this_month' => $revenueThis,
+
             'total_branches' => Branch::count(),
             'pending_alerts' => DiscrepancyAlert::where('status', 'pending')
                 ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
@@ -54,16 +95,13 @@ class DashboardController extends Controller
                 ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
                 ->latest()->take(10)->get(),
 
-            // Revenue for each month of the current year, zero-filled so the
-            // chart always plots a full Jan–Dec axis.
-            'monthly_revenue' => collect(range(1, 12))->mapWithKeys(fn ($m) => [$m => 0.0])->merge(
-                Transaction::selectRaw('MONTH(created_at) as m, SUM(total_amount) as total')
-                    ->whereYear('created_at', now()->year)
-                    ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
-                    ->groupBy('m')
-                    ->pluck('total', 'm')
-                    ->map(fn ($v) => (float) $v)
-            ),
+            // Revenue for each month of the current year as exactly twelve
+            // values, so the chart always plots a full Jan–Dec axis. Built by
+            // mapping over the months rather than merging into a zero-filled
+            // collection, since merge() renumbers integer keys.
+            'monthly_revenue' => collect(range(1, 12))
+                ->map(fn ($m) => (float) ($monthlyTotals[$m] ?? 0))
+                ->values(),
 
             'annual_revenue' => Transaction::whereYear('created_at', now()->year)
                 ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
@@ -108,6 +146,29 @@ class DashboardController extends Controller
                 ->take(4)
                 ->get(),
         ]);
+    }
+
+    /**
+     * Percentage change between two periods.
+     *
+     * Returns null when the prior period has no baseline to divide by — the
+     * dashboard labels these "vs last month", and a percentage against zero
+     * would be presented as fact while meaning nothing.
+     *
+     * @return array{pct: float, direction: string}|null
+     */
+    private function delta(float $current, float $previous): ?array
+    {
+        if ($previous <= 0.0) {
+            return null;
+        }
+
+        $pct = (($current - $previous) / $previous) * 100;
+
+        return [
+            'pct' => round(abs($pct), 1),
+            'direction' => $pct >= 0 ? 'up' : 'down',
+        ];
     }
 
     /**

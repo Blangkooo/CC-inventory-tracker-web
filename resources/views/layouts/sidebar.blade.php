@@ -198,6 +198,13 @@
     <header class="topbar">
         <div class="topbar__title">@yield('title', 'Dashboard')</div>
 
+        {{-- Primary areas, mirroring the pills in the approved design. --}}
+        <nav class="topnav">
+            <a href="{{ route('dashboard') }}" class="topnav__pill {{ $currentRoute === 'dashboard' ? 'is-active' : '' }}">Dashboard</a>
+            <a href="{{ route('business.recipes') }}" class="topnav__pill {{ str_starts_with($currentRoute, 'business') ? 'is-active' : '' }}">Businesses</a>
+            <a href="{{ route('logistics') }}" class="topnav__pill {{ $currentRoute === 'logistics' ? 'is-active' : '' }}">Logistics</a>
+        </nav>
+
         <div class="topbar__actions">
             <a href="{{ route('alerts') }}" class="topbar__icon" title="Help">
                 <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>

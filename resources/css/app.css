@@ -324,6 +324,19 @@
 
     .topbar__divider { width: 1px; height: 24px; background: var(--color-line); margin: 0 8px; }
 
+    .topnav { display: flex; align-items: center; gap: 6px; }
+    .topnav__pill {
+        padding: 8px 18px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--color-ink-2);
+        text-decoration: none;
+        transition: all 0.15s;
+    }
+    .topnav__pill:hover { background: var(--color-surface-2); color: var(--color-ink); }
+    .topnav__pill.is-active { background: var(--color-accent); color: #fff; }
+
     .topbar__user {
         display: flex;
         align-items: center;
@@ -615,6 +628,74 @@
     .legend-stat__swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
     .legend-stat__value { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
     .legend-stat__pct { font-size: 12px; font-weight: 500; color: var(--color-ink-3); margin-left: 4px; }
+
+    /* ── NITA reporting design ──────────────────────────────────────────
+       Outlined cards, terracotta figures, and a green arrow for the
+       month-over-month change. */
+    .ncard {
+        background: var(--color-card);
+        border: 1.5px solid var(--color-accent);
+        border-radius: 12px;
+        padding: 16px 18px;
+    }
+
+    /* Several figures sharing one outline, split by hairline rules. */
+    .ncard--split { padding: 0; display: grid; }
+    .ncard--split > * { padding: 16px 18px; }
+    .ncard--split > * + * { border-left: 1.5px solid var(--color-line); }
+
+    .nstat__label { font-size: 13.5px; font-weight: 700; color: var(--color-ink); }
+    .nstat__value {
+        font-size: 34px;
+        font-weight: 800;
+        color: var(--color-accent);
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+        margin: 4px 0 6px;
+    }
+
+    .trend { font-size: 12px; font-weight: 700; }
+    .trend--up   { color: var(--color-green); }
+    .trend--down { color: var(--color-accent-2); }
+    .trend--flat { color: var(--color-ink-3); }
+    .trend__note { font-size: 11px; font-weight: 500; color: var(--color-ink-3); margin-left: 4px; }
+
+    .nsection {
+        display: flex;
+        align-items: baseline;
+        gap: 9px;
+        font-size: 20px;
+        font-weight: 800;
+        color: var(--color-accent);
+        letter-spacing: -0.01em;
+    }
+    .nsection__pipe { opacity: 0.4; font-weight: 400; }
+
+    /* Ranked list: "1. Coffee Shop" */
+    .rank-list { counter-reset: rank; font-size: 12.5px; }
+    .rank-list__item {
+        counter-increment: rank;
+        display: flex;
+        gap: 6px;
+        padding: 2.5px 0;
+        color: var(--color-ink);
+    }
+    .rank-list__item::before { content: counter(rank) '.'; color: var(--color-ink-3); font-weight: 600; }
+
+    /* Goal dial: cream track with a terracotta wedge */
+    .goal { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .goal__pct { font-size: 22px; font-weight: 800; color: var(--color-accent); }
+    .goal__target { font-size: 10.5px; font-weight: 500; color: var(--color-ink-3); }
+
+    /* Gradient columns used by the KPI and status charts */
+    .gbar {
+        border-radius: 4px 4px 0 0;
+        background: linear-gradient(180deg, var(--color-accent) 0%, rgb(225 112 85 / 0.25) 100%);
+        min-height: 4px;
+    }
+    .gbar--soft {
+        background: linear-gradient(180deg, var(--color-cream-deep) 0%, rgb(250 229 176 / 0.3) 100%);
+    }
 }
 
 /*
