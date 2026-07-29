@@ -7,6 +7,7 @@ use App\Models\PurchaseHistory;
 use App\Models\Supplier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class SupplierController extends Controller
@@ -31,7 +32,13 @@ class SupplierController extends Controller
             'address' => ['nullable', 'string'],
             'landmark' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
+            'photo' => ['nullable', 'image', 'max:5120'],
         ]);
+
+        if ($request->hasFile('photo')) {
+            $validated['photo_path'] = $request->file('photo')->store('suppliers', 'public');
+        }
+        unset($validated['photo']);
 
         $supplier = Supplier::create($validated);
 
@@ -55,7 +62,17 @@ class SupplierController extends Controller
             'landmark' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
+            'photo' => ['nullable', 'image', 'max:5120'],
         ]);
+
+        if ($request->hasFile('photo')) {
+            // Replace rather than accumulate — a supplier keeps one photo.
+            if ($supplier->photo_path) {
+                Storage::disk('public')->delete($supplier->photo_path);
+            }
+            $validated['photo_path'] = $request->file('photo')->store('suppliers', 'public');
+        }
+        unset($validated['photo']);
 
         $supplier->update($validated);
 
@@ -64,6 +81,10 @@ class SupplierController extends Controller
 
     public function destroy(Supplier $supplier): JsonResponse
     {
+        if ($supplier->photo_path) {
+            Storage::disk('public')->delete($supplier->photo_path);
+        }
+
         $supplier->delete();
 
         return response()->json(['success' => true]);

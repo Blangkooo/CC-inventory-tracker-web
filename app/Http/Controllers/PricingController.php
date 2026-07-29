@@ -10,8 +10,10 @@ class PricingController extends Controller
 {
     public function index(): View
     {
+        // Discontinued products stay on the page rather than vanishing — an
+        // owner comparing margins needs to see what was retired, marked as
+        // such, instead of silently losing the row.
         $products = Product::with('recipes.ingredient.suppliers')
-            ->where('is_active', true)
             ->orderBy('name')
             ->get()
             ->map(function ($product) {
@@ -22,6 +24,7 @@ class PricingController extends Controller
                     $lineCost = $unitCost * (float) $recipe->quantity_required;
 
                     return [
+                        'id' => $ingredient->id,
                         'name' => $ingredient->name,
                         'unit' => $ingredient->unit,
                         'size' => $recipe->size,
@@ -53,10 +56,30 @@ class PricingController extends Controller
                     'category' => $product->category,
                     'price' => $price,
                     'sizes' => $sizes,
+                    'is_active' => (bool) $product->is_active,
                 ];
             });
 
-        return view('pricing.index', ['products' => $products]);
+        // Only ingredients that actually appear in a recipe can move a margin,
+        // so the simulator's picker is built from those rather than the full
+        // ingredient list.
+        $simulatable = $products
+            ->flatMap(fn ($p) => collect($p['sizes'])->flatMap(fn ($s) => $s['ingredients']))
+            ->filter(fn ($i) => $i['unit_cost'] > 0)
+            ->unique('id')
+            ->sortBy('name')
+            ->values()
+            ->map(fn ($i) => [
+                'id' => $i['id'],
+                'name' => $i['name'],
+                'unit' => $i['unit'],
+                'unit_cost' => $i['unit_cost'],
+            ]);
+
+        return view('pricing.index', [
+            'products' => $products,
+            'simulatable' => $simulatable,
+        ]);
     }
 
     public function simulate(): JsonResponse

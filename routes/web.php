@@ -1,11 +1,20 @@
 <?php
 
 use App\Http\Controllers\AlertsController;
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AuthOnboardingController;
 use App\Http\Controllers\BranchesController;
+use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HiringController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\LegalPapersController;
+use App\Http\Controllers\NoticesController;
+use App\Http\Controllers\PaymentsController;
 use App\Http\Controllers\RecipesController;
+use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\SalaryController;
+use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -57,6 +66,84 @@ Route::post('/login', function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // ── Static Pages ──────────────────────────────────────────────────
+    Route::get('/help-center', fn () => view('pages.help-center'))->name('help-center');
+    Route::get('/about', fn () => view('pages.about'))->name('about');
+
+    // ── Mail/Messages ─────────────────────────────────────────────────
+    Route::get('/mail', [NoticesController::class, 'index'])->name('notices.index');
+    Route::post('/mail', [NoticesController::class, 'store'])->name('notices.store');
+    Route::delete('/mail/{notice}', [NoticesController::class, 'destroy'])->name('notices.destroy');
+
+    /*
+     * Everything below is closed to staff. These screens read across the whole
+     * branch (pay rates, expense ledgers, revenue) and the controllers treat
+     * "not a manager" as "may see every branch" — so without this gate a staff
+     * account would see more than a manager, not less.
+     */
+    Route::middleware('role:super_admin,manager')->group(function () {
+        // ── Calendar ──────────────────────────────────────────────────
+        Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
+        Route::post('/calendar/events', [CalendarController::class, 'store'])->name('calendar.events.store');
+        Route::put('/calendar/events/{event}', [CalendarController::class, 'update'])->name('calendar.events.update');
+        Route::delete('/calendar/events/{event}', [CalendarController::class, 'destroy'])->name('calendar.events.destroy');
+
+        // ── Salary ────────────────────────────────────────────────────
+        Route::get('/salary', [SalaryController::class, 'index'])->name('salary.index');
+        Route::post('/salary/payslips', [SalaryController::class, 'generate'])->name('salary.generate');
+        Route::get('/salary/payslips/{payslip}', [SalaryController::class, 'show'])->name('salary.show');
+        Route::post('/salary/payslips/{payslip}/mark-paid', [SalaryController::class, 'markPaid'])->name('salary.mark-paid');
+
+        // ── Payments ──────────────────────────────────────────────────
+        Route::get('/payments', [PaymentsController::class, 'index'])->name('payments.index');
+        Route::post('/payments', [PaymentsController::class, 'store'])->name('payments.store');
+        Route::put('/payments/{payment}', [PaymentsController::class, 'update'])->name('payments.update');
+        Route::post('/payments/{payment}/mark-paid', [PaymentsController::class, 'markPaid'])->name('payments.mark-paid');
+        Route::delete('/payments/{payment}', [PaymentsController::class, 'destroy'])->name('payments.destroy');
+
+        // ── Hiring ────────────────────────────────────────────────────
+        Route::get('/hiring', [HiringController::class, 'index'])->name('hiring.index');
+        Route::post('/hiring/openings', [HiringController::class, 'storeOpening'])->name('hiring.openings.store');
+        Route::put('/hiring/openings/{opening}', [HiringController::class, 'updateOpening'])->name('hiring.openings.update');
+        Route::delete('/hiring/openings/{opening}', [HiringController::class, 'destroyOpening'])->name('hiring.openings.destroy');
+        Route::post('/hiring/openings/{opening}/applicants', [HiringController::class, 'storeApplicant'])->name('hiring.applicants.store');
+        Route::put('/hiring/applicants/{applicant}/status', [HiringController::class, 'updateApplicantStatus'])->name('hiring.applicants.status');
+        Route::delete('/hiring/applicants/{applicant}', [HiringController::class, 'destroyApplicant'])->name('hiring.applicants.destroy');
+
+        // ── Legal Papers ──────────────────────────────────────────────
+        Route::get('/legal-papers', [LegalPapersController::class, 'index'])->name('legal-papers.index');
+        Route::get('/legal-papers/{document}/download', [LegalPapersController::class, 'download'])->name('legal-papers.download');
+    });
+
+    /*
+     * Owner-only: setting what a worker is paid, and adding or removing the
+     * company's legal records, are ownership decisions rather than day-to-day
+     * branch management.
+     */
+    Route::middleware('role:super_admin')->group(function () {
+        Route::put('/salary/workers/{user}/rate', [SalaryController::class, 'updateRate'])->name('salary.rate.update');
+
+        Route::post('/legal-papers', [LegalPapersController::class, 'store'])->name('legal-papers.store');
+        Route::put('/legal-papers/{document}', [LegalPapersController::class, 'update'])->name('legal-papers.update');
+        Route::delete('/legal-papers/{document}', [LegalPapersController::class, 'destroy'])->name('legal-papers.destroy');
+    });
+
+    // ── Analytics & Reports (revenue figures — not for staff) ───────────
+    Route::middleware('role:super_admin,manager')->group(function () {
+        Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
+
+        Route::get('/reports', [ReportsController::class, 'index'])->name('reports.index');
+        Route::get('/reports/{type}', [ReportsController::class, 'show'])
+            ->whereIn('type', ['sales', 'inventory', 'payroll', 'purchases'])
+            ->name('reports.show');
+        Route::get('/reports/{type}/export', [ReportsController::class, 'export'])
+            ->whereIn('type', ['sales', 'inventory', 'payroll', 'purchases'])
+            ->name('reports.export');
+        Route::get('/reports/{type}/pdf', [ReportsController::class, 'exportPdf'])
+            ->whereIn('type', ['sales', 'inventory', 'payroll', 'purchases'])
+            ->name('reports.pdf');
+    });
 
     // ── Staff Dashboard (self-service: clock in/out, verify stock) ─────
     Route::get('/staff/dashboard', [\App\Http\Controllers\StaffDashboardController::class, 'index'])
@@ -251,9 +338,8 @@ Route::middleware('auth')->group(function () {
         return response()->file($path);
     })->name('api.docs');
 
-    Route::get('/settings', function () {
-        return view('settings.index');
-    })->name('settings');
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
+    Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
 
     // ── Pricing Simulator ─────────────────────────────────────────────
     Route::get('/pricing', [\App\Http\Controllers\PricingController::class, 'index'])

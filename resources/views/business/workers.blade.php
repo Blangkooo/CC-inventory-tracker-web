@@ -130,633 +130,57 @@
 
 @section('title', 'Workers')
 
-@section('styles')
-        :root {
-            --terra-dk: #A8523E;
-            --border-light: rgba(92,45,27,.08);
-            --shadow-md: 0 2px 8px rgba(92,45,27,.1), 0 8px 24px rgba(92,45,27,.07);
-            --radius-sm: 8px;
-        }
-
-        /* ── WORKSPACE LAYOUT ── */
-        .workspace {
-            max-width: 1400px; margin: 0 auto; padding: 24px 32px;
-            display: flex; gap: 20px;
-        }
-
-        /* ── LEFT SIDEBAR (Branch Selector + Employees) ── */
-        .left-sidebar {
-            width: 220px; flex-shrink: 0;
-            display: flex; flex-direction: column; gap: 16px;
-        }
-
-        .branch-card {
-            position: relative;
-            background: linear-gradient(135deg, #2d1810 0%, #4a2a1e 100%);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-md);
-            overflow: hidden;
-            min-height: 100px;
-        }
-
-        .branch-card__pattern {
-            position: absolute; inset: 0;
-            opacity: .15;
-            background-image:
-                radial-gradient(circle at 20% 30%, rgba(255,255,255,.3) 1px, transparent 1px),
-                radial-gradient(circle at 70% 60%, rgba(255,255,255,.2) 1px, transparent 1px),
-                radial-gradient(circle at 40% 80%, rgba(255,255,255,.15) 2px, transparent 2px);
-            background-size: 40px 40px, 30px 30px, 50px 50px;
-        }
-
-        .branch-card__content {
-            position: relative; z-index: 1;
-            padding: 16px;
-        }
-
-        .branch-card__pill {
-            display: inline-block;
-            padding: 4px 12px; border-radius: 999px;
-            background: rgba(255,255,255,.18); backdrop-filter: blur(4px);
-            font-size: 10px; font-weight: 700; color: #fff;
-            text-transform: uppercase; letter-spacing: .04em;
-            margin-bottom: 10px;
-        }
-
-        .branch-card__name {
-            font-size: 15px; font-weight: 800; color: #fff; line-height: 1.2;
-        }
-
-        .branch-card__sub {
-            font-size: 10px; font-weight: 600; color: rgba(255,255,255,.6);
-            text-transform: uppercase; letter-spacing: .03em; margin-top: 4px;
-        }
-
-        .employees-card {
-            background: #fff;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            overflow: hidden;
-            display: flex; flex-direction: column;
-        }
-
-        .employees-card__head {
-            padding: 14px 16px 10px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .employees-card__title {
-            font-size: 11px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .06em; opacity: .5;
-        }
-
-        .employees-list {
-            display: flex; flex-direction: column;
-            padding: 4px 6px;
-        }
-
-        .employee-row {
-            display: flex; align-items: center; gap: 10px;
-            padding: 9px 10px; border-radius: var(--radius-sm);
-            cursor: pointer; transition: all .12s ease;
-            text-decoration: none; color: var(--brown);
-        }
-
-        .employee-row:hover { background: rgba(92,45,27,.04); }
-        .employee-row.is-active { background: rgba(188,97,75,.1); }
-
-        .employee-avatar {
-            width: 34px; height: 34px; border-radius: 50%;
-            background: var(--terra); color: #fff;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 12px; font-weight: 700; flex-shrink: 0;
-            letter-spacing: .02em;
-        }
-
-        .employee-info { flex: 1; min-width: 0; }
-
-        .employee-name {
-            font-size: 13px; font-weight: 600;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-
-        .employee-role {
-            font-size: 10px; font-weight: 600; opacity: .5;
-            text-transform: uppercase; letter-spacing: .04em;
-        }
-
-        .employees-card__add {
-            display: block; margin: 6px 12px 12px;
-            padding: 9px 0; text-align: center;
-            background: #fff; color: var(--brown);
-            border: 1.5px solid var(--border); border-radius: 999px;
-            font-size: 12px; font-weight: 600; cursor: pointer;
-            font-family: var(--font); text-decoration: none;
-            transition: all .15s ease;
-        }
-
-        .employees-card__add:hover { background: var(--terra); color: #fff; border-color: var(--terra); }
-
-        /* ── MAIN CONTENT ── */
-        .main-content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
-
-        .content-head {
-            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
-        }
-
-        .content-head__title-wrap { display: flex; align-items: baseline; gap: 10px; }
-        .content-head__title { font-size: 22px; font-weight: 800; letter-spacing: .02em; }
-        .content-head__role { font-size: 15px; font-weight: 400; opacity: .5; }
-
-        .profile-card {
-            background: #fff;
-            border: 1.5px solid var(--border);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            overflow: hidden;
-        }
-
-        .profile-card__header {
-            display: flex; align-items: center; gap: 16px;
-            padding: 20px 24px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .profile-avatar {
-            width: 56px; height: 56px; border-radius: 50%;
-            background: var(--terra); color: #fff;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px; font-weight: 700; flex-shrink: 0;
-            border: 3px solid rgba(188,97,75,.2);
-        }
-
-        .profile-name-wrap {
-            flex: 1; min-width: 140px;
-            word-break: keep-all;
-        }
-
-        .profile-name { font-size: 18px; font-weight: 800; }
-        .profile-role-tag {
-            display: inline-block; margin-top: 4px;
-            padding: 3px 12px; border-radius: 999px;
-            background: rgba(188,97,75,.1); color: var(--terra);
-            font-size: 11px; font-weight: 600;
-        }
-
-        .profile-actions-bar {
-            display: flex; align-items: center; gap: 6px;
-            margin-left: auto; flex-shrink: 0;
-        }
-
-        .profile-actions-bar .act-btn {
-            padding: 7px 12px; border-radius: var(--radius-sm);
-            font-size: 11px; font-weight: 600; font-family: var(--font);
-            cursor: pointer; transition: all .12s ease; border: 1.5px solid var(--border);
-            background: #fff; color: var(--brown); display: flex; align-items: center; gap: 5px;
-            white-space: nowrap;
-        }
-
-        .profile-actions-bar .act-btn:hover { border-color: var(--terra); color: var(--terra); }
-        .profile-actions-bar .act-btn--danger:hover { border-color: #dc2626; color: #dc2626; }
-        .profile-actions-bar .act-btn--clock {
-            background: var(--terra); color: #fff; border-color: var(--terra);
-        }
-        .profile-actions-bar .act-btn--clock:hover { background: var(--terra-dk); border-color: var(--terra-dk); }
-        .profile-actions-bar .act-btn--clock.is-active {
-            background: #16a34a; border-color: #16a34a;
-        }
-
-        .profile-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 0;
-        }
-
-        .profile-col {
-            padding: 20px 24px;
-        }
-
-        .profile-col:not(:last-child) { border-right: 1px solid var(--border); }
-
-        .profile-col__title {
-            font-size: 10px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .06em; opacity: .5; margin-bottom: 14px;
-        }
-
-        .profile-field {
-            display: flex; flex-direction: column; gap: 2px;
-            margin-bottom: 14px;
-        }
-
-        .profile-field:last-child { margin-bottom: 0; }
-
-        .profile-field__label {
-            font-size: 10px; font-weight: 600; text-transform: uppercase;
-            letter-spacing: .04em; opacity: .4;
-        }
-
-        .profile-field__value {
-            font-size: 13px; font-weight: 600; color: var(--brown);
-            word-break: keep-all; overflow-wrap: break-word;
-        }
-
-        .profile-field__value a { color: var(--terra); text-decoration: none; }
-        .profile-field__value a:hover { text-decoration: underline; }
-
-        .profile-footer {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 0;
-            border-top: 1px solid var(--border);
-            padding: 16px 24px;
-        }
-
-        .profile-skills { display: flex; flex-direction: column; gap: 8px; }
-
-        .profile-skills__title {
-            font-size: 10px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .06em; opacity: .5;
-        }
-
-        .skills-pills { display: flex; gap: 6px; flex-wrap: wrap; }
-
-        .skill-pill {
-            padding: 4px 12px; border-radius: 999px;
-            background: rgba(188,97,75,.08); color: var(--terra);
-            font-size: 11px; font-weight: 600;
-        }
-
-        .profile-note { display: flex; flex-direction: column; gap: 6px; }
-
-        .profile-note__title {
-            font-size: 10px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .06em; opacity: .5;
-        }
-
-        .profile-note__body {
-            font-size: 12px; font-weight: 500; color: var(--brown);
-            background: rgba(250, 249, 247,.6);
-            padding: 12px 16px; border-radius: var(--radius-sm);
-            border: 1px solid rgba(92,45,27,.08);
-            line-height: 1.6; width: 100%;
-        }
-
-        .two-up { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-
-        .shift-card {
-            background: #fff;
-            border: 1.5px solid var(--border);
-            border-top: 3px solid var(--terra);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            padding: 20px;
-        }
-
-        .shift-card__title {
-            font-size: 11px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .08em; opacity: .6; margin-bottom: 16px;
-            color: var(--brown);
-        }
-
-        .shift-schedule {
-            display: grid;
-            grid-template-columns: 48px 1fr;
-            gap: 2px 12px;
-        }
-
-        .shift-row {
-            display: contents;
-        }
-
-        .shift-day {
-            font-size: 12px; font-weight: 700; letter-spacing: .03em;
-            padding: 7px 0;
-            border-bottom: 1px solid var(--border-light);
-            color: var(--brown);
-        }
-
-        .shift-hours {
-            font-size: 12px; font-weight: 500;
-            padding: 7px 0;
-            border-bottom: 1px solid var(--border-light);
-            color: var(--brown);
-            opacity: .75;
-        }
-
-        .shift-row:last-child .shift-day,
-        .shift-row:last-child .shift-hours {
-            border-bottom: none;
-        }
-
-        .shift-card__footer {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-top: 14px; padding-top: 12px;
-            border-top: 1px solid var(--border);
-        }
-
-        .shift-card__badge {
-            display: inline-block;
-            padding: 4px 12px; border-radius: 999px;
-            background: rgba(188,97,75,.08); color: var(--terra);
-            font-size: 10px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .04em;
-        }
-
-        .shift-card__edit-btn {
-            padding: 5px 14px; border-radius: 6px;
-            border: 1.5px solid var(--border); background: #fff;
-            color: var(--brown); cursor: pointer;
-            font-size: 11px; font-weight: 600; font-family: var(--font);
-            transition: all .12s ease;
-        }
-        .shift-card__edit-btn:hover { border-color: var(--terra); color: var(--terra); }
-
-        .perf-card {
-            background: #fff;
-            border: 1.5px solid var(--border);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            padding: 20px;
-        }
-
-        .perf-card__head {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 14px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .perf-card__title {
-            font-size: 11px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .06em; opacity: .6;
-        }
-
-        .perf-card__score {
-            display: flex; align-items: center; gap: 6px;
-        }
-
-        .perf-rating-pill {
-            display: inline-flex; align-items: center; gap: 4px;
-            padding: 4px 12px; border-radius: 999px;
-            background: rgba(22,163,74,.1); color: #16a34a;
-            font-size: 14px; font-weight: 800;
-        }
-
-        .perf-rating-pill .stars {
-            display: inline-flex; gap: 1px;
-            color: #16a34a; font-size: 11px;
-        }
-
-        .perf-card__score-label {
-            font-size: 9px; font-weight: 600; text-transform: uppercase;
-            letter-spacing: .04em; opacity: .4; color: var(--brown);
-            margin-right: 2px;
-        }
-
-        .perf-list { display: flex; flex-direction: column; gap: 0; }
-
-        .perf-list {
-            display: flex; flex-direction: column; gap: 6px;
-        }
-
-        .perf-item {
-            display: flex; align-items: center; gap: 10px;
-            padding: 10px 14px;
-            background: rgba(22,163,74,.04);
-            border: 1px solid rgba(22,163,74,.12);
-            border-radius: var(--radius-sm);
-            font-size: 13px; font-weight: 500;
-        }
-
-        .perf-item:last-child { border-bottom: none; }
-
-        .perf-dot {
-            width: 8px; height: 8px; border-radius: 50%;
-            background: #16a34a; flex-shrink: 0;
-        }
-
-        .perf-item__text { flex: 1; }
-
-        /* ── RESPONSIVE ── */
-        @media (max-width: 1100px) {
-            .left-sidebar { width: 180px; }
-            .profile-grid { grid-template-columns: 1fr; }
-            .profile-col:first-child { border-right: none; border-bottom: 1px solid var(--border); }
-            .profile-col:not(:last-child) { border-right: none; border-bottom: 1px solid var(--border); }
-            .profile-footer { grid-template-columns: 1fr; gap: 16px; }
-        }
-
-        @media (max-width: 880px) {
-            .profile-actions-bar { flex-wrap: wrap; justify-content: flex-end; }
-        }
-
-        @media (max-width: 880px) {
-            .workspace { flex-direction: column; padding: 16px; }
-            .left-sidebar { width: 100%; flex-direction: row; gap: 12px; }
-            .branch-card { flex: 1; min-height: 80px; }
-            .employees-card { flex: 2; }
-            .two-up { grid-template-columns: 1fr; }
-        }
-
-        @media (max-width: 640px) {
-            .left-sidebar { flex-direction: column; }
-            .nav__inner { padding: 0 16px; }
-        }
-
-        /* ── MODALS ── */
-        .modal-overlay {
-            position: fixed; inset: 0; z-index: 999;
-            background: rgba(44,24,16,.6); backdrop-filter: blur(4px);
-            display: none; align-items: center; justify-content: center;
-            padding: 20px;
-        }
-        .modal-overlay.is-open { display: flex; }
-
-        .modal {
-            background: #fff; border-radius: var(--radius);
-            box-shadow: 0 16px 48px rgba(44,24,16,.25);
-            width: 100%; max-width: 460px; max-height: 90vh; overflow-y: auto;
-            padding: 28px 32px 24px;
-        }
-
-        .modal__head {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        .modal__title { font-size: 17px; font-weight: 800; }
-        .modal__close {
-            width: 32px; height: 32px; border-radius: 8px;
-            background: transparent; border: none; color: var(--brown);
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            transition: background .12s ease; font-size: 18px;
-        }
-        .modal__close:hover { background: rgba(92,45,27,.07); }
-
-        .modal__body { display: flex; flex-direction: column; gap: 14px; }
-
-        .form-group { display: flex; flex-direction: column; gap: 4px; }
-        .form-group label {
-            font-size: 11px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .04em; opacity: .6;
-        }
-        .form-group label .required { color: #dc2626; }
-        .form-control {
-            padding: 10px 14px; border: 1.5px solid var(--border);
-            border-radius: var(--radius-sm); font-size: 13px; font-weight: 500;
-            font-family: var(--font); color: var(--brown); background: #fff;
-            transition: border-color .15s ease; outline: none;
-        }
-        .form-control:focus { border-color: var(--terra); }
-        .form-control.error { border-color: #dc2626; }
-        select.form-control { cursor: pointer; appearance: auto; }
-        .form-error { font-size: 11px; color: #dc2626; font-weight: 600; display: none; }
-        .form-error.is-visible { display: block; }
-
-        .modal__footer {
-            display: flex; gap: 10px; justify-content: flex-end;
-            margin-top: 20px; padding-top: 16px;
-            border-top: 1px solid var(--border);
-        }
-
-        .btn {
-            padding: 9px 20px; border-radius: var(--radius-sm);
-            font-size: 13px; font-weight: 600; font-family: var(--font);
-            cursor: pointer; transition: all .12s ease; border: none;
-        }
-        .btn--secondary {
-            background: transparent; color: var(--brown);
-            border: 1.5px solid var(--border);
-        }
-        .btn--secondary:hover { background: rgba(92,45,27,.04); }
-        .btn--primary { background: var(--terra); color: #fff; }
-        .btn--primary:hover { background: var(--terra-dk); }
-        .btn--danger { background: #dc2626; color: #fff; }
-        .btn--danger:hover { background: #b91c1c; }
-        .btn:disabled { opacity: .5; cursor: not-allowed; }
-
-        /* ── Toast Notifications ── */
-        .toast-container {
-            position: fixed; top: 20px; right: 20px; z-index: 1000;
-            display: flex; flex-direction: column; gap: 8px;
-        }
-        .toast {
-            padding: 12px 20px; border-radius: var(--radius-sm);
-            font-size: 13px; font-weight: 600; color: #fff;
-            box-shadow: var(--shadow-md); animation: toast-in .25s ease;
-            max-width: 360px;
-        }
-        .toast--success { background: #16a34a; }
-        .toast--error { background: #dc2626; }
-        @keyframes toast-in {
-            from { opacity: 0; transform: translateX(40px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        /* ── Attendance / Timesheet ── */
-        .badge {
-            display: inline-block; padding: 3px 10px; border-radius: 999px;
-            font-size: 11px; font-weight: 600;
-        }
-        .badge-open  { background: rgba(22,163,74,.1); color: #16a34a; }
-        .badge-closed { background: rgba(92,45,27,.06); color: rgba(92,45,27,.5); }
-
-        /* ── Empty state ── */
-        .empty-state {
-            text-align: center; padding: 24px 20px;
-        }
-        .empty-state svg {
-            display: block; margin: 0 auto 8px;
-            opacity: .25; color: var(--brown);
-        }
-        .empty-state__text {
-            font-weight: 600; opacity: .45; font-size: 13px;
-        }
-        .btn--xs { padding: 4px 10px; font-size: 11px; border-radius: 6px; }
-        .btn--xs svg { display: inline; vertical-align: middle; }
-
-        /* ── Summary table re-use ── */
-        .summary-table-wrap {
-            background: #fff; border: 1px solid var(--border);
-            border-radius: var(--radius); box-shadow: var(--shadow);
-            overflow: hidden;
-        }
-        .summary-table-wrap__head {
-            padding: 14px 20px; border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; gap: 10px;
-        }
-        .summary-table-wrap__head svg { opacity: .7; flex-shrink: 0; }
-        .summary-table-wrap__title { font-size: 13px; font-weight: 700; }
-        .summary-table {
-            width: 100%; border-collapse: collapse;
-        }
-        .summary-table th {
-            padding: 10px 20px; font-size: 10px; font-weight: 800;
-            text-transform: uppercase; letter-spacing: .06em; opacity: .65;
-            text-align: left; border-bottom: 1px solid var(--border);
-            background: rgba(250, 249, 247,.5);
-            color: var(--brown);
-        }
-        .summary-table td {
-            padding: 10px 20px; font-size: 13px; font-weight: 500;
-            border-bottom: 1px solid rgba(92,45,27,.05);
-        }
-        .summary-table tr:last-child td { border-bottom: none; }
-        .summary-table tr:hover td { background: rgba(188,97,75,.04); }
-
-        /* ── Filter bar ── */
-        .form-control-sm {
-            padding: 7px 10px; border: 1.5px solid var(--border);
-            border-radius: 6px; font-size: 12px; font-weight: 500;
-            font-family: var(--font); color: var(--brown); background: #fff;
-            outline: none; transition: border-color .15s ease;
-        }
-        .form-control-sm:focus { border-color: var(--terra); }
-@endsection
-
 @section('content')
+<style>
+.form-error{font-size:11px;color:#dc2626;font-weight:600;display:none}
+.form-error.is-visible{display:block}
+.form-input.error{border-color:#dc2626}
+@keyframes toast-in{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+</style>
 
-<div class="workspace">
+<div class="max-w-[1400px] mx-auto px-8 py-6 flex gap-5 max-[880px]:flex-col max-[880px]:p-4">
 
     {{-- LEFT SIDEBAR --}}
-    <div class="left-sidebar">
+    <div class="w-[220px] shrink-0 flex flex-col gap-4 max-[1100px]:w-[180px] max-[880px]:w-full max-[880px]:flex-row max-[880px]:gap-3 max-[640px]:flex-col">
         {{-- Branch Selector --}}
-        <div class="branch-card">
-            <div class="branch-card__pattern"></div>
-            <div class="branch-card__content">
-                <span class="branch-card__pill">Coffee Shop</span>
-                <div class="branch-card__name">{{ $activeBranch->name }}</div>
-                <div class="branch-card__sub">{{ $activeBranch->location ?? 'N/A' }}</div>
+        <div class="relative rounded-[var(--radius-card)] shadow-[0_2px_8px_rgba(92,45,27,.1),0_8px_24px_rgba(92,45,27,.07)] overflow-hidden min-h-[100px] max-[880px]:flex-1 max-[880px]:min-h-[80px]" style="background:linear-gradient(135deg,#2d1810 0%,#4a2a1e 100%)">
+            <div class="absolute inset-0 opacity-15" style="background-image:radial-gradient(circle at 20% 30%,rgba(255,255,255,.3) 1px,transparent 1px),radial-gradient(circle at 70% 60%,rgba(255,255,255,.2) 1px,transparent 1px),radial-gradient(circle at 40% 80%,rgba(255,255,255,.15) 2px,transparent 2px);background-size:40px 40px,30px 30px,50px 50px"></div>
+            <div class="relative z-[1] p-4">
+                <span class="inline-block px-3 py-1 rounded-full bg-white/[.18] backdrop-blur-sm text-[10px] font-bold text-white uppercase tracking-[.04em] mb-2.5">Coffee Shop</span>
+                <div class="text-[15px] font-extrabold text-white leading-tight">{{ $activeBranch->name }}</div>
+                <div class="text-[10px] font-semibold text-white/60 uppercase tracking-[.03em] mt-1">{{ $activeBranch->location ?? 'N/A' }}</div>
             </div>
         </div>
 
         {{-- Employees List --}}
-        <div class="employees-card">
-            <div class="employees-card__head">
-                <div class="employees-card__title">Employees</div>
+        <div class="card overflow-hidden flex flex-col max-[880px]:flex-[2]">
+            <div class="px-4 py-3.5 pb-2.5 border-b border-line">
+                <div class="text-[11px] font-bold uppercase tracking-[.06em] opacity-50">Employees</div>
             </div>
             {{-- Search + Filters --}}
-            <div style="padding:8px 10px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px;">
-                <input type="text" id="searchInput" class="form-control" placeholder="Search by name…" style="padding:7px 10px;font-size:12px;border-radius:6px;">
-                <div style="display:flex;gap:4px;">
-                    <select id="filterBranch" class="form-control" style="flex:1;padding:5px 8px;font-size:11px;border-radius:6px;">
+            <div class="p-2 px-2.5 border-b border-line flex flex-col gap-1.5">
+                <input type="text" id="searchInput" class="form-input" placeholder="Search by name…" style="padding:7px 10px;font-size:12px;border-radius:6px;">
+                <div class="flex gap-1">
+                    <select id="filterBranch" class="form-input" style="flex:1;padding:5px 8px;font-size:11px;border-radius:6px;">
                         <option value="">All branches</option>
                         @foreach ($branches as $branch)
                             <option value="{{ $branch->id }}">{{ $branch->name }}</option>
                         @endforeach
                     </select>
-                    <select id="filterRole" class="form-control" style="flex:1;padding:5px 8px;font-size:11px;border-radius:6px;">
+                    <select id="filterRole" class="form-input" style="flex:1;padding:5px 8px;font-size:11px;border-radius:6px;">
                         <option value="">All roles</option>
                         <option value="staff">Staff</option>
                         <option value="manager">Manager</option>
                     </select>
                 </div>
             </div>
-            <div class="employees-list" id="employeesList">
+            <div class="flex flex-col p-1 px-1.5" id="employeesList">
                 @forelse ($workers as $worker)
-                    <a href="{{ url('/business/workers') }}?worker={{ $worker->id }}" class="employee-row {{ $selectedWorker->id === $worker->id ? 'is-active' : '' }}" data-worker-name="{{ strtolower($worker->name) }}" data-worker-branch="{{ $worker->branch_id }}" data-worker-role="{{ $worker->role }}">
-                        <div class="employee-avatar">{{ $initials($worker->name) }}</div>
-                        <div class="employee-info">
-                            <div class="employee-name">{{ $worker->name }}</div>
-                            <div class="employee-role">
+                    <a href="{{ url('/business/workers') }}?worker={{ $worker->id }}" class="employee-row flex items-center gap-2.5 px-2.5 py-[9px] rounded-lg cursor-pointer transition-all duration-[120ms] no-underline text-[var(--color-ink)] hover:bg-[rgba(92,45,27,.04)] {{ $selectedWorker->id === $worker->id ? 'bg-[rgba(188,97,75,.1)]' : '' }}" data-worker-name="{{ strtolower($worker->name) }}" data-worker-branch="{{ $worker->branch_id }}" data-worker-role="{{ $worker->role }}">
+                        <div class="w-[34px] h-[34px] rounded-full bg-accent text-white flex items-center justify-center text-xs font-bold shrink-0 tracking-[.02em]">{{ $initials($worker->name) }}</div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-[13px] font-semibold truncate">{{ $worker->name }}</div>
+                            <div class="text-[10px] font-semibold opacity-50 uppercase tracking-[.04em]">
                                 @php
                                     $roleLabel = $worker->role === \App\Models\User::ROLE_MANAGER ? 'Manager' : ($worker->role === \App\Models\User::ROLE_STAFF ? 'Staff' : ucfirst($worker->role));
                                 @endphp
@@ -765,13 +189,13 @@
                         </div>
                     </a>
                 @empty
-                    <div style="padding:20px 16px;text-align:center;font-size:12px;opacity:.5;font-weight:600;">
+                    <div class="px-4 py-5 text-center text-xs opacity-50 font-semibold">
                         No workers yet. Click "Add new employee" to get started.
                     </div>
                 @endforelse
             </div>
-            <button type="button" class="employees-card__add">
-                <span style="display:flex;align-items:center;justify-content:center;gap:6px;">
+            <button type="button" id="addEmployeeBtn" class="block mx-3 mb-3 mt-1.5 py-[9px] text-center bg-white text-[var(--color-ink)] border-[1.5px] border-line rounded-full text-xs font-semibold cursor-pointer transition-all duration-150 hover:bg-accent hover:text-white hover:border-accent">
+                <span class="flex items-center justify-center gap-1.5">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                     </svg>
@@ -782,35 +206,35 @@
     </div>
 
     {{-- MAIN CONTENT --}}
-    <div class="main-content">
+    <div class="flex-1 min-w-0 flex flex-col gap-4">
 
         {{-- Page Header --}}
-        <div class="content-head">
-            <div class="content-head__title-wrap">
-                <h1 class="content-head__title">Businesses</h1>
-                <span class="content-head__role">/ Owner</span>
+        <div class="flex items-center justify-between flex-wrap gap-3">
+            <div class="flex items-baseline gap-2.5">
+                <h1 class="text-[22px] font-extrabold tracking-[.02em]">Businesses</h1>
+                <span class="text-[15px] font-normal opacity-50">/ Owner</span>
             </div>
             @include('partials._business-tabs', ['active' => 'workers'])
         </div>
 
         {{-- Worker Profile Card --}}
-        <div class="profile-card">
-            <div class="profile-card__header">
-                <div class="profile-avatar">{{ $initials($selectedWorker->name) }}</div>
-                <div class="profile-name-wrap">
-                    <div class="profile-name">{{ $selectedWorker->name }}</div>
-                    <span class="profile-role-tag">{{ $selectedWorker->role }}</span>
+        <div class="card border-[1.5px] border-line overflow-hidden">
+            <div class="flex flex-wrap items-center gap-4 px-6 py-5 border-b border-line">
+                <div class="w-14 h-14 rounded-full bg-accent text-white flex items-center justify-center text-xl font-bold shrink-0 border-[3px] border-accent/20">{{ $initials($selectedWorker->name) }}</div>
+                <div class="flex-1 min-w-[140px]" style="word-break:keep-all">
+                    <div class="text-lg font-extrabold">{{ $selectedWorker->name }}</div>
+                    <span class="inline-block mt-1 px-3 py-[3px] rounded-full bg-accent/10 text-accent text-[11px] font-semibold">{{ $selectedWorker->role }}</span>
                 </div>
                 @if ($selectedUser)
                 @php
                     $isOnShift = in_array($selectedUser->id, $openShiftUserIds);
                 @endphp
-                <div class="profile-actions-bar">
-                    <div id="onShiftIndicator" style="display:{{ $isOnShift ? 'flex' : 'none' }};align-items:center;gap:5px;padding:4px 10px;border-radius:999px;background:rgba(22,163,74,.1);color:#16a34a;font-size:10px;font-weight:700;">
-                        <span style="width:6px;height:6px;border-radius:50%;background:#16a34a;"></span>
+                <div class="flex items-center gap-1.5 ml-auto flex-wrap justify-end max-[1200px]:basis-full max-[1200px]:ml-0">
+                    <div id="onShiftIndicator" class="items-center gap-[5px] px-2.5 py-1 rounded-full bg-green-600/10 text-green-600 text-[10px] font-bold" style="display:{{ $isOnShift ? 'flex' : 'none' }}">
+                        <span class="w-1.5 h-1.5 rounded-full bg-green-600"></span>
                         On Shift
                     </div>
-                    <button type="button" class="act-btn act-btn--clock {{ $isOnShift ? 'is-active' : '' }}" id="clockBtn"
+                    <button type="button" class="px-3 py-[7px] rounded-lg text-[11px] font-semibold cursor-pointer transition-all duration-[120ms] border-[1.5px] flex items-center gap-[5px] whitespace-nowrap {{ $isOnShift ? 'bg-green-600 text-white border-green-600' : 'bg-accent text-white border-accent' }}" id="clockBtn"
                         data-worker-id="{{ $selectedWorker->id }}"
                         data-on-shift="{{ $isOnShift ? 'true' : 'false' }}"
                         onclick="toggleClock(this)">
@@ -819,20 +243,20 @@
                         </svg>
                         <span id="clockBtnText">{{ $isOnShift ? 'Clock Out' : 'Clock In' }}</span>
                     </button>
-                    <button type="button" class="act-btn" onclick="openProfileModal({{ $selectedWorker->id }}, {{ $selectedWorker->profile_id ?? 'null' }})" title="Edit profile">
+                    <button type="button" class="px-3 py-[7px] rounded-lg text-[11px] font-semibold cursor-pointer transition-all duration-[120ms] border-[1.5px] border-line bg-white text-[var(--color-ink)] flex items-center gap-[5px] whitespace-nowrap hover:border-accent hover:text-accent" onclick="openProfileModal({{ $selectedWorker->id }}, {{ $selectedWorker->profile_id ?? 'null' }})" title="Edit profile">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
                         </svg>
                         Profile
                     </button>
-                    <button type="button" class="act-btn" onclick="openEditModal({{ $selectedWorker->id }})" title="Edit worker">
+                    <button type="button" class="px-3 py-[7px] rounded-lg text-[11px] font-semibold cursor-pointer transition-all duration-[120ms] border-[1.5px] border-line bg-white text-[var(--color-ink)] flex items-center gap-[5px] whitespace-nowrap hover:border-accent hover:text-accent" onclick="openEditModal({{ $selectedWorker->id }})" title="Edit worker">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                         </svg>
                         Edit
                     </button>
-                    <button type="button" class="act-btn act-btn--danger" onclick="openDeleteModal({{ $selectedWorker->id }}, '{{ addslashes($selectedWorker->name) }}')" title="Delete worker">
+                    <button type="button" class="px-3 py-[7px] rounded-lg text-[11px] font-semibold cursor-pointer transition-all duration-[120ms] border-[1.5px] border-line bg-white text-[var(--color-ink)] flex items-center gap-[5px] whitespace-nowrap hover:border-red-600 hover:text-red-600" onclick="openDeleteModal({{ $selectedWorker->id }}, '{{ addslashes($selectedWorker->name) }}')" title="Delete worker">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="3 6 5 6 21 6"/>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -843,92 +267,92 @@
                 @endif
             </div>
 
-            <div class="profile-grid">
+            <div class="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] max-[1100px]:grid-cols-1">
                 {{-- Col 1: Contact Info --}}
-                <div class="profile-col">
-                    <div class="profile-col__title">Contact Info</div>
-                    <div class="profile-field">
-                        <span class="profile-field__label">Number</span>
-                        <span class="profile-field__value">{{ $selectedWorker->number }}</span>
+                <div class="px-6 py-5 border-r border-line max-[1100px]:border-r-0 max-[1100px]:border-b">
+                    <div class="text-[10px] font-bold uppercase tracking-[.06em] opacity-50 mb-3.5">Contact Info</div>
+                    <div class="flex flex-col gap-0.5 mb-3.5">
+                        <span class="text-[10px] font-semibold uppercase tracking-[.04em] opacity-40">Number</span>
+                        <span class="text-[13px] font-semibold [overflow-wrap:break-word]">{{ $selectedWorker->number }}</span>
                     </div>
-                    <div class="profile-field">
-                        <span class="profile-field__label">Email</span>
-                        <span class="profile-field__value">
-                            <a href="mailto:{{ $selectedWorker->email }}">{{ $selectedWorker->email }}</a>
+                    <div class="flex flex-col gap-0.5 mb-3.5">
+                        <span class="text-[10px] font-semibold uppercase tracking-[.04em] opacity-40">Email</span>
+                        <span class="text-[13px] font-semibold [overflow-wrap:break-word]">
+                            <a href="mailto:{{ $selectedWorker->email }}" class="text-accent no-underline hover:underline">{{ $selectedWorker->email }}</a>
                         </span>
                     </div>
-                    <div class="profile-field">
-                        <span class="profile-field__label">Address</span>
-                        <span class="profile-field__value">{{ $selectedWorker->address }}</span>
+                    <div class="flex flex-col gap-0.5 mb-3.5">
+                        <span class="text-[10px] font-semibold uppercase tracking-[.04em] opacity-40">Address</span>
+                        <span class="text-[13px] font-semibold [overflow-wrap:break-word]">{{ $selectedWorker->address }}</span>
                     </div>
-                    <div class="profile-field">
-                        <span class="profile-field__label">Birthday</span>
-                        <span class="profile-field__value">{{ $selectedWorker->birthday }}</span>
+                    <div class="flex flex-col gap-0.5">
+                        <span class="text-[10px] font-semibold uppercase tracking-[.04em] opacity-40">Birthday</span>
+                        <span class="text-[13px] font-semibold [overflow-wrap:break-word]">{{ $selectedWorker->birthday }}</span>
                     </div>
                 </div>
                 {{-- Col 2: Education & Emergency --}}
-                <div class="profile-col">
-                    <div class="profile-col__title">Education &amp; Emergency</div>
-                    <div class="profile-field">
-                        <span class="profile-field__label">Senior High</span>
-                        <span class="profile-field__value">{{ $selectedWorker->senior_high }}</span>
+                <div class="px-6 py-5">
+                    <div class="text-[10px] font-bold uppercase tracking-[.06em] opacity-50 mb-3.5">Education &amp; Emergency</div>
+                    <div class="flex flex-col gap-0.5 mb-3.5">
+                        <span class="text-[10px] font-semibold uppercase tracking-[.04em] opacity-40">Senior High</span>
+                        <span class="text-[13px] font-semibold [overflow-wrap:break-word]">{{ $selectedWorker->senior_high }}</span>
                     </div>
-                    <div class="profile-field">
-                        <span class="profile-field__label">College</span>
-                        <span class="profile-field__value">{{ $selectedWorker->college }}</span>
+                    <div class="flex flex-col gap-0.5 mb-3.5">
+                        <span class="text-[10px] font-semibold uppercase tracking-[.04em] opacity-40">College</span>
+                        <span class="text-[13px] font-semibold [overflow-wrap:break-word]">{{ $selectedWorker->college }}</span>
                     </div>
-                    <div class="profile-field">
-                        <span class="profile-field__label">Partner's Contact</span>
-                        <span class="profile-field__value">{{ $selectedWorker->partner_contact }}</span>
+                    <div class="flex flex-col gap-0.5 mb-3.5">
+                        <span class="text-[10px] font-semibold uppercase tracking-[.04em] opacity-40">Partner's Contact</span>
+                        <span class="text-[13px] font-semibold [overflow-wrap:break-word]">{{ $selectedWorker->partner_contact }}</span>
                     </div>
-                    <div class="profile-field">
-                        <span class="profile-field__label">Mother's Contact</span>
-                        <span class="profile-field__value">{{ $selectedWorker->mother_contact }}</span>
+                    <div class="flex flex-col gap-0.5">
+                        <span class="text-[10px] font-semibold uppercase tracking-[.04em] opacity-40">Mother's Contact</span>
+                        <span class="text-[13px] font-semibold [overflow-wrap:break-word]">{{ $selectedWorker->mother_contact }}</span>
                     </div>
                 </div>
             </div>
 
             {{-- Skills & Notes Footer --}}
-            <div class="profile-footer">
-                <div class="profile-skills">
-                    <span class="profile-skills__title">Skills</span>
-                    <div class="skills-pills">
+            <div class="grid grid-cols-2 border-t border-line px-6 py-4 max-[1100px]:grid-cols-1 max-[1100px]:gap-4">
+                <div class="flex flex-col gap-2">
+                    <span class="text-[10px] font-bold uppercase tracking-[.06em] opacity-50">Skills</span>
+                    <div class="flex gap-1.5 flex-wrap">
                         @foreach ($selectedWorker->skills as $skill)
-                            <span class="skill-pill">{{ $skill }}</span>
+                            <span class="px-3 py-1 rounded-full bg-accent/[.08] text-accent text-[11px] font-semibold">{{ $skill }}</span>
                         @endforeach
                     </div>
                 </div>
-                <div class="profile-note">
-                    <span class="profile-note__title">Note</span>
-                    <div class="profile-note__body">{{ $selectedWorker->note }}</div>
+                <div class="flex flex-col gap-1.5">
+                    <span class="text-[10px] font-bold uppercase tracking-[.06em] opacity-50">Note</span>
+                    <div class="text-xs font-medium bg-[rgba(250,249,247,.6)] px-4 py-3 rounded-lg border border-[rgba(92,45,27,.08)] leading-relaxed w-full">{{ $selectedWorker->note }}</div>
                 </div>
             </div>
         </div>
 
         {{-- Bottom Two-Up: Work Shift + Performance --}}
-        <div class="two-up">
-            <div class="shift-card">
-                <div class="shift-card__title">Work Shift</div>
-                <div class="shift-schedule" id="scheduleDisplay">
+        <div class="grid grid-cols-2 gap-4 max-[880px]:grid-cols-1">
+            <div class="card border-[1.5px] border-line border-t-[3px] border-t-accent p-5">
+                <div class="text-[11px] font-bold uppercase tracking-[.08em] opacity-60 mb-4">Work Shift</div>
+                <div class="grid grid-cols-[48px_1fr] gap-x-3 gap-y-0.5" id="scheduleDisplay">
                     @foreach ($selectedWorker->schedule as $day => $hours)
-                        <div class="shift-row">
-                            <span class="shift-day">{{ $day }}</span>
-                            <span class="shift-hours">{{ $hours }}</span>
+                        <div class="contents">
+                            <span class="text-xs font-bold tracking-[.03em] py-[7px] border-b border-[rgba(92,45,27,.08)]">{{ $day }}</span>
+                            <span class="text-xs font-medium py-[7px] border-b border-[rgba(92,45,27,.08)] opacity-75">{{ $hours }}</span>
                         </div>
                     @endforeach
                 </div>
-                <div class="shift-card__footer">
-                    <span class="shift-card__badge">Weekends — Off</span>
-                    <button type="button" class="shift-card__edit-btn" onclick="openScheduleModal({{ $selectedWorker->id }})">Edit</button>
+                <div class="flex items-center justify-between mt-3.5 pt-3 border-t border-line">
+                    <span class="inline-block px-3 py-1 rounded-full bg-accent/[.08] text-accent text-[10px] font-bold uppercase tracking-[.04em]">Weekends — Off</span>
+                    <button type="button" class="px-3.5 py-[5px] rounded-md border-[1.5px] border-line bg-white cursor-pointer text-[11px] font-semibold transition-all duration-[120ms] hover:border-accent hover:text-accent" onclick="openScheduleModal({{ $selectedWorker->id }})">Edit</button>
                 </div>
             </div>
-            <div class="perf-card">
-                <div class="perf-card__head">
-                    <span class="perf-card__title">Performance</span>
-                    <div style="display:flex;align-items:center;gap:12px;">
-                        <div class="perf-card__score">
-                            <span class="perf-rating-pill">
-                                <span class="stars">
+            <div class="card border-[1.5px] border-line p-5">
+                <div class="flex items-center justify-between mb-3.5 pb-3 border-b border-line">
+                    <span class="text-[11px] font-bold uppercase tracking-[.06em] opacity-60">Performance</span>
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-1.5">
+                            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-600/10 text-green-600 text-sm font-extrabold">
+                                <span class="inline-flex gap-px text-green-600 text-[11px]">
                                     @php
                                         $fullStars = floor($selectedWorker->rating);
                                         $halfStar = $selectedWorker->rating - $fullStars >= 0.5;
@@ -941,34 +365,32 @@
                                 {{ number_format($selectedWorker->rating, 1) }}
                             </span>
                         </div>
-                        <button type="button" class="btn--xs" onclick="openPerfModal({{ $selectedWorker->id }})" style="border:1.5px solid var(--border);background:#fff;color:var(--brown);cursor:pointer;padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;transition:all .12s ease;">Record</button>
+                        <button type="button" class="border-[1.5px] border-line bg-white cursor-pointer px-3 py-1 rounded-md text-[11px] font-semibold transition-all duration-[120ms] hover:border-accent hover:text-accent" onclick="openPerfModal({{ $selectedWorker->id }})">Record</button>
                     </div>
                 </div>
-                <div class="perf-list">
+                <div class="flex flex-col gap-1.5">
                     @forelse ($selectedWorker->performance as $metric)
-                        <div class="perf-item">
-                            <span class="perf-dot"></span>
-                            <span class="perf-item__text">{{ $metric }}</span>
+                        <div class="flex items-center gap-2.5 p-2.5 px-3.5 bg-[rgba(22,163,74,.04)] border border-[rgba(22,163,74,.12)] rounded-lg text-[13px] font-medium">
+                            <span class="w-2 h-2 rounded-full bg-green-600 shrink-0"></span>
+                            <span class="flex-1">{{ $metric }}</span>
                         </div>
                     @empty
-                        <div class="perf-item">
-                            <span class="perf-item__text" style="opacity:.4;">No performance data recorded yet.</span>
+                        <div class="flex items-center gap-2.5 p-2.5 px-3.5 bg-[rgba(22,163,74,.04)] border border-[rgba(22,163,74,.12)] rounded-lg text-[13px] font-medium">
+                            <span class="flex-1 opacity-40">No performance data recorded yet.</span>
                         </div>
                     @endforelse
                 </div>
             </div>
         </div>
 
-        {{-- ════════════════════════════════════════════════
-             ACTIVITY HISTORY (Transactions, Shifts, Discrepancies)
-            ════════════════════════════════════════════════ --}}
+        {{-- ACTIVITY HISTORY --}}
         <div class="summary-table-wrap" id="activitySection">
-            <div class="summary-table-wrap__head">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <div class="px-5 py-3.5 border-b border-line flex items-center gap-2.5">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-70 shrink-0">
                     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                 </svg>
-                <span class="summary-table-wrap__title">Activity — <span id="activityName">{{ $selectedWorker->name }}</span></span>
-                <div style="margin-left:auto;display:flex;gap:4px;">
+                <span class="text-[13px] font-bold">Activity — <span id="activityName">{{ $selectedWorker->name }}</span></span>
+                <div class="ml-auto flex gap-1">
                     <button type="button" class="tab active !px-3 !py-1 !text-[11px]" id="actTabTransactions" onclick="switchActivity({{ $selectedWorker->id }}, 'transactions')">Orders</button>
                     <button type="button" class="tab !px-3 !py-1 !text-[11px]" id="actTabShifts" onclick="switchActivity({{ $selectedWorker->id }}, 'shifts')">Shifts</button>
                     <button type="button" class="tab !px-3 !py-1 !text-[11px]" id="actTabDiscrepancies" onclick="switchActivity({{ $selectedWorker->id }}, 'discrepancies')">Variances</button>
@@ -986,28 +408,26 @@
                         </tr>
                     </thead>
                     <tbody id="activityTableBody">
-                        <tr><td colspan="5" style="text-align:center;padding:24px 20px;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 8px;opacity:.25;color:#5C2D1B;">
+                        <tr><td colspan="5" class="text-center py-6 px-5">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="block mx-auto mb-2 opacity-25 text-[#5C2D1B]">
                     <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                 </svg>
-                <span style="font-weight:600;opacity:.45;font-size:13px;">Loading activity data…</span>
+                <span class="font-semibold opacity-45 text-[13px]">Loading activity data…</span>
             </td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        {{-- ════════════════════════════════════════════════
-             ATTENDANCE TIMESHEET
-            ════════════════════════════════════════════════ --}}
+        {{-- ATTENDANCE TIMESHEET --}}
         <div class="summary-table-wrap" id="attendanceSection">
-            <div class="summary-table-wrap__head">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <div class="px-5 py-3.5 border-b border-line flex items-center gap-2.5">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-70 shrink-0">
                     <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                 </svg>
-                <span class="summary-table-wrap__title">Attendance &mdash; <span id="attendanceName">{{ $selectedWorker->name }}</span></span>
-                <button type="button" class="btn btn--secondary btn--xs" onclick="loadAttendance({{ $selectedWorker->id }})" style="margin-left:auto;padding:5px 12px;font-size:11px;">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;">
+                <span class="text-[13px] font-bold">Attendance &mdash; <span id="attendanceName">{{ $selectedWorker->name }}</span></span>
+                <button type="button" class="ml-auto px-3 py-[5px] text-[11px] font-semibold border-[1.5px] border-line bg-white rounded-md cursor-pointer transition-all hover:bg-[rgba(92,45,27,.04)]" onclick="loadAttendance({{ $selectedWorker->id }})">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="inline align-middle mr-1">
                         <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
                     </svg>
                     Refresh
@@ -1025,11 +445,11 @@
                 </thead>
                 <tbody id="attendanceBody">
                     <tr>
-                        <td colspan="5" style="text-align:center;padding:24px 20px;">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 8px;opacity:.25;color:#5C2D1B;">
+                        <td colspan="5" class="text-center py-6 px-5">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="block mx-auto mb-2 opacity-25 text-[#5C2D1B]">
                                 <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                             </svg>
-                            <span style="font-weight:600;opacity:.45;font-size:13px;">Loading attendance data…</span>
+                            <span class="font-semibold opacity-45 text-[13px]">Loading attendance data…</span>
                         </td>
                     </tr>
                 </tbody>
@@ -1042,36 +462,34 @@
 {{-- Toast container --}}
 <div class="toast-container" id="toastContainer"></div>
 
-{{-- ═══════════════════════════════════════════════════════════════
-     ADD EMPLOYEE MODAL
-    ═══════════════════════════════════════════════════════════════ --}}
+{{-- ADD EMPLOYEE MODAL --}}
 <div class="modal-overlay" id="addModal">
-    <div class="modal">
-        <div class="modal__head">
-            <h2 class="modal__title">Add New Worker</h2>
-            <button type="button" class="modal__close" onclick="closeModal('addModal')">&times;</button>
+    <div class="bg-card rounded-[var(--radius-card)] shadow-[0_16px_48px_rgba(44,24,16,.25)] w-full max-w-[460px] max-h-[90vh] overflow-y-auto px-8 py-7 pb-6">
+        <div class="flex items-center justify-between mb-5">
+            <h2 class="text-[17px] font-extrabold">Add New Worker</h2>
+            <button type="button" class="w-8 h-8 rounded-lg bg-transparent border-none cursor-pointer flex items-center justify-center text-lg transition-colors hover:bg-[rgba(92,45,27,.07)]" onclick="closeModal('addModal')">&times;</button>
         </div>
         <form id="addForm" onsubmit="return submitAdd(event)">
             @csrf
-            <div class="modal__body">
+            <div class="flex flex-col gap-3.5">
                 <div class="form-group">
-                    <label>Name <span class="required">*</span></label>
-                    <input type="text" name="name" class="form-control" placeholder="e.g. Juan dela Cruz" required>
+                    <label class="form-label">Name <span class="text-red-600">*</span></label>
+                    <input type="text" name="name" class="form-input" placeholder="e.g. Juan dela Cruz" required>
                     <span class="form-error" id="addErrorName"></span>
                 </div>
                 <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" name="email" class="form-control" placeholder="e.g. juan@nita.com">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-input" placeholder="e.g. juan@nita.com">
                     <span class="form-error" id="addErrorEmail"></span>
                 </div>
                 <div class="form-group">
-                    <label>PIN <span class="required">*</span></label>
-                    <input type="text" name="pin" class="form-control" placeholder="4-8 digit PIN" maxlength="8" required>
+                    <label class="form-label">PIN <span class="text-red-600">*</span></label>
+                    <input type="text" name="pin" class="form-input" placeholder="4-8 digit PIN" maxlength="8" required>
                     <span class="form-error" id="addErrorPin"></span>
                 </div>
                 <div class="form-group">
-                    <label>Branch <span class="required">*</span></label>
-                    <select name="branch_id" class="form-control" required>
+                    <label class="form-label">Branch <span class="text-red-600">*</span></label>
+                    <select name="branch_id" class="form-input" required>
                         <option value="">Select a branch…</option>
                         @foreach ($branches as $branch)
                             <option value="{{ $branch->id }}">{{ $branch->name }}</option>
@@ -1080,53 +498,51 @@
                     <span class="form-error" id="addErrorBranch"></span>
                 </div>
                 <div class="form-group">
-                    <label>Role</label>
-                    <select name="role" class="form-control">
+                    <label class="form-label">Role</label>
+                    <select name="role" class="form-input">
                         <option value="staff">Staff</option>
                         <option value="manager">Manager</option>
                     </select>
                 </div>
             </div>
-            <div class="modal__footer">
-                <button type="button" class="btn btn--secondary" onclick="closeModal('addModal')">Cancel</button>
-                <button type="submit" class="btn btn--primary" id="addSubmitBtn">Add Worker</button>
+            <div class="flex gap-2.5 justify-end mt-5 pt-4 border-t border-line">
+                <button type="button" class="btn-cancel" onclick="closeModal('addModal')">Cancel</button>
+                <button type="submit" class="btn-save" id="addSubmitBtn">Add Worker</button>
             </div>
         </form>
     </div>
 </div>
 
-{{-- ═══════════════════════════════════════════════════════════════
-     EDIT EMPLOYEE MODAL
-    ═══════════════════════════════════════════════════════════════ --}}
+{{-- EDIT EMPLOYEE MODAL --}}
 <div class="modal-overlay" id="editModal">
-    <div class="modal">
-        <div class="modal__head">
-            <h2 class="modal__title">Edit Worker</h2>
-            <button type="button" class="modal__close" onclick="closeModal('editModal')">&times;</button>
+    <div class="bg-card rounded-[var(--radius-card)] shadow-[0_16px_48px_rgba(44,24,16,.25)] w-full max-w-[460px] max-h-[90vh] overflow-y-auto px-8 py-7 pb-6">
+        <div class="flex items-center justify-between mb-5">
+            <h2 class="text-[17px] font-extrabold">Edit Worker</h2>
+            <button type="button" class="w-8 h-8 rounded-lg bg-transparent border-none cursor-pointer flex items-center justify-center text-lg transition-colors hover:bg-[rgba(92,45,27,.07)]" onclick="closeModal('editModal')">&times;</button>
         </div>
         <form id="editForm" onsubmit="return submitEdit(event)">
             @csrf
             @method('PUT')
             <input type="hidden" name="id" id="editId">
-            <div class="modal__body">
+            <div class="flex flex-col gap-3.5">
                 <div class="form-group">
-                    <label>Name <span class="required">*</span></label>
-                    <input type="text" name="name" id="editName" class="form-control" required>
+                    <label class="form-label">Name <span class="text-red-600">*</span></label>
+                    <input type="text" name="name" id="editName" class="form-input" required>
                     <span class="form-error" id="editErrorName"></span>
                 </div>
                 <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" name="email" id="editEmail" class="form-control">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" id="editEmail" class="form-input">
                     <span class="form-error" id="editErrorEmail"></span>
                 </div>
                 <div class="form-group">
-                    <label>New PIN <span style="font-size:10px;opacity:.4;font-weight:400">(leave blank to keep current)</span></label>
-                    <input type="text" name="pin" class="form-control" placeholder="4-8 digit PIN" maxlength="8">
+                    <label class="form-label">New PIN <span class="text-[10px] opacity-40 font-normal">(leave blank to keep current)</span></label>
+                    <input type="text" name="pin" class="form-input" placeholder="4-8 digit PIN" maxlength="8">
                     <span class="form-error" id="editErrorPin"></span>
                 </div>
                 <div class="form-group">
-                    <label>Branch <span class="required">*</span></label>
-                    <select name="branch_id" id="editBranch" class="form-control" required>
+                    <label class="form-label">Branch <span class="text-red-600">*</span></label>
+                    <select name="branch_id" id="editBranch" class="form-input" required>
                         <option value="">Select a branch…</option>
                         @foreach ($branches as $branch)
                             <option value="{{ $branch->id }}">{{ $branch->name }}</option>
@@ -1135,40 +551,38 @@
                     <span class="form-error" id="editErrorBranch"></span>
                 </div>
                 <div class="form-group">
-                    <label>Role</label>
-                    <select name="role" id="editRole" class="form-control">
+                    <label class="form-label">Role</label>
+                    <select name="role" id="editRole" class="form-input">
                         <option value="staff">Staff</option>
                         <option value="manager">Manager</option>
                     </select>
                 </div>
             </div>
-            <div class="modal__footer">
-                <button type="button" class="btn btn--secondary" onclick="closeModal('editModal')">Cancel</button>
-                <button type="submit" class="btn btn--primary" id="editSubmitBtn">Save Changes</button>
+            <div class="flex gap-2.5 justify-end mt-5 pt-4 border-t border-line">
+                <button type="button" class="btn-cancel" onclick="closeModal('editModal')">Cancel</button>
+                <button type="submit" class="btn-save" id="editSubmitBtn">Save Changes</button>
             </div>
         </form>
     </div>
 </div>
 
-{{-- ═══════════════════════════════════════════════════════════════
-     DELETE CONFIRMATION MODAL
-    ═══════════════════════════════════════════════════════════════ --}}
+{{-- DELETE CONFIRMATION MODAL --}}
 <div class="modal-overlay" id="deleteModal">
-    <div class="modal">
-        <div class="modal__head">
-            <h2 class="modal__title">Delete Worker</h2>
-            <button type="button" class="modal__close" onclick="closeModal('deleteModal')">&times;</button>
+    <div class="bg-card rounded-[var(--radius-card)] shadow-[0_16px_48px_rgba(44,24,16,.25)] w-full max-w-[460px] max-h-[90vh] overflow-y-auto px-8 py-7 pb-6">
+        <div class="flex items-center justify-between mb-5">
+            <h2 class="text-[17px] font-extrabold">Delete Worker</h2>
+            <button type="button" class="w-8 h-8 rounded-lg bg-transparent border-none cursor-pointer flex items-center justify-center text-lg transition-colors hover:bg-[rgba(92,45,27,.07)]" onclick="closeModal('deleteModal')">&times;</button>
         </div>
-        <div class="modal__body">
-            <p style="font-size:14px;line-height:1.6;opacity:.8">
+        <div class="flex flex-col gap-3.5">
+            <p class="text-sm leading-relaxed opacity-80">
                 Are you sure you want to delete
                 <strong id="deleteName"></strong>?
                 This action cannot be undone.
             </p>
         </div>
-        <div class="modal__footer">
-            <button type="button" class="btn btn--secondary" onclick="closeModal('deleteModal')">Cancel</button>
-            <button type="button" class="btn btn--danger" id="deleteConfirmBtn">Delete</button>
+        <div class="flex gap-2.5 justify-end mt-5 pt-4 border-t border-line">
+            <button type="button" class="btn-cancel" onclick="closeModal('deleteModal')">Cancel</button>
+            <button type="button" class="btn-danger" id="deleteConfirmBtn">Delete</button>
         </div>
         <form id="deleteForm" method="POST" style="display:none">
             @csrf
@@ -1177,146 +591,137 @@
     </div>
 </div>
 
-{{-- ═══════════════════════════════════════════════════════════════
-     SCHEDULE EDITOR MODAL
-    ═══════════════════════════════════════════════════════════════ --}}
+{{-- SCHEDULE EDITOR MODAL --}}
 <div class="modal-overlay" id="scheduleModal">
-    <div class="modal" style="max-width:500px">
-        <div class="modal__head">
-            <h2 class="modal__title">Edit Work Schedule</h2>
-            <button type="button" class="modal__close" onclick="closeModal('scheduleModal')">&times;</button>
+    <div class="bg-card rounded-[var(--radius-card)] shadow-[0_16px_48px_rgba(44,24,16,.25)] w-full max-w-[500px] max-h-[90vh] overflow-y-auto px-8 py-7 pb-6">
+        <div class="flex items-center justify-between mb-5">
+            <h2 class="text-[17px] font-extrabold">Edit Work Schedule</h2>
+            <button type="button" class="w-8 h-8 rounded-lg bg-transparent border-none cursor-pointer flex items-center justify-center text-lg transition-colors hover:bg-[rgba(92,45,27,.07)]" onclick="closeModal('scheduleModal')">&times;</button>
         </div>
         <form id="scheduleForm" onsubmit="return submitSchedule(event)">
             @csrf
             @method('PUT')
             <input type="hidden" id="schedWorkerId" value="{{ $selectedWorker->id }}">
-            <div class="modal__body">
+            <div class="flex flex-col gap-3.5">
                 @php $days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']; @endphp
                 @foreach ($days as $day)
-                    <div class="form-group" style="display:flex;flex-direction:row;align-items:center;gap:12px;">
-                        <label style="min-width:40px;margin:0;font-size:13px;text-transform:none;letter-spacing:normal;opacity:.8;">{{ $day }}</label>
-                        <input type="text" class="form-control sched-input" data-day="{{ $day }}" placeholder="e.g. 10:00 AM — 8:00 PM" value="{{ $selectedWorker->schedule[$day] ?? '' }}" style="flex:1;">
+                    <div class="flex items-center gap-3">
+                        <label class="min-w-[40px] text-[13px] opacity-80">{{ $day }}</label>
+                        <input type="text" class="form-input sched-input flex-1" data-day="{{ $day }}" placeholder="e.g. 10:00 AM — 8:00 PM" value="{{ $selectedWorker->schedule[$day] ?? '' }}">
                     </div>
                 @endforeach
                 <div class="form-group">
-                    <label>Weekend Note</label>
-                    <input type="text" class="form-control" id="schedWeekend" placeholder="e.g. Weekends — Off">
+                    <label class="form-label">Weekend Note</label>
+                    <input type="text" class="form-input" id="schedWeekend" placeholder="e.g. Weekends — Off">
                 </div>
             </div>
-            <div class="modal__footer">
-                <button type="button" class="btn btn--secondary" onclick="closeModal('scheduleModal')">Cancel</button>
-                <button type="submit" class="btn btn--primary" id="schedSubmitBtn">Save Schedule</button>
+            <div class="flex gap-2.5 justify-end mt-5 pt-4 border-t border-line">
+                <button type="button" class="btn-cancel" onclick="closeModal('scheduleModal')">Cancel</button>
+                <button type="submit" class="btn-save" id="schedSubmitBtn">Save Schedule</button>
             </div>
         </form>
     </div>
 </div>
 
-{{-- ═══════════════════════════════════════════════════════════════
-     RECORD PERFORMANCE MODAL
-    ═══════════════════════════════════════════════════════════════ --}}
+{{-- RECORD PERFORMANCE MODAL --}}
 <div class="modal-overlay" id="perfModal">
-    <div class="modal" style="max-width:500px">
-        <div class="modal__head">
-            <h2 class="modal__title">Record Performance</h2>
-            <button type="button" class="modal__close" onclick="closeModal('perfModal')">&times;</button>
+    <div class="bg-card rounded-[var(--radius-card)] shadow-[0_16px_48px_rgba(44,24,16,.25)] w-full max-w-[500px] max-h-[90vh] overflow-y-auto px-8 py-7 pb-6">
+        <div class="flex items-center justify-between mb-5">
+            <h2 class="text-[17px] font-extrabold">Record Performance</h2>
+            <button type="button" class="w-8 h-8 rounded-lg bg-transparent border-none cursor-pointer flex items-center justify-center text-lg transition-colors hover:bg-[rgba(92,45,27,.07)]" onclick="closeModal('perfModal')">&times;</button>
         </div>
         <form id="perfForm" onsubmit="return submitPerformance(event)">
             @csrf
             @method('PUT')
             <input type="hidden" id="perfWorkerId" value="{{ $selectedWorker->id }}">
-            <div class="modal__body">
+            <div class="flex flex-col gap-3.5">
                 <div class="form-group">
-                    <label>Rating <span style="font-weight:400;opacity:.5;font-size:10px;">(out of 5)</span></label>
-                    <div style="display:flex;align-items:center;gap:12px;">
-                        <input type="range" id="perfRating" min="0" max="5" step="0.1" value="{{ $selectedWorker->rating ?: 4.5 }}" oninput="document.getElementById('perfRatingDisplay').textContent = this.value" style="flex:1;">
-                        <span id="perfRatingDisplay" style="font-size:16px;font-weight:800;min-width:30px;">{{ $selectedWorker->rating ?: 4.5 }}</span>
+                    <label class="form-label">Rating <span class="font-normal opacity-50 text-[10px]">(out of 5)</span></label>
+                    <div class="flex items-center gap-3">
+                        <input type="range" id="perfRating" min="0" max="5" step="0.1" value="{{ $selectedWorker->rating ?: 4.5 }}" oninput="document.getElementById('perfRatingDisplay').textContent = this.value" class="flex-1">
+                        <span id="perfRatingDisplay" class="text-base font-extrabold min-w-[30px]">{{ $selectedWorker->rating ?: 4.5 }}</span>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Metrics <span style="font-weight:400;opacity:.5;font-size:10px;">(one per line)</span></label>
-                    <textarea class="form-control" id="perfMetrics" rows="5" placeholder="Always on time&#10;Good customer service&#10;Fast worker" style="resize:vertical;">{{ implode("\n", $selectedWorker->performance) }}</textarea>
+                    <label class="form-label">Metrics <span class="font-normal opacity-50 text-[10px]">(one per line)</span></label>
+                    <textarea class="form-input resize-y" id="perfMetrics" rows="5" placeholder="Always on time&#10;Good customer service&#10;Fast worker">{{ implode("\n", $selectedWorker->performance) }}</textarea>
                 </div>
                 <div class="form-group">
-                    <label>Notes</label>
-                    <textarea class="form-control" id="perfNotes" rows="2" placeholder="Optional notes on this review…" style="resize:vertical;"></textarea>
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-input resize-y" id="perfNotes" rows="2" placeholder="Optional notes on this review…"></textarea>
                 </div>
             </div>
-            <div class="modal__footer">
-                <button type="button" class="btn btn--secondary" onclick="closeModal('perfModal')">Cancel</button>
-                <button type="submit" class="btn btn--primary" id="perfSubmitBtn">Save Performance</button>
+            <div class="flex gap-2.5 justify-end mt-5 pt-4 border-t border-line">
+                <button type="button" class="btn-cancel" onclick="closeModal('perfModal')">Cancel</button>
+                <button type="submit" class="btn-save" id="perfSubmitBtn">Save Performance</button>
             </div>
         </form>
     </div>
 </div>
 
-{{-- ═══════════════════════════════════════════════════════════════
-     PROFILE EDIT MODAL
-    ═══════════════════════════════════════════════════════════════ --}}
+{{-- PROFILE EDIT MODAL --}}
 <div class="modal-overlay" id="profileModal">
-    <div class="modal" style="max-width:560px">
-        <div class="modal__head">
-            <h2 class="modal__title">Edit Profile</h2>
-            <button type="button" class="modal__close" onclick="closeModal('profileModal')">&times;</button>
+    <div class="bg-card rounded-[var(--radius-card)] shadow-[0_16px_48px_rgba(44,24,16,.25)] w-full max-w-[560px] max-h-[90vh] overflow-y-auto px-8 py-7 pb-6">
+        <div class="flex items-center justify-between mb-5">
+            <h2 class="text-[17px] font-extrabold">Edit Profile</h2>
+            <button type="button" class="w-8 h-8 rounded-lg bg-transparent border-none cursor-pointer flex items-center justify-center text-lg transition-colors hover:bg-[rgba(92,45,27,.07)]" onclick="closeModal('profileModal')">&times;</button>
         </div>
         <form id="profileForm" onsubmit="return submitProfile(event)">
             @csrf
             @method('PUT')
             <input type="hidden" name="worker_id" id="profileWorkerId">
-            <div class="modal__body" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div class="grid grid-cols-2 gap-3.5">
                 {{-- Left column --}}
-                <div style="display:flex;flex-direction:column;gap:14px">
+                <div class="flex flex-col gap-3.5">
                     <div class="form-group">
-                        <label>Phone</label>
-                        <input type="text" name="phone" id="pfPhone" class="form-control" placeholder="+63 912 345 6789">
+                        <label class="form-label">Phone</label>
+                        <input type="text" name="phone" id="pfPhone" class="form-input" placeholder="+63 912 345 6789">
                     </div>
                     <div class="form-group">
-                        <label>Address</label>
-                        <input type="text" name="address" id="pfAddress" class="form-control" placeholder="123 Main St, City">
+                        <label class="form-label">Address</label>
+                        <input type="text" name="address" id="pfAddress" class="form-input" placeholder="123 Main St, City">
                     </div>
                     <div class="form-group">
-                        <label>Birthday</label>
-                        <input type="text" name="birthday" id="pfBirthday" class="form-control" placeholder="March 15, 1998">
+                        <label class="form-label">Birthday</label>
+                        <input type="text" name="birthday" id="pfBirthday" class="form-input" placeholder="March 15, 1998">
                     </div>
                     <div class="form-group">
-                        <label>Senior High</label>
-                        <input type="text" name="senior_high" id="pfSeniorHigh" class="form-control" placeholder="School name">
+                        <label class="form-label">Senior High</label>
+                        <input type="text" name="senior_high" id="pfSeniorHigh" class="form-input" placeholder="School name">
                     </div>
                     <div class="form-group">
-                        <label>College</label>
-                        <input type="text" name="college" id="pfCollege" class="form-control" placeholder="University — Course">
+                        <label class="form-label">College</label>
+                        <input type="text" name="college" id="pfCollege" class="form-input" placeholder="University — Course">
                     </div>
                 </div>
                 {{-- Right column --}}
-                <div style="display:flex;flex-direction:column;gap:14px">
+                <div class="flex flex-col gap-3.5">
                     <div class="form-group">
-                        <label>Partner's Contact</label>
-                        <input type="text" name="partner_contact" id="pfPartnerContact" class="form-control" placeholder="+63 917 654 3210">
+                        <label class="form-label">Partner's Contact</label>
+                        <input type="text" name="partner_contact" id="pfPartnerContact" class="form-input" placeholder="+63 917 654 3210">
                     </div>
                     <div class="form-group">
-                        <label>Mother's Contact</label>
-                        <input type="text" name="mother_contact" id="pfMotherContact" class="form-control" placeholder="+63 908 777 8888">
+                        <label class="form-label">Mother's Contact</label>
+                        <input type="text" name="mother_contact" id="pfMotherContact" class="form-input" placeholder="+63 908 777 8888">
                     </div>
                     <div class="form-group">
-                        <label>Skills <span style="font-size:10px;opacity:.4">(comma-separated)</span></label>
-                        <input type="text" name="skills" id="pfSkills" class="form-control" placeholder="Barista, Chef, Marketing">
+                        <label class="form-label">Skills <span class="text-[10px] opacity-40">(comma-separated)</span></label>
+                        <input type="text" name="skills" id="pfSkills" class="form-input" placeholder="Barista, Chef, Marketing">
                     </div>
-                    <div class="form-group" style="grid-column:1/-1">
-                        <label>Notes</label>
-                        <textarea name="notes" id="pfNotes" class="form-control" rows="3" placeholder="Notes about this worker…"></textarea>
+                    <div class="form-group col-span-2">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" id="pfNotes" class="form-input resize-y" rows="3" placeholder="Notes about this worker…"></textarea>
                     </div>
                 </div>
             </div>
-            <div class="modal__footer">
-                <button type="button" class="btn btn--secondary" onclick="closeModal('profileModal')">Cancel</button>
-                <button type="submit" class="btn btn--primary" id="profileSubmitBtn">Save Profile</button>
+            <div class="flex gap-2.5 justify-end mt-5 pt-4 border-t border-line">
+                <button type="button" class="btn-cancel" onclick="closeModal('profileModal')">Cancel</button>
+                <button type="submit" class="btn-save" id="profileSubmitBtn">Save Profile</button>
             </div>
         </form>
     </div>
 </div>
 
-{{-- ═══════════════════════════════════════════════════════════════
-     JAVASCRIPT — Modal & AJAX Logic
-    ═══════════════════════════════════════════════════════════════ --}}
 <script>
     // ── CSRF Token Setup ──
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -1348,7 +753,7 @@
             el.classList.remove('is-visible');
             el.textContent = '';
         });
-        document.querySelectorAll('#' + id + ' .form-control').forEach(el => {
+        document.querySelectorAll('#' + id + ' .form-input').forEach(el => {
             el.classList.remove('error');
         });
     }
@@ -1520,7 +925,7 @@
     });
 
     // ── Open Add Modal ──
-    document.querySelector('.employees-card__add')?.addEventListener('click', function() {
+    document.getElementById('addEmployeeBtn')?.addEventListener('click', function() {
         openModal('addModal');
     });
 
@@ -1885,7 +1290,6 @@
     }
 
     // ── Auto-load activity on page load ──
-    // (Note: loadAttendance is already called by the existing DOMContentLoaded listener)
     document.addEventListener('DOMContentLoaded', function () {
         if ({{ $selectedWorker->id }} > 0) {
             loadActivity({{ $selectedWorker->id }}, 'transactions');

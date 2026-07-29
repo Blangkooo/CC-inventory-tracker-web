@@ -20,6 +20,8 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\IngredientController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OverviewController;
+use App\Http\Controllers\Api\PaymentsController;
+use App\Http\Controllers\Api\PricingController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ReceiptController;
 use App\Http\Controllers\Api\RecipeController;
@@ -28,6 +30,7 @@ use App\Http\Controllers\Api\ShiftController;
 use App\Http\Controllers\Api\ShiftLogController;
 use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\StockController;
+use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\AuthOnboardingController;
 use Illuminate\Support\Facades\Route;
@@ -95,6 +98,7 @@ Route::middleware('auth:api')->group(function () {
 
         Route::get('/alerts', [AlertController::class, 'index']);
         Route::get('/alerts/{alert}', [AlertController::class, 'show']);
+        Route::patch('/alerts/{alert}', [AlertController::class, 'update']);
         Route::put('/alerts/{alert}/review', [AlertController::class, 'review']);
         Route::put('/alerts/{alert}/dismiss', [AlertController::class, 'dismiss']);
 
@@ -103,6 +107,8 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/stock/restock', [StockController::class, 'restock']);
         Route::get('/stock/low-stock', [StockController::class, 'lowStock']);
         Route::get('/stock/{branchStock}/movements', [StockController::class, 'movements']);
+        Route::put('/stock/{branchStock}', [StockController::class, 'update']);
+        Route::delete('/stock/{branchStock}', [StockController::class, 'destroy']);
 
         Route::get('/branches/{branch}', [BranchController::class, 'show']);
 
@@ -110,6 +116,28 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/dashboard/kpis', [DashboardController::class, 'kpis']);
         Route::get('/dashboard/sales-summary', [DashboardController::class, 'salesSummary']);
         Route::get('/dashboard/top-products', [DashboardController::class, 'topProducts']);
+        Route::get('/dashboard/trends', [DashboardController::class, 'trends']);
+        Route::get('/dashboard/leakage', [DashboardController::class, 'leakage']);
+
+        // Supplier Directory — company-wide, not branch-scoped.
+        Route::get('/suppliers', [SupplierController::class, 'index']);
+        Route::post('/suppliers', [SupplierController::class, 'store']);
+        Route::get('/suppliers/{supplier}', [SupplierController::class, 'show']);
+        Route::put('/suppliers/{supplier}', [SupplierController::class, 'update']);
+        Route::delete('/suppliers/{supplier}', [SupplierController::class, 'destroy']);
+        Route::post('/suppliers/{supplier}/ingredients', [SupplierController::class, 'linkIngredient']);
+        Route::delete('/suppliers/{supplier}/ingredients/{ingredient}', [SupplierController::class, 'unlinkIngredient']);
+        Route::post('/suppliers/{supplier}/purchases', [SupplierController::class, 'addPurchase']);
+
+        // Operational cost logging (rent, utilities, packaging, utensils, gas, wages…).
+        Route::get('/payments', [PaymentsController::class, 'index']);
+        Route::post('/payments', [PaymentsController::class, 'store']);
+        Route::put('/payments/{payment}', [PaymentsController::class, 'update']);
+        Route::post('/payments/{payment}/mark-paid', [PaymentsController::class, 'markPaid']);
+        Route::delete('/payments/{payment}', [PaymentsController::class, 'destroy']);
+
+        // Pricing Simulator — what-if margin calculation, nothing persisted.
+        Route::post('/pricing/simulate', [PricingController::class, 'simulate']);
     });
 
     // POS shift lifecycle — staff on the floor + manager covering a shift.

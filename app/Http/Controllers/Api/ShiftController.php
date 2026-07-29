@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Concerns\AuthorizesBranchAccess;
 use App\Http\Controllers\Controller;
+use App\Models\AppSetting;
 use App\Models\BranchStock;
 use App\Models\DiscrepancyAlert;
+use App\Models\Ingredient;
 use App\Models\ShiftLog;
 use App\Models\ShiftStockCount;
 use App\Models\StockMovement;
@@ -136,26 +138,32 @@ class ShiftController extends Controller
                 ]);
 
                 if (abs($variance) > 0) {
-                    $severity = 'low';
-                    if ((float) $expected !== 0.0) {
-                        $pct = abs($variance) / abs($expected);
-                        $severity = $pct >= 0.1 ? 'high' : ($pct >= 0.05 ? 'medium' : 'low');
-                    } else {
-                        $severity = 'high';
-                    }
+                    // Configurable in Settings (owner only) — an alert only fires once
+                    // the variance crosses EITHER the relative or the peso limit, so a
+                    // 1-gram rounding difference doesn't flood the dashboard.
+                    $thresholdPct = (float) AppSetting::get('variance_threshold_pct', 0.05);
+                    $thresholdPhp = (float) AppSetting::get('variance_threshold_php', 100);
 
-                    $alerts[] = DiscrepancyAlert::create([
-                        'branch_id' => $shiftLog->branch_id,
-                        'type' => 'shift_variance',
-                        'severity' => $severity,
-                        'ingredient_id' => $count['ingredient_id'],
-                        'shift_log_id' => $shiftLog->id,
-                        'expected_value' => $expected,
-                        'actual_value' => $actual,
-                        'variance' => $variance,
-                        'details' => "Shift-end variance of {$variance} detected for ingredient #{$count['ingredient_id']} during shift #{$shiftLog->id}.",
-                        'status' => 'pending',
-                    ]);
+                    $pct = (float) $expected !== 0.0 ? abs($variance) / abs($expected) : 1.0;
+                    $unitCost = (float) (Ingredient::find($count['ingredient_id'])?->primarySupplier()?->pivot?->unit_cost ?? 0);
+                    $phpImpact = abs($variance) * $unitCost;
+
+                    if ($pct >= $thresholdPct || $phpImpact >= $thresholdPhp) {
+                        $severity = ($pct >= $thresholdPct * 2 || $phpImpact >= $thresholdPhp * 2) ? 'high' : 'medium';
+
+                        $alerts[] = DiscrepancyAlert::create([
+                            'branch_id' => $shiftLog->branch_id,
+                            'type' => 'shift_variance',
+                            'severity' => $severity,
+                            'ingredient_id' => $count['ingredient_id'],
+                            'shift_log_id' => $shiftLog->id,
+                            'expected_value' => $expected,
+                            'actual_value' => $actual,
+                            'variance' => $variance,
+                            'details' => "Shift-end variance of {$variance} detected for ingredient #{$count['ingredient_id']} during shift #{$shiftLog->id}.",
+                            'status' => 'pending',
+                        ]);
+                    }
                 }
 
                 if ($branchStock) {

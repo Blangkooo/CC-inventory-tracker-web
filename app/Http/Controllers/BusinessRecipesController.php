@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Branch;
+use App\Models\BranchStock;
 use App\Models\Ingredient;
 use App\Models\Product;
 use App\Models\Recipe;
@@ -29,6 +30,8 @@ class BusinessRecipesController extends Controller
             ->orderBy('name')
             ->get();
 
+        $this->markAvailability($products, $branches->pluck('id'));
+
         $allIngredients = Ingredient::orderBy('name')->get();
 
         return view('business.recipes', [
@@ -37,6 +40,45 @@ class BusinessRecipesController extends Controller
             'products'        => $products,
             'allIngredients'  => $allIngredients,
         ]);
+    }
+
+    /**
+     * Tag each product with whether it can actually be sold right now.
+     *
+     * A product is unavailable if it has been discontinued, or if any
+     * ingredient its recipe needs is at zero stock in every branch the
+     * viewer can see. Stock is taken as the best figure across those
+     * branches — an owner looking at six branches should not see a drink
+     * marked unavailable because one branch ran out.
+     *
+     * @param  \Illuminate\Support\Collection<int, Product>  $products
+     * @param  \Illuminate\Support\Collection<int, int>  $branchIds
+     */
+    private function markAvailability($products, $branchIds): void
+    {
+        $stock = BranchStock::whereIn('branch_id', $branchIds)
+            ->get()
+            ->groupBy('ingredient_id')
+            ->map(fn ($rows) => (float) $rows->max('current_quantity'));
+
+        foreach ($products as $product) {
+            if (! $product->is_active) {
+                $product->availability = 'discontinued';
+                $product->missing_ingredients = collect();
+
+                continue;
+            }
+
+            $missing = $product->recipes
+                ->filter(fn ($r) => ($stock[$r->ingredient_id] ?? 0) <= 0)
+                ->map(fn ($r) => $r->ingredient?->name)
+                ->filter()
+                ->unique()
+                ->values();
+
+            $product->availability = $missing->isNotEmpty() ? 'out_of_stock' : 'available';
+            $product->missing_ingredients = $missing;
+        }
     }
 
     /**

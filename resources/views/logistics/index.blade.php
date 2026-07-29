@@ -18,131 +18,20 @@
 
 @section('title', 'Logistics')
 
-@section('styles')
-    .page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
-    .page-head__left { display: flex; align-items: baseline; gap: 10px; }
-    .page-head__title { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
-    .page-head__role { font-size: 14px; color: var(--text-3); }
-
-    .subnav { display: flex; gap: 6px; }
-    .subnav__pill {
-        padding: 7px 18px; border-radius: 999px; font-size: 13px; font-weight: 600;
-        border: 1.5px solid var(--border); background: var(--card); color: var(--text-2);
-        cursor: pointer; text-decoration: none; transition: all .15s;
-    }
-    .subnav__pill:hover { border-color: var(--accent); color: var(--accent); }
-    .subnav__pill.is-active { background: var(--accent); color: #fff; border-color: var(--accent); }
-
-    .summary-table-wrap {
-        background: var(--card); border: 1px solid var(--border);
-        border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 24px;
-    }
-    .summary-table-wrap__head {
-        padding: 14px 20px; border-bottom: 1px solid var(--border);
-        display: flex; align-items: center; gap: 10px;
-    }
-    .summary-table-wrap__head svg { opacity: .6; }
-    .summary-table-wrap__title { font-size: 13px; font-weight: 700; }
-
-    .summary-table { width: 100%; border-collapse: collapse; }
-    .summary-table th {
-        padding: 10px 20px; font-size: 10px; font-weight: 700;
-        text-transform: uppercase; letter-spacing: .06em; color: var(--text-3);
-        text-align: left; border-bottom: 1px solid var(--border); background: rgba(0,0,0,.01);
-    }
-    .summary-table td { padding: 10px 20px; font-size: 13px; border-bottom: 1px solid var(--border); }
-    .summary-table tr:last-child td { border-bottom: none; }
-    .summary-table tr:hover td { background: var(--accent-light); }
-    .summary-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
-
-    .severity-badge {
-        display: inline-flex; align-items: center; gap: 5px;
-        padding: 3px 10px; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: uppercase;
-    }
-    .sev-none { background: rgba(0,184,148,.1); color: var(--green); }
-    .sev-mild { background: rgba(253,203,110,.15); color: #a16207; }
-    .sev-moderate { background: rgba(225,112,85,.1); color: #c2410c; }
-    .sev-severe { background: rgba(214,48,49,.1); color: #d63031; }
-
-    .branch-card-sm {
-        background: var(--card); border: 1px solid var(--border);
-        border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 18px;
-    }
-    .branch-card-sm__name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-3); }
-    .branch-card-sm__stat { font-size: 12px; display: flex; justify-content: space-between; padding: 4px 0; }
-
-    .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-
-    .card__head svg { flex-shrink: 0; opacity: .6; }
-    .card__head-title { font-size: 13px; font-weight: 700; }
-    .card__foot { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; }
-
-    .btn-edit {
-        padding: 6px 18px; background: var(--card); color: var(--text-2);
-        border: 1.5px solid var(--border); border-radius: 8px;
-        font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: all .15s;
-    }
-    .btn-edit:hover { background: var(--text); color: #fff; border-color: var(--text); }
-
-    .var-list { list-style: none; }
-    .var-list li { display: flex; align-items: baseline; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
-    .var-list li:last-child { border-bottom: none; }
-    .var-label { font-weight: 600; color: var(--text-2); min-width: 160px; }
-    .var-value { font-weight: 700; }
-
-    .remarks-sub { font-size: 12px; color: var(--text-2); margin-bottom: 14px; line-height: 1.6; }
-    .remarks-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .remarks-col h4 { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-    .remark-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; font-size: 12px; border-bottom: 1px solid var(--border); }
-    .remark-row:last-child { border-bottom: none; }
-
-    .dot { width: 7px; height: 7px; border-radius: 50%; }
-    .dot-green { background: #00b894; }
-    .dot-yellow { background: #fdcb6e; }
-    .dot-orange { background: #e17055; }
-    .dot-red { background: #d63031; }
-    .dot-dkred { background: #d63031; }
-
-    .formula-sub { font-size: 12px; color: var(--text-2); margin-bottom: 14px; }
-    .formula-box { background: rgba(214,48,49,.04); border: 1px solid rgba(214,48,49,.15); border-radius: 10px; padding: 14px 16px; }
-    .formula-expr { font-size: 13px; font-weight: 700; color: #d63031; }
-    .formula-note { font-size: 11px; color: var(--text-2); margin-top: 6px; }
-
-    .breakdown-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .breakdown-col h4 { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-    .breakdown-row { display: flex; justify-content: space-between; padding: 7px 0; font-size: 12px; border-bottom: 1px solid var(--border); }
-    .breakdown-row:last-child { border-bottom: none; }
-    .bd-green { font-weight: 700; color: var(--green); }
-    .bd-amber { font-weight: 700; color: #e17055; }
-    .bd-red { font-weight: 700; color: #d63031; }
-
-    .alert-table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
-    .alert-table { width: 100%; border-collapse: collapse; }
-    .alert-table th { padding: 10px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); text-align: left; border-bottom: 1px solid var(--border); background: rgba(0,0,0,.01); }
-    .alert-table td { padding: 10px 16px; font-size: 13px; border-bottom: 1px solid var(--border); }
-    .alert-table tr:last-child td { border-bottom: none; }
-    .alert-table tr:hover td { background: var(--accent-light); }
-
-    @media (max-width: 900px) {
-        .card-grid { grid-template-columns: 1fr; }
-        .page-head { flex-direction: column; align-items: flex-start; gap: 12px; }
-    }
-@endsection
-
 @section('content')
-<div class="page-head">
-    <div class="page-head__left">
-        <h1 class="page-head__title">Logistics</h1>
-        <span class="page-head__role">/ {{ auth()->user()->isSuperAdmin() ? 'Owner' : 'Manager' }}</span>
+<div class="flex items-center justify-between mb-6 max-[900px]:flex-col max-[900px]:items-start max-[900px]:gap-3">
+    <div class="flex items-baseline gap-2.5">
+        <h1 class="text-[22px] font-extrabold tracking-tight">Logistics</h1>
+        <span class="text-sm text-ink-3">/ {{ auth()->user()->isSuperAdmin() ? 'Owner' : 'Manager' }}</span>
     </div>
-    <div class="subnav">
-        <a href="{{ url('/logistics') }}?tab=summary" class="subnav__pill {{ $tab === 'summary' ? 'is-active' : '' }}">Summary</a>
-        <a href="{{ url('/logistics') }}?tab=flags" class="subnav__pill {{ $tab === 'flags' ? 'is-active' : '' }}">Flags</a>
+    <div class="flex gap-1.5">
+        <a href="{{ url('/logistics') }}?tab=summary" class="{{ $tab === 'summary' ? 'bg-accent text-white border-accent' : 'bg-card text-ink-2 border-line hover:border-accent hover:text-accent' }} px-[18px] py-[7px] rounded-full text-[13px] font-semibold border-[1.5px] no-underline transition-all duration-150">Summary</a>
+        <a href="{{ url('/logistics') }}?tab=flags" class="{{ $tab === 'flags' ? 'bg-accent text-white border-accent' : 'bg-card text-ink-2 border-line hover:border-accent hover:text-accent' }} px-[18px] py-[7px] rounded-full text-[13px] font-semibold border-[1.5px] no-underline transition-all duration-150">Flags</a>
     </div>
 </div>
 
 @if ($tab === 'summary')
-<div class="summary-table-wrap">
+<div class="summary-table-wrap mb-6">
     <div class="summary-table-wrap__head">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
         <span class="summary-table-wrap__title">Stock Reconciliation by Item</span>
@@ -166,7 +55,7 @@
                     $remark = $pct >= 95 ? 'Normal' : ($pct >= 85 ? 'Low' : ($pct >= 70 ? 'Moderate' : 'Critical'));
                 @endphp
                 <tr>
-                    <td style="font-weight:600">{{ $item->item_name }} <span style="opacity:.4;font-size:11px">{{ $item->unit }}</span></td>
+                    <td class="font-semibold">{{ $item->item_name }} <span class="opacity-40 text-[11px]">{{ $item->unit }}</span></td>
                     <td>{{ $item->branch_name }}</td>
                     <td class="num">{{ number_format($est, $item->unit === 'pcs' ? 0 : 1) }} {{ $item->unit }}</td>
                     <td class="num">{{ number_format($onSite, $item->unit === 'pcs' ? 0 : 1) }} {{ $item->unit }}</td>
@@ -175,53 +64,53 @@
                     <td style="font-weight:700;color:{{ $remarkColor }}">{{ $remark }}</td>
                 </tr>
             @empty
-                <tr><td colspan="7" class="empty-state">No stock items found.</td></tr>
+                <tr><td colspan="7" class="p-8 text-center text-[13px] text-ink-3">No stock items found.</td></tr>
             @endforelse
         </tbody>
     </table>
 </div>
 
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;">
-    <div class="branch-card-sm">
-        <div class="branch-card-sm__name">Leakage Indicator</div>
-        <div style="margin-top:8px">
-            <div class="branch-card-sm__stat"><span>Normal</span><span style="color:var(--green);font-weight:700">≥ 95%</span></div>
-            <div class="branch-card-sm__stat"><span>Mild</span><span style="color:#a16207;font-weight:700">85% – 94%</span></div>
-            <div class="branch-card-sm__stat"><span>Moderate</span><span style="color:#c2410c;font-weight:700">70% – 84%</span></div>
-            <div class="branch-card-sm__stat"><span>Severe</span><span style="color:#d63031;font-weight:700">&lt; 70%</span></div>
+<div class="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
+    <div class="card px-[18px] py-4">
+        <div class="text-xs font-bold uppercase tracking-[.05em] text-ink-3">Leakage Indicator</div>
+        <div class="mt-2">
+            <div class="text-xs flex justify-between py-1"><span>Normal</span><span class="font-bold text-green">&ge; 95%</span></div>
+            <div class="text-xs flex justify-between py-1"><span>Mild</span><span class="font-bold text-[#a16207]">85% – 94%</span></div>
+            <div class="text-xs flex justify-between py-1"><span>Moderate</span><span class="font-bold text-[#c2410c]">70% – 84%</span></div>
+            <div class="text-xs flex justify-between py-1"><span>Severe</span><span class="font-bold text-[#d63031]">&lt; 70%</span></div>
         </div>
     </div>
-    <div class="branch-card-sm">
-        <div class="branch-card-sm__name">Inventory Indicator</div>
-        <div style="margin-top:8px">
-            <div class="branch-card-sm__stat"><span>Stocked</span><span class="badge badge-green">OK</span></div>
-            <div class="branch-card-sm__stat"><span>Low</span><span class="badge badge-amber">Low</span></div>
-            <div class="branch-card-sm__stat"><span>Out</span><span class="badge badge-red">Out</span></div>
+    <div class="card px-[18px] py-4">
+        <div class="text-xs font-bold uppercase tracking-[.05em] text-ink-3">Inventory Indicator</div>
+        <div class="mt-2">
+            <div class="text-xs flex justify-between py-1"><span>Stocked</span><span class="badge badge-green">OK</span></div>
+            <div class="text-xs flex justify-between py-1"><span>Low</span><span class="badge badge-amber">Low</span></div>
+            <div class="text-xs flex justify-between py-1"><span>Out</span><span class="badge badge-red">Out</span></div>
         </div>
     </div>
-    <div class="branch-card-sm">
-        <div class="branch-card-sm__name">Summary</div>
+    <div class="card px-[18px] py-4">
+        <div class="text-xs font-bold uppercase tracking-[.05em] text-ink-3">Summary</div>
         @php
             $totalItems = $stockItems->count();
             $flaggedItems = $stockItems->filter(fn($i) => (float)$i->on_site_amount < (float)$i->estimated_amount)->count();
             $leakItems = $stockItems->filter(fn($i) => (float)$i->on_site_amount < (float)$i->estimated_amount * 0.85)->count();
         @endphp
-        <div style="margin-top:8px">
-            <div class="branch-card-sm__stat"><span>Total Items</span><span style="font-weight:700">{{ $totalItems }}</span></div>
-            <div class="branch-card-sm__stat"><span>With Variance</span><span style="font-weight:700;color:#e17055">{{ $flaggedItems }}</span></div>
-            <div class="branch-card-sm__stat"><span>Probable Leak</span><span style="font-weight:700;color:#d63031">{{ $leakItems }}</span></div>
+        <div class="mt-2">
+            <div class="text-xs flex justify-between py-1"><span>Total Items</span><span class="font-bold">{{ $totalItems }}</span></div>
+            <div class="text-xs flex justify-between py-1"><span>With Variance</span><span class="font-bold text-[#e17055]">{{ $flaggedItems }}</span></div>
+            <div class="text-xs flex justify-between py-1"><span>Probable Leak</span><span class="font-bold text-[#d63031]">{{ $leakItems }}</span></div>
         </div>
     </div>
 </div>
 @endif
 
 @if ($tab === 'flags')
-<div class="alert-table-wrap" style="margin-bottom:24px;">
+<div class="summary-table-wrap mb-6">
     <div class="summary-table-wrap__head">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
         <span class="summary-table-wrap__title">Active Discrepancy Flags</span>
     </div>
-    <table class="alert-table">
+    <table class="summary-table">
         <thead><tr><th>Item</th><th>Branch</th><th>Expected</th><th>Actual</th><th>Leakage</th><th>Status</th><th>Remarks</th></tr></thead>
         <tbody>
             @forelse ($activeAlerts as $alert)
@@ -231,7 +120,7 @@
                     $sev = $alert->severity ?? 'none';
                 @endphp
                 <tr>
-                    <td style="font-weight:600">{{ $alert->ingredient?->name ?? 'Raw Materials' }}</td>
+                    <td class="font-semibold">{{ $alert->ingredient?->name ?? 'Raw Materials' }}</td>
                     <td>{{ $alert->branch?->name ?? '—' }}</td>
                     <td>{{ number_format($alert->expected_value, 2) }} {{ $alert->ingredient?->unit ?? '' }}</td>
                     <td>{{ number_format($alert->actual_value, 2) }} {{ $alert->ingredient?->unit ?? '' }}</td>
@@ -242,59 +131,87 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="7" class="empty-state">No active flags — all stock levels are normal.</td></tr>
+                <tr><td colspan="7" class="p-8 text-center text-[13px] text-ink-3">No active flags — all stock levels are normal.</td></tr>
             @endforelse
         </tbody>
     </table>
 </div>
 
-<div class="card-grid">
+<div class="grid grid-cols-2 gap-4 max-[900px]:grid-cols-1">
     <div class="card">
-        <div class="card__head"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="3" cy="18" r="1"/></svg><span class="card__head-title">Variables</span></div>
+        <div class="card__head"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 opacity-60"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="3" cy="18" r="1"/></svg><span class="card__title">Variables</span></div>
         <div class="card__body">
-            <ul class="var-list">
-                <li><span class="var-label">Constant Float Value</span><span class="var-value">&#8369;200</span></li>
-                <li><span class="var-label">Expected Total Sales</span><span class="var-value">Total EOD Transactions</span></li>
-                <li><span class="var-label">Total Inventory</span><span class="var-value">{{ $totalStockItems }} items</span></li>
+            <ul class="list-none">
+                <li class="flex items-baseline gap-2 py-2.5 border-b border-line text-[13px]"><span class="font-semibold text-ink-2 min-w-[160px]">Constant Float Value</span><span class="font-bold">&#8369;200</span></li>
+                <li class="flex items-baseline gap-2 py-2.5 border-b border-line text-[13px]"><span class="font-semibold text-ink-2 min-w-[160px]">Expected Total Sales</span><span class="font-bold">Total EOD Transactions</span></li>
+                <li class="flex items-baseline gap-2 py-2.5 text-[13px]"><span class="font-semibold text-ink-2 min-w-[160px]">Total Inventory</span><span class="font-bold">{{ $totalStockItems }} items</span></li>
             </ul>
         </div>
-        <div class="card__foot"><button class="btn-edit">Edit</button></div>
+        <div class="px-5 py-3 border-t border-line flex justify-end"><button class="btn-sm">Edit</button></div>
     </div>
     <div class="card">
-        <div class="card__head"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="card__head-title">Remarks</span></div>
+        <div class="card__head"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 opacity-60"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="card__title">Remarks</span></div>
         <div class="card__body">
-            <p class="remarks-sub">Indicator rules for Leakage &amp; Inventory status thresholds.</p>
-            <div class="remarks-cols">
-                <div class="remarks-col"><h4>Leakage Indicator</h4><div class="remark-row"><span>Normal</span><span class="dot dot-green"></span></div><div class="remark-row"><span>Running Low</span><span class="dot dot-yellow"></span></div><div class="remark-row"><span>Low</span><span class="dot dot-orange"></span></div><div class="remark-row"><span>Almost Out</span><span class="dot dot-red"></span></div><div class="remark-row"><span>Out</span><span class="dot dot-dkred"></span></div></div>
-                <div class="remarks-col"><h4>Inventory Indicator</h4><div class="remark-row"><span>Normal</span><span class="dot dot-green"></span></div><div class="remark-row"><span>Running Low</span><span class="dot dot-yellow"></span></div><div class="remark-row"><span>Low</span><span class="dot dot-orange"></span></div><div class="remark-row"><span>Almost Out</span><span class="dot dot-red"></span></div><div class="remark-row"><span>Out</span><span class="dot dot-dkred"></span></div></div>
+            <p class="text-xs text-ink-2 mb-3.5 leading-relaxed">Indicator rules for Leakage &amp; Inventory status thresholds.</p>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h4 class="text-[10px] font-bold uppercase tracking-[.06em] text-ink-3 mb-2.5 pb-2 border-b border-line">Leakage Indicator</h4>
+                    <div class="flex justify-between items-center py-[7px] text-xs border-b border-line"><span>Normal</span><span class="w-[7px] h-[7px] rounded-full bg-[#00b894]"></span></div>
+                    <div class="flex justify-between items-center py-[7px] text-xs border-b border-line"><span>Running Low</span><span class="w-[7px] h-[7px] rounded-full bg-[#fdcb6e]"></span></div>
+                    <div class="flex justify-between items-center py-[7px] text-xs border-b border-line"><span>Low</span><span class="w-[7px] h-[7px] rounded-full bg-[#e17055]"></span></div>
+                    <div class="flex justify-between items-center py-[7px] text-xs border-b border-line"><span>Almost Out</span><span class="w-[7px] h-[7px] rounded-full bg-[#d63031]"></span></div>
+                    <div class="flex justify-between items-center py-[7px] text-xs"><span>Out</span><span class="w-[7px] h-[7px] rounded-full bg-[#d63031]"></span></div>
+                </div>
+                <div>
+                    <h4 class="text-[10px] font-bold uppercase tracking-[.06em] text-ink-3 mb-2.5 pb-2 border-b border-line">Inventory Indicator</h4>
+                    <div class="flex justify-between items-center py-[7px] text-xs border-b border-line"><span>Normal</span><span class="w-[7px] h-[7px] rounded-full bg-[#00b894]"></span></div>
+                    <div class="flex justify-between items-center py-[7px] text-xs border-b border-line"><span>Running Low</span><span class="w-[7px] h-[7px] rounded-full bg-[#fdcb6e]"></span></div>
+                    <div class="flex justify-between items-center py-[7px] text-xs border-b border-line"><span>Low</span><span class="w-[7px] h-[7px] rounded-full bg-[#e17055]"></span></div>
+                    <div class="flex justify-between items-center py-[7px] text-xs border-b border-line"><span>Almost Out</span><span class="w-[7px] h-[7px] rounded-full bg-[#d63031]"></span></div>
+                    <div class="flex justify-between items-center py-[7px] text-xs"><span>Out</span><span class="w-[7px] h-[7px] rounded-full bg-[#d63031]"></span></div>
+                </div>
             </div>
         </div>
-        <div class="card__foot"><button class="btn-edit">Edit</button></div>
+        <div class="px-5 py-3 border-t border-line flex justify-end"><button class="btn-sm">Edit</button></div>
     </div>
     <div class="card">
-        <div class="card__head"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r=".5" fill="currentColor"/></svg><span class="card__head-title">Float Amount Discrepancy</span></div>
-        <div class="card__body"><p class="formula-sub">Verifies that the amount left in the till is exact.</p><div class="formula-box"><div class="formula-expr">Actual Till Amount / Constant Float Value</div><div class="formula-note">Must equate to 1 to be true — a flag is sent otherwise.</div></div></div>
-        <div class="card__foot"><button class="btn-edit">Edit</button></div>
+        <div class="card__head"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 opacity-60"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r=".5" fill="currentColor"/></svg><span class="card__title">Float Amount Discrepancy</span></div>
+        <div class="card__body"><p class="text-xs text-ink-2 mb-3.5">Verifies that the amount left in the till is exact.</p><div class="bg-[rgba(214,48,49,.04)] border border-[rgba(214,48,49,.15)] rounded-[10px] p-3.5 px-4"><div class="text-[13px] font-bold text-[#d63031]">Actual Till Amount / Constant Float Value</div><div class="text-[11px] text-ink-2 mt-1.5">Must equate to 1 to be true — a flag is sent otherwise.</div></div></div>
+        <div class="px-5 py-3 border-t border-line flex justify-end"><button class="btn-sm">Edit</button></div>
     </div>
     <div class="card">
-        <div class="card__head"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg><span class="card__head-title">Total Sales Discrepancy</span></div>
-        <div class="card__body"><p class="formula-sub">Tracks variance between cash collected and expected revenue.</p><div class="formula-box"><div class="formula-expr">Actual Cash / Expected Total Sales</div></div></div>
-        <div class="card__foot"><button class="btn-edit">Edit</button></div>
+        <div class="card__head"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 opacity-60"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg><span class="card__title">Total Sales Discrepancy</span></div>
+        <div class="card__body"><p class="text-xs text-ink-2 mb-3.5">Tracks variance between cash collected and expected revenue.</p><div class="bg-[rgba(214,48,49,.04)] border border-[rgba(214,48,49,.15)] rounded-[10px] p-3.5 px-4"><div class="text-[13px] font-bold text-[#d63031]">Actual Cash / Expected Total Sales</div></div></div>
+        <div class="px-5 py-3 border-t border-line flex justify-end"><button class="btn-sm">Edit</button></div>
     </div>
     <div class="card">
-        <div class="card__head"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg><span class="card__head-title">EOD Inventory Discrepancy</span></div>
-        <div class="card__body"><p class="formula-sub">Compares end-of-day physical count against expected inventory levels.</p><div class="formula-box"><div class="formula-expr">Actual Inventory Left / Expected Inventory Left</div></div></div>
-        <div class="card__foot"><button class="btn-edit">Edit</button></div>
+        <div class="card__head"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 opacity-60"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg><span class="card__title">EOD Inventory Discrepancy</span></div>
+        <div class="card__body"><p class="text-xs text-ink-2 mb-3.5">Compares end-of-day physical count against expected inventory levels.</p><div class="bg-[rgba(214,48,49,.04)] border border-[rgba(214,48,49,.15)] rounded-[10px] p-3.5 px-4"><div class="text-[13px] font-bold text-[#d63031]">Actual Inventory Left / Expected Inventory Left</div></div></div>
+        <div class="px-5 py-3 border-t border-line flex justify-end"><button class="btn-sm">Edit</button></div>
     </div>
     <div class="card">
-        <div class="card__head"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="card__head-title">Leakage &amp; Inventory Breakdown</span></div>
+        <div class="card__head"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 opacity-60"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="card__title">Leakage &amp; Inventory Breakdown</span></div>
         <div class="card__body">
-            <div class="breakdown-cols">
-                <div class="breakdown-col"><h4>Leakage Indicator</h4><div class="breakdown-row"><span>Normal</span><span class="bd-green">&lt; 5%</span></div><div class="breakdown-row"><span>Running Low</span><span class="bd-amber">5% – 10%</span></div><div class="breakdown-row"><span>Low</span><span class="bd-amber">10% – 15%</span></div><div class="breakdown-row"><span>Almost Out</span><span class="bd-red">15% – 20%</span></div><div class="breakdown-row"><span>Out</span><span class="bd-red">&gt; 20%</span></div></div>
-                <div class="breakdown-col"><h4>Inventory Indicator</h4><div class="breakdown-row"><span>Normal</span><span class="bd-green">&gt; 60%</span></div><div class="breakdown-row"><span>Running Low</span><span class="bd-amber">40% – 60%</span></div><div class="breakdown-row"><span>Low</span><span class="bd-amber">20% – 40%</span></div><div class="breakdown-row"><span>Almost Out</span><span class="bd-red">10% – 20%</span></div><div class="breakdown-row"><span>Out</span><span class="bd-red">&lt; 10%</span></div></div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h4 class="text-[10px] font-bold uppercase tracking-[.06em] text-ink-3 mb-2.5 pb-2 border-b border-line">Leakage Indicator</h4>
+                    <div class="flex justify-between py-[7px] text-xs border-b border-line"><span>Normal</span><span class="font-bold text-green">&lt; 5%</span></div>
+                    <div class="flex justify-between py-[7px] text-xs border-b border-line"><span>Running Low</span><span class="font-bold text-[#e17055]">5% – 10%</span></div>
+                    <div class="flex justify-between py-[7px] text-xs border-b border-line"><span>Low</span><span class="font-bold text-[#e17055]">10% – 15%</span></div>
+                    <div class="flex justify-between py-[7px] text-xs border-b border-line"><span>Almost Out</span><span class="font-bold text-[#d63031]">15% – 20%</span></div>
+                    <div class="flex justify-between py-[7px] text-xs"><span>Out</span><span class="font-bold text-[#d63031]">&gt; 20%</span></div>
+                </div>
+                <div>
+                    <h4 class="text-[10px] font-bold uppercase tracking-[.06em] text-ink-3 mb-2.5 pb-2 border-b border-line">Inventory Indicator</h4>
+                    <div class="flex justify-between py-[7px] text-xs border-b border-line"><span>Normal</span><span class="font-bold text-green">&gt; 60%</span></div>
+                    <div class="flex justify-between py-[7px] text-xs border-b border-line"><span>Running Low</span><span class="font-bold text-[#e17055]">40% – 60%</span></div>
+                    <div class="flex justify-between py-[7px] text-xs border-b border-line"><span>Low</span><span class="font-bold text-[#e17055]">20% – 40%</span></div>
+                    <div class="flex justify-between py-[7px] text-xs border-b border-line"><span>Almost Out</span><span class="font-bold text-[#d63031]">10% – 20%</span></div>
+                    <div class="flex justify-between py-[7px] text-xs"><span>Out</span><span class="font-bold text-[#d63031]">&lt; 10%</span></div>
+                </div>
             </div>
         </div>
-        <div class="card__foot"><button class="btn-edit">Edit</button></div>
+        <div class="px-5 py-3 border-t border-line flex justify-end"><button class="btn-sm">Edit</button></div>
     </div>
 </div>
 @endif

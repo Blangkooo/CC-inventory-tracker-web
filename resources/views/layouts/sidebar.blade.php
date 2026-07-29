@@ -4,10 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Dashboard') — NITA</title>
-    @vite(['resources/css/app.css'])
+    <title>@yield('title', 'Dashboard') — InvenTrack</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        /* Tailwind's preflight already zeroes margin/padding and sets
+           border-box on every element. Repeating it here is not just
+           redundant — this block is unlayered, so a `*` reset would outrank
+           every @layer components rule and silently flatten card padding. */
 
         body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
 
@@ -23,69 +26,70 @@
             display: flex; align-items: center; gap: 10px;
             padding: 0 20px; margin-bottom: 28px;
         }
-        .sidebar__brand img { height: 26px; }
-        .sidebar__brand-text { font-size: 18px; font-weight: 900; color: var(--text); letter-spacing: -.02em; }
-        .sidebar__brand-badge {
-            font-size: 9px; font-weight: 700; background: var(--accent); color: #fff;
-            padding: 2px 6px; border-radius: 4px; margin-left: 2px; letter-spacing: .05em;
+        .sidebar__brand-icon {
+            width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+            background: var(--accent); color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
         }
+        .sidebar__brand-text { font-size: 18px; font-weight: 900; color: var(--text); letter-spacing: -.02em; }
 
         .sidebar__nav { flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 0 12px; }
 
+        /* Nav reads as a terracotta list, matching the approved design. */
         .sidebar__link {
             display: flex; align-items: center; gap: 12px;
-            padding: 10px 14px; border-radius: 10px;
-            font-size: 13px; font-weight: 500; color: var(--text-2);
+            padding: 9px 14px; border-radius: 10px;
+            font-size: 13.5px; font-weight: 600; color: var(--text-2);
+            border-left: 3px solid transparent;
             text-decoration: none; transition: all .15s;
         }
-        .sidebar__link:hover { color: var(--text); background: var(--color-surface-2); }
-        /* Active nav reads as a soft neutral pill; the accent is reserved for
-           primary actions so the sidebar stays quiet. */
+        .sidebar__link:hover { background: var(--color-accent-light); }
         .sidebar__link.is-active {
-            color: var(--text); background: var(--color-surface-2);
-            font-weight: 700;
+            background: var(--color-accent-light);
+            color: var(--text);
+            border-left-color: var(--accent);
+            font-weight: 800;
         }
-        .sidebar__link.is-active svg { color: var(--accent); }
-        .sidebar__link svg { width: 18px; height: 18px; flex-shrink: 0; }
+        .sidebar__link svg { width: 17px; height: 17px; flex-shrink: 0; }
         .sidebar__link .badge-count {
             margin-left: auto; background: var(--accent-2); color: #fff;
             font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 99px;
         }
 
-        .sidebar__section {
-            font-size: 10px; font-weight: 700; color: var(--text-3);
-            text-transform: uppercase; letter-spacing: .1em;
-            padding: 18px 14px 6px;
+        /* Groups are separated by a rule rather than a caption, so the nav
+           stays a single uninterrupted column of destinations. */
+        .sidebar__divider {
+            height: 1px; background: var(--border);
+            margin: 12px 14px;
         }
 
         .sidebar__footer {
-            padding: 12px 12px 0; border-top: 1px solid var(--border); margin-top: auto;
+            padding: 14px 14px 0; margin-top: auto;
         }
         .sidebar__user {
-            display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+            display: flex; align-items: center; gap: 10px; padding: 0 0 12px;
         }
-        .sidebar__avatar {
-            width: 34px; height: 34px; border-radius: 10px;
-            background: linear-gradient(135deg, var(--accent), var(--pink));
-            color: #fff; display: flex; align-items: center; justify-content: center;
-            font-size: 12px; font-weight: 800;
-        }
-        .sidebar__user-name { font-size: 13px; font-weight: 700; color: var(--text); }
+        .sidebar__user-name { font-size: 12px; font-weight: 700; color: var(--text); }
         .sidebar__user-role { font-size: 10px; color: var(--text-3); font-weight: 600; }
 
+        /* Tinted pill, matching the weight of every other nav row — Log Out
+           reads as "leave" rather than a loud destructive button. */
         .sidebar__logout {
             display: flex; align-items: center; gap: 10px;
-            width: 100%; padding: 10px 14px; border-radius: 10px;
-            font-size: 12px; font-weight: 600; color: var(--text-3);
-            background: none; border: none; cursor: pointer; font-family: var(--font);
-            transition: all .15s; margin-top: 4px;
+            width: 100%; padding: 9px 14px; border-radius: 10px;
+            font-size: 13.5px; font-weight: 700; color: var(--accent-2);
+            background: rgba(214, 48, 49, 0.08); border: none; cursor: pointer;
+            font-family: var(--font); transition: all .15s;
         }
-        .sidebar__logout:hover { color: var(--accent-2); background: rgba(214,48,49,.05); }
-        .sidebar__logout svg { width: 16px; height: 16px; }
+        .sidebar__logout:hover { background: rgba(214, 48, 49, 0.14); }
+        .sidebar__logout svg { width: 17px; height: 17px; flex-shrink: 0; }
 
         /* ═══ MAIN ═══ */
-        .main { margin-left: var(--sidebar-w); flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 100vh; }
-        .content { flex: 1; padding: 24px 32px; }
+        .main { margin-left: var(--sidebar-w); flex: 1; min-width: 0; overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh; }
+        /* Capped so cards stop stretching edge-to-edge on wide monitors —
+           past ~1280px the extra width just widens gaps, not content. */
+        .content { flex: 1; padding: 16px; max-width: 1280px; width: 100%; margin: 0 auto; }
 
         .content-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
         .content-title { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
@@ -118,60 +122,82 @@
     $initials = collect(explode(' ', $user->name))->map(fn($w) => strtoupper($w[0] ?? ''))->take(2)->join('');
     $roleName = $user->isSuperAdmin() ? 'Owner' : ($user->isManager() ? 'Manager' : 'Staff');
     $pendingAlertCount = \App\Models\DiscrepancyAlert::where('status', 'pending')->count();
+    $pendingApplicantCount = \App\Models\JobApplicant::where('status', 'applied')->count();
     $currentRoute = request()->route()?->getName() ?? '';
+
+    // Mirrors the route middleware. The gate is enforced server-side; hiding
+    // the links here just avoids offering a user a door that 403s.
+    $isOwner = $user->isSuperAdmin();
+    $canSeeFinancials = $user->hasRole(\App\Models\User::ROLE_SUPER_ADMIN, \App\Models\User::ROLE_MANAGER);
 @endphp
 
 <aside class="sidebar">
     <div class="sidebar__brand">
-        <img src="{{ asset('images/logo.svg') }}" alt="NITA">
-        <span class="sidebar__brand-text">NITA</span>
-        <span class="sidebar__brand-badge">PRO</span>
+        <div class="sidebar__brand-icon">📦</div>
+        <span class="sidebar__brand-text">InvenTrack</span>
     </div>
 
     <nav class="sidebar__nav">
-        <span class="sidebar__section">Overview</span>
         <a href="{{ route('dashboard') }}" class="sidebar__link {{ $currentRoute === 'dashboard' ? 'is-active' : '' }}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             Dashboard
         </a>
-        <a href="{{ route('business.recipes') }}" class="sidebar__link {{ str_starts_with($currentRoute, 'business') ? 'is-active' : '' }}">
+        @if ($canSeeFinancials)
+        <a href="{{ route('calendar.index') }}" class="sidebar__link {{ str_starts_with($currentRoute, 'calendar') ? 'is-active' : '' }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Calendar
+        </a>
+        @endif
+        <a href="{{ route('business.recipes') }}" class="sidebar__link {{ str_starts_with($currentRoute, 'business') && $currentRoute !== 'business.workers' ? 'is-active' : '' }}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
             Business
         </a>
-        <a href="{{ route('logistics') }}" class="sidebar__link {{ $currentRoute === 'logistics' ? 'is-active' : '' }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-            Logistics
+        @if ($canSeeFinancials)
+        <a href="{{ route('reports.index') }}" class="sidebar__link {{ str_starts_with($currentRoute, 'reports') ? 'is-active' : '' }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Reports
         </a>
 
-        <span class="sidebar__section">Tools</span>
-        <a href="{{ route('suppliers.index') }}" class="sidebar__link {{ $currentRoute === 'suppliers.index' ? 'is-active' : '' }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            Suppliers
+        <div class="sidebar__divider"></div>
+        <a href="{{ route('payments.index') }}" class="sidebar__link {{ str_starts_with($currentRoute, 'payments') ? 'is-active' : '' }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Payments
         </a>
-        <a href="{{ route('pricing.index') }}" class="sidebar__link {{ $currentRoute === 'pricing.index' ? 'is-active' : '' }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            Pricing
+        <a href="{{ route('salary.index') }}" class="sidebar__link {{ str_starts_with($currentRoute, 'salary') ? 'is-active' : '' }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+            Salary
         </a>
-        <a href="{{ route('alerts') }}" class="sidebar__link {{ $currentRoute === 'alerts' ? 'is-active' : '' }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            Alerts
-            @if ($pendingAlertCount > 0)
-                <span class="badge-count">{{ $pendingAlertCount }}</span>
-            @endif
+        <a href="{{ route('analytics.index') }}" class="sidebar__link {{ str_starts_with($currentRoute, 'analytics') ? 'is-active' : '' }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Analytics
         </a>
 
-        <span class="sidebar__section">Manage</span>
+        <div class="sidebar__divider"></div>
         <a href="{{ route('business.workers') }}" class="sidebar__link {{ $currentRoute === 'business.workers' ? 'is-active' : '' }}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-            Workers
+            Employees
         </a>
-        <a href="{{ route('branches') }}" class="sidebar__link {{ str_starts_with($currentRoute, 'branches') ? 'is-active' : '' }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1"/><path d="M14 9h1"/><path d="M9 13h1"/><path d="M14 13h1"/></svg>
-            Branches
+        <a href="{{ route('hiring.index') }}" class="sidebar__link {{ str_starts_with($currentRoute, 'hiring') ? 'is-active' : '' }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            Hiring
+            @if ($pendingApplicantCount > 0)
+                <span class="badge-count">{{ $pendingApplicantCount }}</span>
+            @endif
         </a>
+        <a href="{{ route('legal-papers.index') }}" class="sidebar__link {{ str_starts_with($currentRoute, 'legal-papers') ? 'is-active' : '' }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M12 22V12"/><path d="M3 7l9 5 9-5"/></svg>
+            Legal Papers
+        </a>
+        @endif
+
+        <div class="sidebar__divider"></div>
         <a href="{{ route('settings') }}" class="sidebar__link {{ $currentRoute === 'settings' ? 'is-active' : '' }}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             Settings
+        </a>
+        <a href="{{ route('notices.index') }}" class="sidebar__link {{ str_starts_with($currentRoute, 'notices') ? 'is-active' : '' }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Mail/Messages
         </a>
     </nav>
 
@@ -180,8 +206,8 @@
     <div class="sidebar__footer">
         <div class="sidebar__user">
             <div>
-                <div class="sidebar__user-name">Signed in as</div>
-                <div class="sidebar__user-role">{{ $roleName }}</div>
+                <div class="sidebar__user-role">Signed in as</div>
+                <div class="sidebar__user-name">{{ $roleName }}</div>
             </div>
         </div>
         <form method="POST" action="{{ route('logout') }}">

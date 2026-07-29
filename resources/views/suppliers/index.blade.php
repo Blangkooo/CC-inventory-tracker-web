@@ -2,158 +2,64 @@
 
 @section('title', 'Supplier Directory')
 
-@section('styles')
-    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
-    .page-title { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
-    .page-subtitle { font-size: 13px; color: var(--text-2); margin-top: 2px; }
-
-    .btn-add {
-        display: flex; align-items: center; gap: 6px;
-        padding: 10px 20px; background: var(--accent); color: #fff;
-        border: none; border-radius: 10px; font-size: 13px; font-weight: 700;
-        font-family: var(--font); cursor: pointer; transition: all .15s;
-    }
-    .btn-add:hover { background: #d35e47; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(225,112,85,.3); }
-
-    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
-    .stat-card {
-        background: var(--card); border: 1px solid var(--border);
-        border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
-    }
-    .stat-card__value { font-size: 26px; font-weight: 800; color: var(--text); }
-    .stat-card__label { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
-
-    .table-wrap {
-        background: var(--card); border: 1px solid var(--border);
-        border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
-    }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    thead { background: rgba(0,0,0,.02); }
-    th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); }
-    td { padding: 14px 16px; border-top: 1px solid var(--border); vertical-align: middle; }
-    tr:hover td { background: var(--accent-light); }
-
-    .supplier-name { font-weight: 700; color: var(--text); }
-    .supplier-contact { color: var(--text-2); font-size: 12px; margin-top: 2px; }
-    .ingredient-count { font-weight: 700; color: var(--accent); }
-
-    .actions { display: flex; gap: 6px; }
-    .btn-sm {
-        padding: 5px 12px; border-radius: 8px; font-size: 11px; font-weight: 600;
-        border: 1.5px solid var(--border); background: var(--card); color: var(--text-2);
-        cursor: pointer; font-family: var(--font); transition: all .15s;
-    }
-    .btn-sm:hover { background: var(--text); color: #fff; border-color: var(--text); }
-    .btn-sm.danger:hover { background: #d63031; color: #fff; border-color: #d63031; }
-
-    .modal-overlay {
-        display: none; position: fixed; inset: 0; z-index: 200;
-        background: rgba(0,0,0,.5); backdrop-filter: blur(4px);
-        align-items: center; justify-content: center; padding: 24px;
-    }
-    .modal-overlay.is-open { display: flex; }
-    .modal {
-        background: var(--card); border-radius: 18px; width: 100%; max-width: 520px;
-        max-height: 90vh; overflow-y: auto; padding: 32px;
-        box-shadow: 0 24px 64px rgba(0,0,0,.2);
-    }
-    .modal h2 { font-size: 18px; font-weight: 800; margin-bottom: 20px; }
-
-    .form-group { margin-bottom: 14px; }
-    .form-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); margin-bottom: 5px; }
-    .form-input {
-        width: 100%; height: 42px; padding: 0 14px;
-        border: 1.5px solid var(--border); border-radius: 10px;
-        font-size: 13px; color: var(--text); font-family: var(--font);
-        background: var(--card); transition: all .15s;
-    }
-    .form-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(225,112,85,.1); }
-    textarea.form-input { height: 80px; padding: 10px 14px; resize: vertical; }
-
-    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
-    .btn-cancel {
-        padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 600;
-        border: 1.5px solid var(--border); background: var(--card); color: var(--text-2);
-        cursor: pointer; font-family: var(--font);
-    }
-    .btn-save {
-        padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 700;
-        border: none; background: var(--accent); color: #fff;
-        cursor: pointer; font-family: var(--font);
-    }
-    .btn-save:hover { background: #d35e47; }
-
-    .detail-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
-    .detail-name { font-size: 20px; font-weight: 800; }
-    .detail-section { margin-bottom: 20px; }
-    .detail-section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-3); margin-bottom: 8px; }
-    .detail-info { font-size: 13px; line-height: 1.7; }
-
-    .ingredient-list { display: flex; flex-direction: column; gap: 6px; }
-    .ingredient-item {
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 10px 14px; background: rgba(0,0,0,.02); border-radius: 10px; font-size: 13px;
-    }
-    .ingredient-item__name { font-weight: 600; }
-    .ingredient-item__cost { font-weight: 700; color: var(--accent); }
-    .ingredient-item__primary { font-size: 10px; font-weight: 700; background: rgba(0,184,148,.1); color: var(--green); padding: 2px 8px; border-radius: 99px; }
-
-    .purchase-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
-    .purchase-row:last-child { border-bottom: none; }
-
-    @media (max-width: 768px) {
-        .stats-row { grid-template-columns: 1fr; }
-        table { font-size: 12px; }
-        th, td { padding: 10px 12px; }
-    }
-@endsection
-
 @section('content')
-<div class="page-header">
+<div class="flex items-center justify-between mb-6">
     <div>
-        <div class="page-title">Supplier Directory</div>
-        <div class="page-subtitle">Manage ingredient suppliers, contacts, and purchase history</div>
+        <div class="text-[22px] font-extrabold tracking-tight">Supplier Directory</div>
+        <div class="text-[13px] text-ink-2 mt-0.5">Manage ingredient suppliers, contacts, and purchase history</div>
     </div>
-    <button class="btn-add" onclick="openAddModal()">
+    <button class="btn-primary flex items-center gap-1.5" onclick="openAddModal()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Add Supplier
     </button>
 </div>
 
-<div class="stats-row">
-    <div class="stat-card">
-        <div class="stat-card__value">{{ $suppliers->count() }}</div>
-        <div class="stat-card__label">Total Suppliers</div>
+<div class="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3 mb-6">
+    <div class="card p-5">
+        <div class="text-[26px] font-extrabold">{{ $suppliers->count() }}</div>
+        <div class="text-[11px] font-semibold text-ink-3 uppercase tracking-[.06em] mt-1">Total Suppliers</div>
     </div>
-    <div class="stat-card">
-        <div class="stat-card__value">{{ $suppliers->where('is_active', true)->count() }}</div>
-        <div class="stat-card__label">Active</div>
+    <div class="card p-5">
+        <div class="text-[26px] font-extrabold">{{ $suppliers->where('is_active', true)->count() }}</div>
+        <div class="text-[11px] font-semibold text-ink-3 uppercase tracking-[.06em] mt-1">Active</div>
     </div>
-    <div class="stat-card">
-        <div class="stat-card__value">{{ $ingredients->count() }}</div>
-        <div class="stat-card__label">Ingredients Tracked</div>
+    <div class="card p-5">
+        <div class="text-[26px] font-extrabold">{{ $ingredients->count() }}</div>
+        <div class="text-[11px] font-semibold text-ink-3 uppercase tracking-[.06em] mt-1">Ingredients Tracked</div>
     </div>
 </div>
 
-<div class="table-wrap">
+<div class="summary-table-wrap">
     @if ($suppliers->isEmpty())
-        <div class="empty-state"><p>No suppliers added yet. Click "Add Supplier" to get started.</p></div>
+        <div class="p-8 text-center text-[13px] text-ink-3">No suppliers added yet. Click "Add Supplier" to get started.</div>
     @else
-        <table>
+        <table class="summary-table">
             <thead><tr><th>Supplier</th><th>Contact</th><th>Address / Landmark</th><th>Ingredients</th><th>Status</th><th></th></tr></thead>
             <tbody>
                 @foreach ($suppliers as $supplier)
                 <tr>
                     <td>
-                        <div class="supplier-name">{{ $supplier->name }}</div>
-                        @if ($supplier->contact_person)<div class="supplier-contact">{{ $supplier->contact_person }}</div>@endif
+                        <div class="flex items-center gap-2.5">
+                            @if ($supplier->photo_path)
+                                <img src="{{ \Illuminate\Support\Facades\Storage::url($supplier->photo_path) }}" alt="{{ $supplier->name }}"
+                                     class="w-9 h-9 rounded-lg object-cover shrink-0 border border-line">
+                            @else
+                                <div class="w-9 h-9 rounded-lg shrink-0 bg-accent-light text-accent flex items-center justify-center text-[11px] font-extrabold uppercase">
+                                    {{ mb_substr($supplier->name, 0, 2) }}
+                                </div>
+                            @endif
+                            <div>
+                                <div class="font-bold">{{ $supplier->name }}</div>
+                                @if ($supplier->contact_person)<div class="text-ink-2 text-xs mt-0.5">{{ $supplier->contact_person }}</div>@endif
+                            </div>
+                        </div>
                     </td>
                     <td>{{ $supplier->contact_number ?? '—' }}</td>
-                    <td>{{ Str::limit($supplier->address, 30) }}@if ($supplier->landmark)<br><span style="opacity:.6;font-size:11px;">Near: {{ $supplier->landmark }}</span>@endif</td>
-                    <td><span class="ingredient-count">{{ $supplier->ingredients_count }}</span></td>
+                    <td>{{ Str::limit($supplier->address, 30) }}@if ($supplier->landmark)<br><span class="opacity-60 text-[11px]">Near: {{ $supplier->landmark }}</span>@endif</td>
+                    <td><span class="font-bold text-accent">{{ $supplier->ingredients_count }}</span></td>
                     <td>@if ($supplier->is_active)<span class="badge badge-green">Active</span>@else<span class="badge badge-gray">Inactive</span>@endif</td>
                     <td>
-                        <div class="actions">
+                        <div class="flex gap-1.5">
                             <button class="btn-sm" onclick="viewSupplier({{ $supplier->id }})">View</button>
                             <button class="btn-sm" onclick="editSupplier({{ $supplier->id }}, {{ json_encode($supplier) }})">Edit</button>
                             <button class="btn-sm danger" onclick="deleteSupplier({{ $supplier->id }}, '{{ $supplier->name }}')">Del</button>
@@ -168,8 +74,8 @@
 
 {{-- ADD/EDIT MODAL --}}
 <div class="modal-overlay" id="supplierModal">
-    <div class="modal">
-        <h2 id="modalTitle">Add Supplier</h2>
+    <div class="modal-box">
+        <h2 class="text-lg font-extrabold mb-5" id="modalTitle">Add Supplier</h2>
         <form id="supplierForm" onsubmit="saveSupplier(event)">
             <input type="hidden" id="supplierId" value="">
             <div class="form-group"><div class="form-label">Supplier Name *</div><input type="text" class="form-input" id="fName" required placeholder="e.g. Marikina Market Vendor"></div>
@@ -178,7 +84,8 @@
             <div class="form-group"><div class="form-label">Address</div><textarea class="form-input" id="fAddress" placeholder="Full address..."></textarea></div>
             <div class="form-group"><div class="form-label">Nearest Landmark</div><input type="text" class="form-input" id="fLandmark" placeholder="e.g. Near BPI Marikina Market"></div>
             <div class="form-group"><div class="form-label">Notes</div><textarea class="form-input" id="fNotes" placeholder="Delivery schedule, minimum order, etc."></textarea></div>
-            <div class="modal-actions">
+            <div class="form-group"><div class="form-label">Photo <span class="opacity-50 font-normal">(storefront or contact, max 5MB)</span></div><input type="file" class="form-input" id="fPhoto" accept="image/*"></div>
+            <div class="modal-footer">
                 <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
                 <button type="submit" class="btn-save">Save Supplier</button>
             </div>
@@ -188,30 +95,36 @@
 
 {{-- DETAIL MODAL --}}
 <div class="modal-overlay" id="detailModal">
-    <div class="modal" style="max-width:600px;">
-        <div class="detail-header"><div><div class="detail-name" id="detailName">—</div></div><button class="btn-sm" onclick="closeDetail()">Close</button></div>
-        <div class="detail-section"><div class="detail-section-title">Contact Info</div><div class="detail-info" id="detailContact">—</div></div>
-        <div class="detail-section"><div class="detail-section-title">Location</div><div class="detail-info" id="detailLocation">—</div></div>
-        <div class="detail-section"><div class="detail-section-title">Linked Ingredients</div><div class="ingredient-list" id="detailIngredients"><div class="empty-state">No linked ingredients yet.</div></div></div>
-        <div class="detail-section"><div class="detail-section-title">Recent Purchases</div><div id="detailPurchases"><div class="empty-state">No purchase history recorded.</div></div></div>
-        <hr style="border:none;border-top:1px solid var(--border);margin:20px 0;">
-        <div class="detail-section">
-            <div class="detail-section-title">Link an Ingredient</div>
-            <form id="linkForm" onsubmit="linkIngredient(event)" style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
-                <div style="flex:1;min-width:140px;"><div class="form-label">Ingredient</div><select class="form-input" id="linkIngredientId" required style="height:42px;" onchange="updateUnitLabels()">@foreach ($ingredients as $ing)<option value="{{ $ing->id }}" data-unit="{{ $ing->unit }}">{{ $ing->name }} ({{ $ing->unit }})</option>@endforeach</select></div>
-                <div style="width:100px;"><div class="form-label">Unit Cost <span id="linkCostUnit" style="opacity:.5;font-weight:400;"></span></div><input type="number" step="0.01" class="form-input" id="linkCost" placeholder="₱"></div>
-                <div style="display:flex;align-items:center;gap:4px;padding-bottom:2px;"><input type="checkbox" id="linkPrimary"><label for="linkPrimary" style="font-size:11px;font-weight:600;">Primary</label></div>
-                <button type="submit" class="btn-save" style="height:42px;">Link</button>
+    <div class="modal-box" style="max-width:600px;">
+        <div class="flex items-start justify-between mb-5 gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+                <img id="detailPhoto" src="" alt="" class="w-14 h-14 rounded-xl object-cover shrink-0 border border-line hidden">
+                <div class="text-xl font-extrabold truncate" id="detailName">—</div>
+            </div>
+            <button class="btn-sm shrink-0" onclick="closeDetail()">Close</button>
+        </div>
+        <div class="mb-5"><div class="text-xs font-bold uppercase text-ink-3 mb-2">Contact Info</div><div class="text-[13px] leading-relaxed" id="detailContact">—</div></div>
+        <div class="mb-5"><div class="text-xs font-bold uppercase text-ink-3 mb-2">Location</div><div class="text-[13px] leading-relaxed" id="detailLocation">—</div></div>
+        <div class="mb-5"><div class="text-xs font-bold uppercase text-ink-3 mb-2">Linked Ingredients</div><div class="flex flex-col gap-1.5" id="detailIngredients"><div class="p-4 text-center text-[13px] text-ink-3">No linked ingredients yet.</div></div></div>
+        <div class="mb-5"><div class="text-xs font-bold uppercase text-ink-3 mb-2">Recent Purchases</div><div id="detailPurchases"><div class="p-4 text-center text-[13px] text-ink-3">No purchase history recorded.</div></div></div>
+        <hr class="border-line my-5">
+        <div class="mb-5">
+            <div class="text-xs font-bold uppercase text-ink-3 mb-2">Link an Ingredient</div>
+            <form id="linkForm" onsubmit="linkIngredient(event)" class="flex gap-2 flex-wrap items-end">
+                <div class="flex-1 min-w-[140px]"><div class="form-label">Ingredient</div><select class="form-input" id="linkIngredientId" required onchange="updateUnitLabels()">@foreach ($ingredients as $ing)<option value="{{ $ing->id }}" data-unit="{{ $ing->unit }}">{{ $ing->name }} ({{ $ing->unit }})</option>@endforeach</select></div>
+                <div class="w-[100px]"><div class="form-label">Unit Cost <span id="linkCostUnit" class="opacity-50 font-normal"></span></div><input type="number" step="0.01" class="form-input" id="linkCost" placeholder="₱"></div>
+                <div class="flex items-center gap-1 pb-0.5"><input type="checkbox" id="linkPrimary"><label for="linkPrimary" class="text-[11px] font-semibold">Primary</label></div>
+                <button type="submit" class="btn-save h-[42px]">Link</button>
             </form>
         </div>
-        <div class="detail-section" style="margin-top:16px;">
-            <div class="detail-section-title">Record a Purchase</div>
-            <form id="purchaseForm" onsubmit="recordPurchase(event)" style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
-                <div style="flex:1;min-width:140px;"><div class="form-label">Ingredient</div><select class="form-input" id="purchIngredient" required style="height:42px;" onchange="updateUnitLabels()">@foreach ($ingredients as $ing)<option value="{{ $ing->id }}" data-unit="{{ $ing->unit }}">{{ $ing->name }} ({{ $ing->unit }})</option>@endforeach</select></div>
-                <div style="width:90px;"><div class="form-label">Unit Price <span id="purchPriceUnit" style="opacity:.5;font-weight:400;"></span></div><input type="number" step="0.01" class="form-input" id="purchPrice" required placeholder="₱"></div>
-                <div style="width:80px;"><div class="form-label">Qty <span id="purchQtyUnit" style="opacity:.5;font-weight:400;"></span></div><input type="number" step="0.001" class="form-input" id="purchQty" required placeholder="0"></div>
-                <div style="width:130px;"><div class="form-label">Date</div><input type="date" class="form-input" id="purchDate" required value="{{ date('Y-m-d') }}"></div>
-                <button type="submit" class="btn-save" style="height:42px;">Save</button>
+        <div class="mt-4">
+            <div class="text-xs font-bold uppercase text-ink-3 mb-2">Record a Purchase</div>
+            <form id="purchaseForm" onsubmit="recordPurchase(event)" class="flex gap-2 flex-wrap items-end">
+                <div class="flex-1 min-w-[140px]"><div class="form-label">Ingredient</div><select class="form-input" id="purchIngredient" required onchange="updateUnitLabels()">@foreach ($ingredients as $ing)<option value="{{ $ing->id }}" data-unit="{{ $ing->unit }}">{{ $ing->name }} ({{ $ing->unit }})</option>@endforeach</select></div>
+                <div class="w-[90px]"><div class="form-label">Unit Price <span id="purchPriceUnit" class="opacity-50 font-normal"></span></div><input type="number" step="0.01" class="form-input" id="purchPrice" required placeholder="₱"></div>
+                <div class="w-[80px]"><div class="form-label">Qty <span id="purchQtyUnit" class="opacity-50 font-normal"></span></div><input type="number" step="0.001" class="form-input" id="purchQty" required placeholder="0"></div>
+                <div class="w-[130px]"><div class="form-label">Date</div><input type="date" class="form-input" id="purchDate" required value="{{ date('Y-m-d') }}"></div>
+                <button type="submit" class="btn-save h-[42px]">Save</button>
             </form>
         </div>
     </div>
@@ -243,10 +156,23 @@ function closeModal() { document.getElementById('supplierModal').classList.remov
 async function saveSupplier(e) {
     e.preventDefault();
     const id = document.getElementById('supplierId').value;
-    const body = { name: document.getElementById('fName').value, contact_person: document.getElementById('fContactPerson').value || null, contact_number: document.getElementById('fContactNumber').value || null, address: document.getElementById('fAddress').value || null, landmark: document.getElementById('fLandmark').value || null, notes: document.getElementById('fNotes').value || null };
+
+    // Sent as multipart so the optional photo rides along. PUT is spoofed via
+    // _method because PHP does not parse multipart bodies on a real PUT.
+    const fd = new FormData();
+    fd.append('name', document.getElementById('fName').value);
+    fd.append('contact_person', document.getElementById('fContactPerson').value);
+    fd.append('contact_number', document.getElementById('fContactNumber').value);
+    fd.append('address', document.getElementById('fAddress').value);
+    fd.append('landmark', document.getElementById('fLandmark').value);
+    fd.append('notes', document.getElementById('fNotes').value);
+
+    const photo = document.getElementById('fPhoto').files[0];
+    if (photo) fd.append('photo', photo);
+    if (id) fd.append('_method', 'PUT');
+
     const url = id ? `/suppliers/${id}` : '/suppliers';
-    const method = id ? 'PUT' : 'POST';
-    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }, body: JSON.stringify(body) });
+    const res = await fetch(url, { method: 'POST', headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }, body: fd });
     if (res.ok) location.reload(); else alert('Error saving supplier.');
 }
 async function deleteSupplier(id, name) {
@@ -269,10 +195,20 @@ async function viewSupplier(id) {
     if (!res.ok) return alert('Failed to load supplier.');
     const s = await res.json();
     document.getElementById('detailName').textContent = s.name;
+
+    const photo = document.getElementById('detailPhoto');
+    if (s.photo_path) {
+        photo.src = `/storage/${s.photo_path}`;
+        photo.alt = s.name;
+        photo.classList.remove('hidden');
+    } else {
+        photo.classList.add('hidden');
+    }
+
     document.getElementById('detailContact').innerHTML = `<strong>Person:</strong> ${s.contact_person||'—'}<br><strong>Phone:</strong> ${s.contact_number||'—'}`;
     document.getElementById('detailLocation').innerHTML = `${s.address||'—'}${s.landmark?'<br><strong>Landmark:</strong> '+s.landmark:''}`;
-    document.getElementById('detailIngredients').innerHTML = s.ingredients&&s.ingredients.length ? s.ingredients.map(i=>`<div class="ingredient-item"><span class="ingredient-item__name">${i.name} (${i.unit})</span><span>${i.pivot.is_primary?'<span class="ingredient-item__primary">PRIMARY</span>':''}<span class="ingredient-item__cost">${i.pivot.unit_cost?'₱'+Number(i.pivot.unit_cost).toFixed(2):'—'}</span></span></div>`).join('') : '<div class="empty-state">No linked ingredients.</div>';
-    document.getElementById('detailPurchases').innerHTML = s.purchase_history&&s.purchase_history.length ? s.purchase_history.map(p=>`<div class="purchase-row"><span>${new Date(p.purchased_at).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})}</span><span>₱${Number(p.unit_price).toFixed(2)} × ${p.quantity}</span><span style="font-weight:700;">₱${(p.unit_price*p.quantity).toFixed(2)}</span></div>`).join('') : '<div class="empty-state">No purchases recorded.</div>';
+    document.getElementById('detailIngredients').innerHTML = s.ingredients&&s.ingredients.length ? s.ingredients.map(i=>`<div class="flex items-center justify-between p-2.5 px-3.5 bg-black/[.02] rounded-[10px] text-[13px]"><span class="font-semibold">${i.name} (${i.unit})</span><span class="flex items-center gap-2">${i.pivot.is_primary?'<span class="text-[10px] font-bold bg-[rgba(0,184,148,.1)] text-green px-2 py-0.5 rounded-full">PRIMARY</span>':''}<span class="font-bold text-accent">${i.pivot.unit_cost?'₱'+Number(i.pivot.unit_cost).toFixed(2):'—'}</span></span></div>`).join('') : '<div class="p-4 text-center text-[13px] text-ink-3">No linked ingredients.</div>';
+    document.getElementById('detailPurchases').innerHTML = s.purchase_history&&s.purchase_history.length ? s.purchase_history.map(p=>`<div class="flex items-center justify-between py-2 border-b border-line text-xs last:border-b-0"><span>${new Date(p.purchased_at).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})}</span><span>₱${Number(p.unit_price).toFixed(2)} × ${p.quantity}</span><span class="font-bold">₱${(p.unit_price*p.quantity).toFixed(2)}</span></div>`).join('') : '<div class="p-4 text-center text-[13px] text-ink-3">No purchases recorded.</div>';
     document.getElementById('detailModal').classList.add('is-open');
     updateUnitLabels();
 }

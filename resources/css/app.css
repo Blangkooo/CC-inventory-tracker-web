@@ -3,6 +3,7 @@
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
+@source '../../node_modules/flowbite/dist/**/*.js';
 
 /*
  * NITA design tokens.
@@ -17,31 +18,38 @@
     --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 
-    --color-bg: #f0f2f5;
+    /* Pure white everywhere except the top bar. Warmth is a deliberate
+       accent, not a wash — spending it on the whole canvas is what made an
+       earlier pass read as "too much cream, not clean." Cards separate from
+       the page via --color-line and --shadow-card, not a tinted background. */
+    --color-bg: #ffffff;
     --color-card: #ffffff;
 
     --color-ink: #1a1a2e;
     --color-ink-2: #636e72;
     --color-ink-3: #b2bec3;
 
-    --color-accent: #e17055;
+    --color-accent: #c0392b;
     --color-accent-2: #d63031;
-    --color-accent-light: rgba(225, 112, 85, 0.08);
+    --color-accent-light: rgba(192, 57, 43, 0.08);
 
     --color-blue: #6c5ce7;
     --color-green: #00b894;
     --color-orange: #fdcb6e;
     --color-pink: #fd79a8;
 
-    --color-line: rgba(0, 0, 0, 0.06);
+    --color-line: #f0ece4;
 
     /* Neutral fills: sidebar active pill, hover states, subtle panel backgrounds. */
     --color-surface-2: #f4f4f6;
     --color-surface-3: #ebebef;
 
-    /* Butter yellow pairs with the terracotta accent across the charts. */
-    --color-cream: #fae5b0;
-    --color-cream-deep: #f3d488;
+    /* Butter yellow pairs with the accent across the charts. */
+    --color-cream: #f3ddb0;
+    --color-cream-deep: #ecc98a;
+
+    /* Top bar matches the page — pure white throughout, no tinted band. */
+    --color-topbar: #ffffff;
 
     /* Severity dots on the flag summary. */
     --color-sev-high: #e63946;
@@ -56,7 +64,7 @@
     --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.03);
     --shadow-card-md: 0 4px 20px rgba(0, 0, 0, 0.08);
 
-    --spacing-sidebar: 250px;
+    --spacing-sidebar: 200px;
 }
 
 /*
@@ -285,8 +293,8 @@
         justify-content: space-between;
         gap: 16px;
         padding: 0 32px;
-        height: 68px;
-        background: var(--color-card);
+        height: 56px;
+        background: var(--color-topbar);
         border-bottom: 1px solid var(--color-line);
         position: sticky;
         top: 0;
@@ -309,7 +317,9 @@
         text-decoration: none;
         transition: all 0.15s;
     }
-    .topbar__icon:hover { background: var(--color-surface-2); color: var(--color-ink); }
+    /* Hovers inside the cream band are warm — the neutral grey used elsewhere
+       reads as a dirty smudge against it. */
+    .topbar__icon:hover { background: rgba(92, 45, 27, 0.07); color: var(--color-ink); }
     .topbar__icon { position: relative; }
     .topbar__icon .dot {
         position: absolute;
@@ -322,7 +332,7 @@
         border: 2px solid var(--color-card);
     }
 
-    .topbar__divider { width: 1px; height: 24px; background: var(--color-line); margin: 0 8px; }
+    .topbar__divider { width: 1px; height: 24px; background: rgba(92, 45, 27, 0.14); margin: 0 8px; }
 
     .topnav { display: flex; align-items: center; gap: 6px; }
     .topnav__pill {
@@ -334,7 +344,7 @@
         text-decoration: none;
         transition: all 0.15s;
     }
-    .topnav__pill:hover { background: var(--color-surface-2); color: var(--color-ink); }
+    .topnav__pill:hover { background: rgba(92, 45, 27, 0.07); color: var(--color-ink); }
     .topnav__pill.is-active { background: var(--color-accent); color: #fff; }
 
     .topbar__user {
@@ -345,9 +355,22 @@
         border-radius: 12px;
         transition: background 0.15s;
     }
-    .topbar__user:hover { background: var(--color-surface-2); }
+    .topbar__user:hover { background: rgba(92, 45, 27, 0.07); }
     .topbar__user-name  { font-size: 13px; font-weight: 700; line-height: 1.3; }
     .topbar__user-email { font-size: 11px; color: var(--color-ink-3); line-height: 1.3; }
+
+    /* The title and the account block hold their size; the centre nav is the
+       one that gives way, so a long email can't push the bar past the
+       viewport and force the page to scroll sideways. */
+    .topbar__title, .topbar__actions { flex-shrink: 0; }
+    .topnav { min-width: 0; overflow: hidden; }
+    .topbar__user-name, .topbar__user-email {
+        display: block;
+        max-width: 160px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
 
     .avatar {
         display: flex;
@@ -357,7 +380,7 @@
         height: 34px;
         flex-shrink: 0;
         border-radius: 50%;
-        background: linear-gradient(135deg, var(--color-accent), var(--color-pink));
+        background: var(--color-accent);
         color: #fff;
         font-size: 12px;
         font-weight: 800;
@@ -431,13 +454,14 @@
     .delta-note  { font-size: 11px; color: var(--color-ink-3); margin-left: 6px; }
 
     /* ── Outlined panels ────────────────────────────────────────────────
-       The reporting surfaces use a terracotta outline rather than a shadow,
-       which keeps the cream/terracotta charts readable on a white page. */
+       Same quiet treatment as .ncard: hairline edge, faint lift, colour
+       reserved for the data inside. */
     .panel {
         background: var(--color-card);
-        border: 1.5px solid var(--color-accent);
+        border: 1px solid var(--color-line);
         border-radius: 16px;
         padding: 18px 20px;
+        box-shadow: var(--shadow-card);
     }
 
     .panel__head {
@@ -634,9 +658,11 @@
        month-over-month change. */
     .ncard {
         background: var(--color-card);
-        border: 1.5px solid var(--color-accent);
+        border: 1.5px solid var(--color-line);
         border-radius: 12px;
-        padding: 16px 18px;
+        padding: 16px;
+        box-shadow: var(--shadow-card);
+        max-width: 100%;
     }
 
     /* Several figures sharing one outline, split by hairline rules. */
@@ -644,58 +670,217 @@
     .ncard--split > * { padding: 16px 18px; }
     .ncard--split > * + * { border-left: 1.5px solid var(--color-line); }
 
-    .nstat__label { font-size: 13.5px; font-weight: 700; color: var(--color-ink); }
+    .nstat__label { font-size: 13px; font-weight: 600; color: var(--color-ink); }
     .nstat__value {
-        font-size: 34px;
-        font-weight: 800;
+        font-size: 30px;
+        font-weight: 700;
         color: var(--color-accent);
         letter-spacing: -0.02em;
         line-height: 1.15;
-        margin: 4px 0 6px;
+        margin: 4px 0;
     }
 
     .trend { font-size: 12px; font-weight: 700; }
     .trend--up   { color: var(--color-green); }
     .trend--down { color: var(--color-accent-2); }
     .trend--flat { color: var(--color-ink-3); }
-    .trend__note { font-size: 11px; font-weight: 500; color: var(--color-ink-3); margin-left: 4px; }
+    .trend__note { font-size: 12px; font-weight: 500; color: var(--color-ink-3); margin-left: 4px; }
 
     .nsection {
         display: flex;
         align-items: baseline;
-        gap: 9px;
-        font-size: 20px;
-        font-weight: 800;
+        gap: 8px;
+        font-size: 16px;
+        font-weight: 600;
         color: var(--color-accent);
         letter-spacing: -0.01em;
     }
     .nsection__pipe { opacity: 0.4; font-weight: 400; }
 
     /* Ranked list: "1. Coffee Shop" */
-    .rank-list { counter-reset: rank; font-size: 12.5px; }
+    .rank-list { counter-reset: rank; font-size: 14px; }
     .rank-list__item {
         counter-increment: rank;
         display: flex;
         gap: 6px;
-        padding: 2.5px 0;
+        padding: 0;
         color: var(--color-ink);
     }
-    .rank-list__item::before { content: counter(rank) '.'; color: var(--color-ink-3); font-weight: 600; }
+    .rank-list__item::before { content: counter(rank) '.'; color: var(--color-ink-2); font-weight: 600; }
 
     /* Goal dial: cream track with a terracotta wedge */
     .goal { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-    .goal__pct { font-size: 22px; font-weight: 800; color: var(--color-accent); }
+    .goal__pct { font-size: 20px; font-weight: 800; color: var(--color-accent); }
     .goal__target { font-size: 10.5px; font-weight: 500; color: var(--color-ink-3); }
 
     /* Gradient columns used by the KPI and status charts */
     .gbar {
-        border-radius: 4px 4px 0 0;
-        background: linear-gradient(180deg, var(--color-accent) 0%, rgb(225 112 85 / 0.25) 100%);
+        border-radius: 6px 6px 2px 2px;
+        background: linear-gradient(180deg,
+            color-mix(in srgb, var(--color-accent) 75%, white) 0%,
+            var(--color-accent) 32%,
+            rgb(225 112 85 / 0.22) 100%);
+        box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35);
         min-height: 4px;
     }
     .gbar--soft {
-        background: linear-gradient(180deg, var(--color-cream-deep) 0%, rgb(250 229 176 / 0.3) 100%);
+        background: linear-gradient(180deg,
+            color-mix(in srgb, var(--color-cream-deep) 75%, white) 0%,
+            var(--color-cream-deep) 32%,
+            rgb(236 201 138 / 0.3) 100%);
+        box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35);
     }
+
+    /* ── Shared modals ─────────────────────────────────────────── */
+    .modal-overlay {
+        position: fixed; inset: 0; z-index: 200;
+        background: rgba(0,0,0,.5); backdrop-filter: blur(4px);
+        display: none; align-items: center; justify-content: center;
+        padding: 24px;
+    }
+    .modal-overlay.is-open { display: flex; }
+
+    .modal-box {
+        background: var(--color-card); border-radius: var(--radius-card);
+        box-shadow: 0 8px 40px rgba(0,0,0,.2);
+        width: 100%; max-width: 520px; max-height: 90vh;
+        display: flex; flex-direction: column;
+        animation: modal-in .2s ease;
+    }
+    .modal-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 20px 24px; border-bottom: 1px solid var(--color-line);
+    }
+    .modal-header h2 { font-size: 17px; font-weight: 800; }
+    .modal-close {
+        width: 32px; height: 32px; border-radius: 8px;
+        border: none; background: transparent; color: var(--color-ink);
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        font-size: 18px; transition: background .15s;
+    }
+    .modal-close:hover { background: rgba(0,0,0,.05); }
+    .modal-body { flex: 1; overflow-y: auto; padding: 24px; }
+    .modal-footer {
+        display: flex; align-items: center; gap: 10px; justify-content: flex-end;
+        padding: 16px 24px; border-top: 1px solid var(--color-line);
+    }
+    @keyframes modal-in {
+        from { opacity: 0; transform: translateY(20px) scale(.97); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* ── Form controls ─────────────────────────────────────────── */
+    .form-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
+    .form-label {
+        font-size: 11px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: .06em; color: var(--color-ink-3);
+    }
+    .form-label .required { color: #dc2626; }
+    .form-input {
+        width: 100%; height: 42px; padding: 0 14px;
+        border: 1.5px solid var(--color-line); border-radius: 10px;
+        font-size: 13px; color: var(--color-ink); font-family: var(--font-sans);
+        background: var(--color-card); transition: all .15s; outline: none;
+    }
+    .form-input:focus { border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(225,112,85,.1); }
+    .form-input.error { border-color: #dc2626; }
+    textarea.form-input { height: auto; min-height: 80px; padding: 10px 14px; resize: vertical; }
+    select.form-input { cursor: pointer; appearance: auto; }
+    .form-error { font-size: 11px; color: #dc2626; font-weight: 600; display: none; }
+    .form-error.is-visible { display: block; }
+
+    /* ── Action buttons ────────────────────────────────────────── */
+    .btn-secondary {
+        padding: 9px 20px; background: transparent; color: var(--color-ink);
+        border: 1.5px solid var(--color-line); border-radius: 10px;
+        font-size: 13px; font-weight: 600; font-family: var(--font-sans);
+        cursor: pointer; transition: all .15s;
+    }
+    .btn-secondary:hover { background: rgba(0,0,0,.03); }
+    .btn-danger {
+        padding: 9px 20px; background: #dc2626; color: #fff;
+        border: none; border-radius: 10px;
+        font-size: 13px; font-weight: 600; font-family: var(--font-sans);
+        cursor: pointer; transition: all .15s;
+    }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-save {
+        padding: 9px 24px; background: var(--color-accent); color: #fff;
+        border: none; border-radius: 10px;
+        font-size: 13px; font-weight: 700; font-family: var(--font-sans);
+        cursor: pointer; transition: background .15s;
+    }
+    .btn-save:hover { background: #d35e47; }
+    .btn-save:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-cancel {
+        padding: 9px 20px; background: var(--color-card); color: var(--color-ink-2);
+        border: 1.5px solid var(--color-line); border-radius: 10px;
+        font-size: 13px; font-weight: 600; font-family: var(--font-sans);
+        cursor: pointer; transition: all .15s;
+    }
+    .btn-cancel:hover { background: rgba(0,0,0,.03); }
+    .btn-sm {
+        padding: 5px 12px; border-radius: 8px; font-size: 11px; font-weight: 600;
+        border: 1.5px solid var(--color-line); background: var(--color-card); color: var(--color-ink-2);
+        cursor: pointer; font-family: var(--font-sans); transition: all .15s;
+    }
+    .btn-sm:hover { background: var(--color-ink); color: #fff; border-color: var(--color-ink); }
+    .btn-sm.danger:hover { background: #d63031; color: #fff; border-color: #d63031; }
+
+    /* ── Toast notifications ───────────────────────────────────── */
+    .toast-container {
+        position: fixed; top: 20px; right: 20px; z-index: 1000;
+        display: flex; flex-direction: column; gap: 8px;
+    }
+    .toast {
+        padding: 12px 20px; border-radius: 8px;
+        font-size: 13px; font-weight: 600; color: #fff;
+        box-shadow: 0 4px 20px rgba(0,0,0,.15);
+        animation: toast-in .25s ease; max-width: 360px;
+    }
+    .toast--success { background: #16a34a; }
+    .toast--error { background: #dc2626; }
+    @keyframes toast-in {
+        from { opacity: 0; transform: translateX(40px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* ── Summary tables ────────────────────────────────────────── */
+    .summary-table-wrap {
+        background: var(--color-card); border: 1px solid var(--color-line);
+        border-radius: var(--radius-card); box-shadow: var(--shadow-card);
+        overflow: hidden;
+    }
+    .summary-table-wrap__head {
+        padding: 14px 20px; border-bottom: 1px solid var(--color-line);
+        display: flex; align-items: center; gap: 10px;
+    }
+    .summary-table-wrap__head svg { opacity: .6; }
+    .summary-table-wrap__title { font-size: 13px; font-weight: 700; }
+    .summary-table { width: 100%; border-collapse: collapse; }
+    .summary-table th {
+        padding: 10px 20px; font-size: 10px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .06em; color: var(--color-ink-3);
+        text-align: left; border-bottom: 1px solid var(--color-line);
+        background: rgba(0,0,0,.01);
+    }
+    .summary-table td { padding: 10px 20px; font-size: 13px; border-bottom: 1px solid var(--color-line); }
+    .summary-table tr:last-child td { border-bottom: none; }
+    .summary-table tr:hover td { background: var(--color-accent-light); }
+    .summary-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+    /* ── Severity badges ───────────────────────────────────────── */
+    .severity-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 3px 10px; border-radius: 999px;
+        font-size: 10px; font-weight: 700; text-transform: uppercase;
+    }
+    .sev-none { background: rgba(0,184,148,.1); color: var(--color-green); }
+    .sev-mild { background: rgba(253,203,110,.15); color: #a16207; }
+    .sev-moderate { background: rgba(225,112,85,.1); color: #c2410c; }
+    .sev-severe { background: rgba(214,48,49,.1); color: #d63031; }
+    .badge-open { background: rgba(22,163,74,.1); color: #16a34a; }
+    .badge-closed { background: rgba(92,45,27,.06); color: rgba(92,45,27,.5); }
 }
 
 /*

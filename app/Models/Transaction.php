@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'user_id',
     'product_id',
     'quantity',
+    'unit_price',
     'total_amount',
     'sync_status',
     'created_offline_at',
@@ -26,6 +27,7 @@ class Transaction extends Model
     protected function casts(): array
     {
         return [
+            'unit_price' => 'decimal:2',
             'total_amount' => 'decimal:2',
             'created_offline_at' => 'datetime',
             'synced_at' => 'datetime',

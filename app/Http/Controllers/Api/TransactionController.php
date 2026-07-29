@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Exceptions\InsufficientStockException;
 use App\Http\Controllers\Concerns\AuthorizesBranchAccess;
 use App\Http\Controllers\Controller;
 use App\Models\BranchStock;
@@ -58,114 +57,128 @@ class TransactionController extends Controller
 
         $product = Product::with(['recipes' => fn ($q) => $q->where('size', $validated['size'])->with('ingredient')])
             ->findOrFail($validated['product_id']);
-        $total_amount = $product->price * $validated['quantity'];
+        $unit_price = $product->priceForSize($validated['size']);
+        $total_amount = $unit_price * $validated['quantity'];
 
-        try {
-            return DB::transaction(function () use ($validated, $product, $total_amount, $request) {
-                // CHECK STOCK — lockForUpdate() holds a row lock per ingredient for
-                // the rest of this DB transaction, so a second concurrent checkout
-                // for the same ingredient can't read stale stock and over-deduct.
-                foreach ($product->recipes as $recipe) {
-                    $stock = BranchStock::where('branch_id', $validated['branch_id'])
-                        ->where('ingredient_id', $recipe->ingredient_id)
-                        ->lockForUpdate()
-                        ->first();
-                    $needed = $recipe->quantity_required * $validated['quantity'];
+        return DB::transaction(function () use ($validated, $product, $unit_price, $total_amount, $request) {
+            // DEDUCT STOCK — per the team's confirmed negative-stock policy,
+            // a short ingredient no longer blocks the sale: it deducts past
+            // zero, the response carries a warning, and the existing
+            // low/out-of-stock alert loop below flags it on the dashboard.
+            // lockForUpdate() still holds a row lock per ingredient so two
+            // concurrent checkouts can't read stale stock and race.
+            $deductions = [];
+            $stockWarnings = [];
 
-                    if (! $stock || $stock->current_quantity < $needed) {
-                        throw new InsufficientStockException(
-                            'Insufficient stock for '.$recipe->ingredient->name,
-                            $needed.$recipe->ingredient->unit,
-                            ($stock->current_quantity ?? 0).$recipe->ingredient->unit,
-                        );
-                    }
-                }
+            foreach ($product->recipes as $recipe) {
+                $stock = BranchStock::where('branch_id', $validated['branch_id'])
+                    ->where('ingredient_id', $recipe->ingredient_id)
+                    ->lockForUpdate()
+                    ->first();
+                $needed = $recipe->quantity_required * $validated['quantity'];
+                $before = $stock->current_quantity ?? 0;
+                $after = $before - $needed;
 
-                // DEDUCT STOCK — also capture before/after per ingredient so the
-                // sale's movement history can be logged once the transaction exists.
-                $deductions = [];
-                foreach ($product->recipes as $recipe) {
-                    $deduction = $recipe->quantity_required * $validated['quantity'];
-                    $stock = BranchStock::where('branch_id', $validated['branch_id'])
-                        ->where('ingredient_id', $recipe->ingredient_id)
-                        ->first();
-
-                    $before = $stock->current_quantity;
-                    $after = $before - $deduction;
-
-                    $stock->update([
+                if ($stock) {
+                    $stock->update(['current_quantity' => $after, 'last_updated_at' => now()]);
+                } else {
+                    // No stock row yet for this branch+ingredient — create one
+                    // at the (likely negative) resulting balance rather than
+                    // silently skipping the deduction.
+                    $stock = BranchStock::create([
+                        'branch_id' => $validated['branch_id'],
+                        'ingredient_id' => $recipe->ingredient_id,
                         'current_quantity' => $after,
+                        'min_threshold' => 0,
                         'last_updated_at' => now(),
                     ]);
+                }
 
-                    $deductions[] = [
-                        'branch_stock_id' => $stock->id,
-                        'quantity_change' => -$deduction,
-                        'quantity_before' => $before,
-                        'quantity_after' => $after,
+                if ($after < 0) {
+                    $stockWarnings[] = [
+                        'ingredient_id' => $recipe->ingredient_id,
+                        'ingredient_name' => $recipe->ingredient->name,
+                        'short_by' => round(abs($after), 3),
+                        'unit' => $recipe->ingredient->unit,
                     ];
                 }
 
-                // CHECK IF NOW LOW/OUT - create discrepancy alert if needed
-                foreach ($product->recipes as $recipe) {
-                    $stock = BranchStock::where('branch_id', $validated['branch_id'])
-                        ->where('ingredient_id', $recipe->ingredient_id)
-                        ->first();
-                    if ($stock && $stock->current_quantity <= $stock->min_threshold) {
-                        DiscrepancyAlert::create([
-                            'branch_id' => $validated['branch_id'],
-                            'type' => 'stock_mismatch',
-                            'severity' => $stock->current_quantity <= 0 ? 'high' : 'medium',
-                            'ingredient_id' => $recipe->ingredient_id,
-                            'expected_value' => $stock->min_threshold,
-                            'actual_value' => $stock->current_quantity,
-                            'variance' => $stock->current_quantity - $stock->min_threshold,
-                            'details' => $recipe->ingredient->name.' is '.$stock->stock_status.' at Branch ID '.$validated['branch_id'],
-                            'status' => 'pending',
-                        ]);
-                    }
-                }
+                $deductions[] = [
+                    'branch_stock_id' => $stock->id,
+                    'quantity_change' => -$needed,
+                    'quantity_before' => $before,
+                    'quantity_after' => $after,
+                ];
+            }
 
-                // CREATE TRANSACTION
-                $transaction = Transaction::create([
-                    'client_uuid' => $validated['client_uuid'],
-                    'branch_id' => $validated['branch_id'],
-                    'user_id' => $request->user()?->id,
-                    'product_id' => $validated['product_id'],
-                    'quantity' => $validated['quantity'],
-                    'total_amount' => $total_amount,
-                    'sync_status' => 'synced',
-                    'synced_at' => now(),
-                    'created_offline_at' => now(),
-                ]);
+            // CHECK IF NOW LOW/OUT/NEGATIVE - create discrepancy alert if needed
+            foreach ($product->recipes as $recipe) {
+                $stock = BranchStock::where('branch_id', $validated['branch_id'])
+                    ->where('ingredient_id', $recipe->ingredient_id)
+                    ->first();
+                if ($stock && $stock->current_quantity <= $stock->min_threshold) {
+                    // Reorder link (Trinity doc): point straight at the cheapest/primary
+                    // supplier so whoever reads the alert can act without hunting through
+                    // the Supplier Directory first.
+                    $supplier = $recipe->ingredient->primarySupplier();
+                    $reorderNote = $supplier
+                        ? ' Reorder from '.$supplier->name.($supplier->contact_number ? ' ('.$supplier->contact_number.')' : '').'.'
+                        : '';
 
-                // LOG STOCK MOVEMENTS for this sale, now that the transaction exists to reference.
-                foreach ($deductions as $deduction) {
-                    StockMovement::create($deduction + [
-                        'type' => StockMovement::TYPE_SALE,
-                        'reference_type' => Transaction::class,
-                        'reference_id' => $transaction->id,
-                        'user_id' => $request->user()?->id,
+                    DiscrepancyAlert::create([
+                        'branch_id' => $validated['branch_id'],
+                        'type' => 'stock_mismatch',
+                        'severity' => $stock->current_quantity <= 0 ? 'high' : 'medium',
+                        'ingredient_id' => $recipe->ingredient_id,
+                        'expected_value' => $stock->min_threshold,
+                        'actual_value' => $stock->current_quantity,
+                        'variance' => $stock->current_quantity - $stock->min_threshold,
+                        'details' => ($stock->current_quantity < 0
+                            ? $recipe->ingredient->name.' went negative ('.$stock->current_quantity.' '.$recipe->ingredient->unit.') at Branch ID '.$validated['branch_id']
+                            : $recipe->ingredient->name.' is '.$stock->stock_status.' at Branch ID '.$validated['branch_id']
+                        ).$reorderNote,
+                        'status' => 'pending',
                     ]);
                 }
+            }
 
-                // RETURN WITH UPDATED STOCK
-                $updatedStock = BranchStock::with('ingredient')
-                    ->where('branch_id', $validated['branch_id'])
-                    ->get();
+            // CREATE TRANSACTION — always recorded; the POS flow is never blocked by stock.
+            $transaction = Transaction::create([
+                'client_uuid' => $validated['client_uuid'],
+                'branch_id' => $validated['branch_id'],
+                'user_id' => $request->user()?->id,
+                'product_id' => $validated['product_id'],
+                'quantity' => $validated['quantity'],
+                'unit_price' => $unit_price,
+                'total_amount' => $total_amount,
+                'sync_status' => 'synced',
+                'synced_at' => now(),
+                'created_offline_at' => now(),
+            ]);
 
-                return response()->json([
-                    'message' => 'Transaction recorded and stock updated',
-                    'transaction' => $transaction->load('product', 'branch'),
-                    'updated_stock' => $updatedStock,
-                ], 201);
-            });
-        } catch (InsufficientStockException $e) {
+            // LOG STOCK MOVEMENTS for this sale, now that the transaction exists to reference.
+            foreach ($deductions as $deduction) {
+                StockMovement::create($deduction + [
+                    'type' => StockMovement::TYPE_SALE,
+                    'reference_type' => Transaction::class,
+                    'reference_id' => $transaction->id,
+                    'user_id' => $request->user()?->id,
+                ]);
+            }
+
+            // RETURN WITH UPDATED STOCK
+            $updatedStock = BranchStock::with('ingredient')
+                ->where('branch_id', $validated['branch_id'])
+                ->get();
+
             return response()->json([
-                'error' => $e->getMessage(),
-                'needed' => $e->needed,
-                'available' => $e->available,
-            ], 422);
-        }
+                'message' => $stockWarnings
+                    ? 'Transaction recorded. Stock went negative for '.count($stockWarnings).' ingredient(s) — flagged on the dashboard.'
+                    : 'Transaction recorded and stock updated',
+                'transaction' => $transaction->load('product', 'branch'),
+                'updated_stock' => $updatedStock,
+                'stock_warnings' => $stockWarnings,
+            ], 201);
+        });
     }
 }

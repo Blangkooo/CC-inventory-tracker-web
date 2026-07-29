@@ -21,6 +21,7 @@ class WorkerProfile extends Model
         'work_schedule',
         'performance_metrics',
         'rating',
+        'hourly_rate',
     ];
 
     protected function casts(): array
@@ -30,6 +31,7 @@ class WorkerProfile extends Model
             'work_schedule'       => 'array',
             'performance_metrics' => 'array',
             'rating'              => 'decimal:1',
+            'hourly_rate'         => 'decimal:2',
         ];
     }
 

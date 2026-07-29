@@ -7,10 +7,32 @@ use App\Http\Controllers\Controller;
 use App\Models\DiscrepancyAlert;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class AlertController extends Controller
 {
     use AuthorizesBranchAccess;
+
+    /**
+     * Single-endpoint alternative to review()/dismiss() below — those stay as
+     * they are for existing callers, this just gives new callers one verb
+     * instead of two.
+     */
+    public function update(Request $request, DiscrepancyAlert $alert): JsonResponse
+    {
+        $this->authorizeBranch($alert->branch_id);
+
+        $validated = $request->validate([
+            'status' => ['required', Rule::in(['reviewed', 'dismissed'])],
+        ]);
+
+        $alert->update(['status' => $validated['status']]);
+
+        return response()->json([
+            'message' => 'Alert '.$validated['status'].'.',
+            'alert' => $alert,
+        ]);
+    }
 
     public function index(Request $request): JsonResponse
     {

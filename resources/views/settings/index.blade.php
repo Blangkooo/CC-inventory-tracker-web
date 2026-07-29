@@ -2,151 +2,60 @@
 
 @section('title', 'Settings')
 
-@section('styles')
-
-        /* ── Dimmed overlay ── */
-        .overlay {
-            position: fixed; top: 0; right: 0; bottom: 0; left: 250px;
-            background: rgba(26,26,46,.4); backdrop-filter: blur(3px);
-            z-index: 100; display: flex; justify-content: flex-end;
-            cursor: pointer;
-        }
-
-        /* ── Drawer ── */
-        .drawer {
-            width: 380px; max-width: 90vw; height: 100vh;
-            background: var(--card, #fff); border-radius: 20px 0 0 20px;
-            padding: 32px 28px; display: flex; flex-direction: column;
-            box-shadow: -8px 0 40px rgba(0,0,0,.18);
-            animation: slideIn .22s ease-out;
-            cursor: default; color: var(--text, #1a1a2e);
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); }
-            to   { transform: translateX(0); }
-        }
-
-        /* ── Header ── */
-        .drawer-header {
-            display: flex; align-items: center; gap: 12px;
-            margin-bottom: 28px; padding-bottom: 20px;
-            border-bottom: 1.5px solid var(--border);
-        }
-
-        .drawer-header h2 { font-size: 20px; font-weight: 800; }
-
-        /* ── Profile card ── */
-        .profile-card {
-            display: flex; align-items: center; gap: 14px;
-            padding: 16px; margin-bottom: 24px;
-            background: var(--accent-light, rgba(225,112,85,.08)); border: 1px solid var(--border);
-            border-radius: 12px;
-        }
-
-        .profile-avatar {
-            width: 46px; height: 46px; border-radius: 50%;
-            background: var(--accent, #e17055); color: #fff;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 18px; font-weight: 800; flex-shrink: 0;
-            text-transform: uppercase;
-        }
-
-        .profile-info .name  { font-size: 15px; font-weight: 700; }
-        .profile-info .email { font-size: 12px; color: var(--text-2, #636e72); margin-top: 2px; }
-        .profile-info .role  { font-size: 11px; font-weight: 600; color: var(--accent, #e17055); margin-top: 3px; text-transform: capitalize; }
-
-        /* ── Sections ── */
-        .drawer-section { margin-bottom: 20px; }
-
-        .drawer-section h3 {
-            font-size: 11px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .06em; opacity: .5; margin-bottom: 8px;
-        }
-
-        .drawer-row {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 11px 0; font-size: 13.5px; font-weight: 500;
-            border-bottom: 1px solid rgba(92,45,27,.07);
-        }
-
-        .drawer-row:last-child { border-bottom: none; }
-
-        .row-value { opacity: .55; font-size: 13px; font-weight: 400; }
-
-        /* ── Logout ── */
-        .logout-section {
-            margin-top: auto; padding-top: 20px;
-            border-top: 1.5px solid var(--border);
-        }
-
-        .btn-logout {
-            display: flex; align-items: center; justify-content: center;
-            gap: 10px; width: 100%; height: 50px;
-            background: transparent; color: #dc2626;
-            border: 1.5px solid #dc2626; border-radius: 12px;
-            font-size: 15px; font-weight: 700; font-family: var(--font);
-            cursor: pointer; transition: all .15s ease;
-        }
-
-        .btn-logout:hover { background: #dc2626; color: #fff; }
-
-        .dismiss-hint {
-            position: fixed; bottom: 20px; left: 270px; z-index: 101;
-            font-size: 11px; color: rgba(255,255,255,.45); cursor: default;
-        }
-@endsection
-
 @section('content')
+<style>@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}</style>
 
-    {{-- Dimmed background -- click to close --}}
-    <div class="overlay" onclick="window.location.href='{{ url('/dashboard') }}'">
+    <div class="fixed top-0 right-0 bottom-0 z-100 flex justify-end cursor-pointer backdrop-blur-sm"
+         style="left:250px;background:rgba(26,26,46,.4)"
+         onclick="window.location.href='{{ url('/dashboard') }}'">
 
-        <div class="drawer" onclick="event.stopPropagation()">
+        <div class="w-[380px] max-w-[90vw] h-screen bg-card rounded-l-[20px] px-7 py-8 flex flex-col cursor-default text-ink"
+             style="box-shadow:-8px 0 40px rgba(0,0,0,.18);animation:slideIn .22s ease-out"
+             onclick="event.stopPropagation()">
 
             {{-- Header --}}
-            <div class="drawer-header">
+            <div class="flex items-center gap-3 mb-7 pb-5 border-b-[1.5px] border-line">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="3"/>
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                 </svg>
-                <h2>Settings</h2>
+                <h2 class="text-xl font-extrabold">Settings</h2>
             </div>
 
             {{-- Profile Card --}}
             @php $user = auth()->user(); @endphp
-            <div class="profile-card">
-                <div class="profile-avatar">{{ mb_substr($user->name, 0, 1) }}</div>
-                <div class="profile-info">
-                    <div class="name">{{ $user->name }}</div>
-                    <div class="email">{{ $user->email }}</div>
-                    <div class="role">{{ str_replace('_', ' ', $user->role) }}</div>
+            <div class="flex items-center gap-3.5 p-4 mb-6 bg-accent-light border border-line rounded-xl">
+                <div class="w-[46px] h-[46px] rounded-full bg-accent text-white flex items-center justify-center text-lg font-extrabold shrink-0 uppercase">{{ mb_substr($user->name, 0, 1) }}</div>
+                <div>
+                    <div class="text-[15px] font-bold">{{ $user->name }}</div>
+                    <div class="text-xs text-ink-2 mt-0.5">{{ $user->email }}</div>
+                    <div class="text-[11px] font-semibold text-accent mt-[3px] capitalize">{{ str_replace('_', ' ', $user->role) }}</div>
                 </div>
             </div>
 
             {{-- Account --}}
-            <div class="drawer-section">
-                <h3>Account</h3>
-                <div class="drawer-row">
+            <div class="mb-5">
+                <h3 class="text-[11px] font-bold uppercase tracking-[.06em] opacity-50 mb-2">Account</h3>
+                <div class="flex items-center justify-between py-[11px] text-[13.5px] font-medium border-b border-[rgba(92,45,27,.07)]">
                     <span>Name</span>
-                    <span class="row-value">{{ $user->name }}</span>
+                    <span class="opacity-55 text-[13px] font-normal">{{ $user->name }}</span>
                 </div>
-                <div class="drawer-row">
+                <div class="flex items-center justify-between py-[11px] text-[13.5px] font-medium border-b border-[rgba(92,45,27,.07)]">
                     <span>Email</span>
-                    <span class="row-value">{{ $user->email }}</span>
+                    <span class="opacity-55 text-[13px] font-normal">{{ $user->email }}</span>
                 </div>
-                <div class="drawer-row">
+                <div class="flex items-center justify-between py-[11px] text-[13.5px] font-medium border-b border-[rgba(92,45,27,.07)]">
                     <span>Role</span>
-                    <span class="row-value">{{ ucwords(str_replace('_', ' ', $user->role)) }}</span>
+                    <span class="opacity-55 text-[13px] font-normal">{{ ucwords(str_replace('_', ' ', $user->role)) }}</span>
                 </div>
                 @if ($user->branch_id)
-                    <div class="drawer-row">
+                    <div class="flex items-center justify-between py-[11px] text-[13.5px] font-medium">
                         <span>Branch</span>
-                        <span class="row-value">{{ $user->branch->name ?? '—' }}</span>
+                        <span class="opacity-55 text-[13px] font-normal">{{ $user->branch->name ?? '—' }}</span>
                     </div>
                 @endif
-                <div style="margin-top:12px;">
-                    <a href="{{ url('/business/workers') }}?worker={{ $user->id }}" style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(188,97,75,.08);border:1px solid rgba(188,97,75,.2);border-radius:8px;color:var(--terra);font-size:12px;font-weight:600;text-decoration:none;transition:all.12s ease;">
+                <div class="mt-3">
+                    <a href="{{ url('/business/workers') }}?worker={{ $user->id }}" class="flex items-center gap-2 py-[9px] px-3.5 bg-[rgba(188,97,75,.08)] border border-[rgba(188,97,75,.2)] rounded-lg text-accent text-xs font-semibold no-underline transition-all duration-150 hover:bg-[rgba(188,97,75,.15)]">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
                         </svg>
@@ -155,67 +64,103 @@
                 </div>
             </div>
 
-            {{-- Quick Stats --}}
-            <div class="drawer-section">
-                <h3>Quick Actions</h3>
-                <div class="drawer-row" style="cursor:pointer;" onclick="window.location.href='{{ url('/alerts') }}'">
+            {{-- Quick Actions --}}
+            <div class="mb-5">
+                <h3 class="text-[11px] font-bold uppercase tracking-[.06em] opacity-50 mb-2">Quick Actions</h3>
+                <div class="flex items-center justify-between py-[11px] text-[13.5px] font-medium border-b border-[rgba(92,45,27,.07)] cursor-pointer" onclick="window.location.href='{{ url('/alerts') }}'">
                     <span>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:6px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline align-middle mr-1.5">
                             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                         </svg>
                         View Alerts
                     </span>
-                    <span class="row-value">&rarr;</span>
+                    <span class="opacity-55 text-[13px] font-normal">&rarr;</span>
                 </div>
-                <div class="drawer-row" style="cursor:pointer;" onclick="window.location.href='{{ url('/api-docs') }}'">
+                <div class="flex items-center justify-between py-[11px] text-[13.5px] font-medium border-b border-[rgba(92,45,27,.07)] cursor-pointer" onclick="window.location.href='{{ url('/api-docs') }}'">
                     <span>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:6px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline align-middle mr-1.5">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
                             <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
                         </svg>
                         API Documentation
                     </span>
-                    <span class="row-value">&rarr;</span>
+                    <span class="opacity-55 text-[13px] font-normal">&rarr;</span>
                 </div>
                 @if ($user->isOwner())
-                <div class="drawer-row" style="cursor:pointer;" onclick="window.location.href='{{ url('/logistics') }}'">
+                <div class="flex items-center justify-between py-[11px] text-[13.5px] font-medium cursor-pointer" onclick="window.location.href='{{ url('/logistics') }}'">
                     <span>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:6px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline align-middle mr-1.5">
                             <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
                         </svg>
                         Logistics Dashboard
                     </span>
-                    <span class="row-value">&rarr;</span>
+                    <span class="opacity-55 text-[13px] font-normal">&rarr;</span>
                 </div>
                 @endif
             </div>
 
             {{-- Preferences --}}
-            <div class="drawer-section">
-                <h3>Preferences</h3>
-                <div class="drawer-row">
+            <div class="mb-5">
+                <h3 class="text-[11px] font-bold uppercase tracking-[.06em] opacity-50 mb-2">Preferences</h3>
+                <div class="flex items-center justify-between py-[11px] text-[13.5px] font-medium border-b border-[rgba(92,45,27,.07)]">
                     <span>Currency</span>
-                    <span class="row-value">Philippine Peso (&#8369;)</span>
+                    <span class="opacity-55 text-[13px] font-normal">Philippine Peso (&#8369;)</span>
                 </div>
-                <div class="drawer-row">
+                <div class="flex items-center justify-between py-[11px] text-[13.5px] font-medium border-b border-[rgba(92,45,27,.07)]">
                     <span>Language</span>
-                    <span class="row-value">English</span>
+                    <span class="opacity-55 text-[13px] font-normal">English</span>
                 </div>
-                <div class="drawer-row">
+                <div class="flex items-center justify-between py-[11px] text-[13.5px] font-medium border-b border-[rgba(92,45,27,.07)]">
                     <span>Notifications</span>
-                    <span class="row-value">Enabled</span>
+                    <span class="opacity-55 text-[13px] font-normal">Enabled</span>
                 </div>
-                <div class="drawer-row">
+                <div class="flex items-center justify-between py-[11px] text-[13.5px] font-medium">
                     <span>Timezone</span>
-                    <span class="row-value">Asia/Manila (PHT)</span>
+                    <span class="opacity-55 text-[13px] font-normal">Asia/Manila (PHT)</span>
                 </div>
             </div>
 
+            {{-- System Settings (owner only) --}}
+            @if ($user->isOwner())
+            <div class="mb-5">
+                <h3 class="text-[11px] font-bold uppercase tracking-[.06em] opacity-50 mb-2">System Settings</h3>
+                <div class="py-[11px]">
+                    <label class="block text-[13.5px] font-medium mb-1.5">Shift Variance Alert Threshold</label>
+                    <p class="text-[11.5px] opacity-55 mb-2.5 leading-snug">A shift-closing count discrepancy raises a dashboard alert once it crosses either limit below.</p>
+                    <div class="flex gap-2.5 mb-3.5">
+                        <div class="flex-1">
+                            <span class="block text-[11px] opacity-55 mb-1">Percent (%)</span>
+                            <input type="number" id="varianceThresholdPct" value="{{ $varianceThresholdPct * 100 }}" step="0.1" min="0" max="100"
+                                   class="w-full h-9 px-2.5 rounded-lg border border-line text-[13.5px] font-medium bg-transparent">
+                        </div>
+                        <div class="flex-1">
+                            <span class="block text-[11px] opacity-55 mb-1">Amount (&#8369;)</span>
+                            <input type="number" id="varianceThresholdPhp" value="{{ $varianceThresholdPhp }}" step="1" min="0"
+                                   class="w-full h-9 px-2.5 rounded-lg border border-line text-[13.5px] font-medium bg-transparent">
+                        </div>
+                    </div>
+
+                    <label class="block text-[13.5px] font-medium mb-1.5">Low Stock Threshold</label>
+                    <p class="text-[11.5px] opacity-55 mb-2.5 leading-snug">When an ingredient's set capacity is known, its low-stock line is this percent of that capacity.</p>
+                    <div class="mb-3.5">
+                        <span class="block text-[11px] opacity-55 mb-1">Percent (%)</span>
+                        <input type="number" id="lowStockThresholdPct" value="{{ $lowStockThresholdPct * 100 }}" step="1" min="0" max="100"
+                               class="w-full h-9 px-2.5 rounded-lg border border-line text-[13.5px] font-medium bg-transparent">
+                    </div>
+
+                    <button type="button" onclick="saveSystemSettings()"
+                            class="w-full h-9 rounded-lg bg-accent text-white text-[13px] font-bold border-0 cursor-pointer transition-opacity duration-150 hover:opacity-90">
+                        Save Settings
+                    </button>
+                </div>
+            </div>
+            @endif
+
             {{-- Logout --}}
-            <div class="logout-section">
+            <div class="mt-auto pt-5 border-t-[1.5px] border-line">
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="btn-logout">
+                    <button type="submit" class="flex items-center justify-center gap-2.5 w-full h-[50px] bg-transparent text-red-600 border-[1.5px] border-red-600 rounded-xl text-[15px] font-bold font-sans cursor-pointer transition-all duration-150 hover:bg-red-600 hover:text-white">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                             <polyline points="16 17 21 12 16 7"/>
@@ -229,6 +174,37 @@
         </div>
     </div>
 
-    <div class="dismiss-hint">Click outside to close</div>
+    <div class="fixed bottom-5 z-[101] text-[11px] cursor-default" style="left:270px;color:rgba(255,255,255,.45)">Click outside to close</div>
+
+    <script>
+        function saveSystemSettings() {
+            const variancePct = parseFloat(document.getElementById('varianceThresholdPct').value) / 100;
+            const variancePhp = parseFloat(document.getElementById('varianceThresholdPhp').value);
+            const lowStockPct = parseFloat(document.getElementById('lowStockThresholdPct').value) / 100;
+
+            fetch('{{ route('settings.update') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+                body: JSON.stringify({
+                    variance_threshold_pct: variancePct,
+                    variance_threshold_php: variancePhp,
+                    low_stock_threshold_pct: lowStockPct,
+                }),
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('Settings updated', 'success');
+                    } else {
+                        showToast(data.message || 'Failed to update settings', 'error');
+                    }
+                })
+                .catch(() => showToast('Failed to update settings', 'error'));
+        }
+    </script>
 
 @endsection
