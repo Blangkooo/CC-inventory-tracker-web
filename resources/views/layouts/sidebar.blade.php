@@ -96,6 +96,8 @@
         .content-subtitle { font-size: 13px; color: var(--text-2); margin-top: 2px; }
         .content-date { font-size: 13px; color: var(--text-2); font-weight: 500; }
 
+        /* Top navigation pills removed per user request */
+
         /* Shared components (.card, .badge, .btn-primary, .data-table, …)
            now live in resources/css/app.css. */
         .card__link { font-size: 12px; font-weight: 600; color: var(--accent); text-decoration: none; }
@@ -133,8 +135,7 @@
 
 <aside class="sidebar">
     <div class="sidebar__brand">
-        <div class="sidebar__brand-icon">📦</div>
-        <span class="sidebar__brand-text">InvenTrack</span>
+        <img src="{{ asset('images/logo.svg') }}" alt="InvenTrack" style="height: 32px; width: auto;">
     </div>
 
     <nav class="sidebar__nav">
@@ -224,12 +225,7 @@
     <header class="topbar">
         <div class="topbar__title">@yield('title', 'Dashboard')</div>
 
-        {{-- Primary areas, mirroring the pills in the approved design. --}}
-        <nav class="topnav">
-            <a href="{{ route('dashboard') }}" class="topnav__pill {{ $currentRoute === 'dashboard' ? 'is-active' : '' }}">Dashboard</a>
-            <a href="{{ route('business.recipes') }}" class="topnav__pill {{ str_starts_with($currentRoute, 'business') ? 'is-active' : '' }}">Businesses</a>
-            <a href="{{ route('logistics') }}" class="topnav__pill {{ $currentRoute === 'logistics' ? 'is-active' : '' }}">Logistics</a>
-        </nav>
+
 
         <div class="topbar__actions">
             <a href="{{ route('alerts') }}" class="topbar__icon" title="Help">
