@@ -8,10 +8,10 @@
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --cream:  #FDF5D6;
-            --brown:  #5C2D1B;
-            --terra:  #BC614B;
-            --border: rgba(92,45,27,.16);
+            --cream:  #F8F6F3;
+            --brown:  #1C1917;
+            --terra:  #B45353;
+            --border: rgba(28,25,23,.12);
             --font:   -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
@@ -140,7 +140,7 @@
             cursor: pointer; transition: background .15s; margin-top: 6px;
         }
 
-        .btn-primary:hover { background: #a8523e; }
+        .btn-primary:hover { background: #9F4242; }
 
         /* ══ FOOTER LINK ══ */
         .form-footer {

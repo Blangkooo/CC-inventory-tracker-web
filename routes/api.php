@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\StockController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\AuthOnboardingController;
+use App\Http\Controllers\MeetingController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public Auth Routes (JWT — no token required) ─────────────────────
@@ -110,6 +111,15 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/dashboard/kpis', [DashboardController::class, 'kpis']);
         Route::get('/dashboard/sales-summary', [DashboardController::class, 'salesSummary']);
         Route::get('/dashboard/top-products', [DashboardController::class, 'topProducts']);
+
+        // ── Meeting Management ──────────────────────────────────────────
+        Route::get('/meetings', [MeetingController::class, 'index']);
+        Route::post('/meetings', [MeetingController::class, 'store']);
+        Route::get('/meetings/week', [MeetingController::class, 'week']);
+        Route::get('/meetings/upcoming', [MeetingController::class, 'upcoming']);
+        Route::get('/meetings/{meeting}', [MeetingController::class, 'show']);
+        Route::put('/meetings/{meeting}', [MeetingController::class, 'update']);
+        Route::delete('/meetings/{meeting}', [MeetingController::class, 'destroy']);
     });
 
     // POS shift lifecycle — staff on the floor + manager covering a shift.

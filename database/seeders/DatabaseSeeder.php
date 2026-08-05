@@ -20,10 +20,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // ── Global Super Admin Accounts ────────────────────────────────
-        // Note: password and pin use the 'hashed' cast in User model,
-        // so we pass plain text and the cast hashes automatically.
+        // ── Skip if already seeded ────────────────────────────────────
+        if (User::count() > 0) {
+            $this->command->info('Database already seeded. Skipping.');
+            return;
+        }
 
+        // ── Global Super Admin Accounts ────────────────────────────────
         User::create([
             'name' => 'Admin Owner',
             'email' => 'admin@inventory.ph',
@@ -267,5 +270,8 @@ class DatabaseSeeder extends Seeder
                 ]);
             }
         }
+
+        // ── Meetings (only if empty) ─────────────────────────────────
+        $this->call(MeetingSeeder::class);
     }
 }

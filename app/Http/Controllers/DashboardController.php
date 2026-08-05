@@ -6,7 +6,6 @@ use App\Models\Branch;
 use App\Models\BranchStock;
 use App\Models\DiscrepancyAlert;
 use App\Models\Product;
-use App\Models\ShiftLog;
 use App\Models\ShiftStockCount;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +23,30 @@ class DashboardController extends Controller
             'shiftLog', fn ($q2) => $q2->where('branch_id', $branchId)
         ))->sum('closing_quantity_expected');
 
+        // ── Last-month comparisons ─────────────────────────────────────
+        $lastMonthRevenue = Transaction::whereMonth('created_at', now()->subMonth())
+            ->whereYear('created_at', now()->subMonth()->year)
+            ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
+            ->sum('total_amount');
+
+        $lastMonthAlerts = DiscrepancyAlert::where('status', 'pending')
+            ->whereMonth('created_at', now()->subMonth())
+            ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
+            ->count();
+
+        $lastMonthLowStock = BranchStock::where('current_quantity', '<=', DB::raw('min_threshold'))
+            ->where('min_threshold', '>', 0)
+            ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
+            ->count();
+
+        // ── Monthly sales for KPI chart (Jan–Dec of current year) ─────
+        $monthlySales = Transaction::selectRaw("strftime('%m', created_at) as month, SUM(total_amount) as total")
+            ->whereYear('created_at', now()->year)
+            ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
+            ->groupBy('month')
+            ->pluck('total', 'month')
+            ->toArray();
+
         return view('dashboard', [
             'total_branches' => Branch::count(),
             'pending_alerts' => DiscrepancyAlert::where('status', 'pending')
@@ -36,12 +59,6 @@ class DashboardController extends Controller
             'total_sales' => Transaction::whereDate('created_at', today())
                 ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
                 ->sum('total_amount'),
-            'daily_sales' => Transaction::selectRaw('DATE(created_at) as date, SUM(total_amount) as total')
-                ->whereDate('created_at', '>=', now()->subDays(7))
-                ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
-                ->groupBy('date')
-                ->orderBy('date')
-                ->get(),
             'branches_with_sales' => Branch::with(['transactions' => fn ($q) => $q->whereDate('created_at', today())])
                 ->when($isManager, fn ($q) => $q->where('id', $branchId))
                 ->get()
@@ -50,10 +67,6 @@ class DashboardController extends Controller
                     'today_sales' => $b->transactions->sum('total_amount'),
                     'has_sales' => $b->transactions->count() > 0,
                 ]),
-            'recent_transactions' => Transaction::with('product', 'branch', 'user')
-                ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
-                ->latest()->take(10)->get(),
-
             'annual_revenue' => Transaction::whereYear('created_at', now()->year)
                 ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
                 ->sum('total_amount'),
@@ -64,11 +77,6 @@ class DashboardController extends Controller
                 : 0,
             'value_saved' => $this->estimatedValueSaved($isManager, $branchId),
 
-            'flag_counts' => DiscrepancyAlert::where('status', 'pending')
-                ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
-                ->selectRaw('severity, COUNT(*) as c')
-                ->groupBy('severity')
-                ->pluck('c', 'severity'),
             'recent_flags' => DiscrepancyAlert::with('branch', 'ingredient', 'shiftLog.user')
                 ->where('status', 'pending')
                 ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
@@ -90,12 +98,11 @@ class DashboardController extends Controller
                         ->sum(DB::raw('ABS(variance)')),
                 ])->sortBy('leak')->values(),
 
-            'ongoing_shifts' => ShiftLog::with('branch', 'user')
-                ->where('status', 'open')
-                ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
-                ->latest('shift_start')
-                ->take(4)
-                ->get(),
+            // ── New data for redesigned UI ─────────────────────────────
+            'monthly_sales' => $monthlySales,
+            'lastMonthRevenue' => $lastMonthRevenue,
+            'lastMonthAlerts' => $lastMonthAlerts,
+            'lastMonthLowStock' => $lastMonthLowStock,
         ]);
     }
 

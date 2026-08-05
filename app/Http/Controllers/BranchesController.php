@@ -22,9 +22,32 @@ class BranchesController extends Controller
             ->when($user->isManager(), fn ($q) => $q->where('id', $user->branch_id))
             ->get();
 
+        // Get products with recipes for the recipes panel
+        $products = Product::with('recipes.ingredient')->get();
+
         return view('branches.index', [
             'branches' => $branches,
+            'products' => $products,
         ]);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'location' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $branch = Branch::create([
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'location' => $validated['location'] ?? null,
+            'status' => 'active',
+        ]);
+
+        return redirect()->route('branches')
+            ->with('success', 'Business added successfully!');
     }
 
     public function show(Branch $branch, Request $request): View

@@ -170,11 +170,9 @@
                 <div class="step-label">Step 3 of 3 — Confirm</div>
 
                 <h1>One last step</h1>
-                <p class="form-subtitle">Review and confirm all documents before completing your registration.</p>
-
-                <form method="POST" action="{{ url('/api/auth/register/confirm') }}">
-                    @csrf
-                    <input type="hidden" name="owner_id" value="mock-owner-001">
+                <p class="form-subtitle">Review and confirm all documents before completing your registration.</p>                    <form method="POST" action="{{ url('/api/auth/register/confirm') }}">
+                        @csrf
+                        <input type="hidden" name="email" value="{{ request('email', '') }}">
 
                     <ul class="check-list">
                         @foreach ([

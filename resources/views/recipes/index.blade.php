@@ -313,6 +313,7 @@
 var ALL_INGREDIENTS = @json($allIngredients->map(fn($i) => ['id' => $i->id, 'name' => $i->name, 'unit' => $i->unit]));
 var CSRF_TOKEN = '{{ csrf_token() }}';
 var _editingProductId = null;
+var _originalRecipeIds = []; // track existing recipe IDs for deletion detection
 
 // ── Open modal ──
 function openModal(productId) {
@@ -320,6 +321,7 @@ function openModal(productId) {
     document.getElementById('recipe-modal').classList.add('is-open');
     document.getElementById('modal-title').textContent = 'Loading…';
     document.getElementById('btn-save').disabled = true;
+    _originalRecipeIds = [];
     fetchProductData(productId);
 }
 
@@ -357,7 +359,10 @@ function populateModal(data) {
 
     if (data.recipes && data.recipes.length > 0) {
         var grouped = {};
+        _originalRecipeIds = [];
         data.recipes.forEach(function (r) {
+            _originalRecipeIds.push(r.id);
+
             var ingId = r.ingredient_id;
             if (!grouped[ingId]) {
                 grouped[ingId] = {
@@ -513,6 +518,26 @@ function saveRecipe() {
                     );
                 }
             }
+        }
+    });
+
+    // 3. Delete removed ingredients (ones that were in the original data but are no longer in the form)
+    var currentIds = [];
+    rows.forEach(function (row) {
+        var rid = row.dataset.regularId;
+        var lid = row.dataset.largeId;
+        if (rid) currentIds.push(String(rid));
+        if (lid) currentIds.push(String(lid));
+    });
+
+    _originalRecipeIds.forEach(function (id) {
+        if (currentIds.indexOf(String(id)) === -1) {
+            requests.push(
+                fetch('/business/recipes/ingredient/' + id + '/delete', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': CSRF_TOKEN }
+                })
+            );
         }
     });
 

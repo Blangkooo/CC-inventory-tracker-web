@@ -184,6 +184,7 @@
 
                 <form method="POST" action="{{ url('/api/auth/register/step-2') }}" enctype="multipart/form-data">
                     @csrf
+                    <input type="hidden" name="email" value="{{ request('email', '') }}">
 
                     <div class="field">
                         <div class="field-label">Business Name</div>

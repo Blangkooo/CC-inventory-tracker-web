@@ -1,0 +1,771 @@
+@extends('layouts.app')
+
+@section('title', 'Analytics')
+
+@section('content')
+<style>
+    /* ══ ANALYTICS-SPECIFIC STYLES ════════════════════════════════════ */
+    .analytics-tabs {
+        display: flex;
+        gap: 5px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0;
+    }
+
+    .analytics-tab {
+        padding: 10px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        border-bottom: 2px solid transparent;
+        background: transparent;
+        color: var(--brown);
+        opacity: 0.5;
+        transition: all .15s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .analytics-tab:hover {
+        opacity: 0.8;
+    }
+
+    .analytics-tab.active {
+        opacity: 1;
+        border-bottom-color: var(--terra);
+    }
+
+    .analytics-tab__icon {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+    }
+
+    /* ══ VIEW LABEL ══════════════════════════════════════════════════ */
+    .view-label {
+        margin-bottom: 20px;
+    }
+
+    .view-label__btn {
+        padding: 8px 20px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: default;
+        border: 1.5px solid #f59e0b;
+        background: #fef3c7;
+        color: #92400e;
+        font-family: var(--font);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* ══ ACTIVITY GRID ════════════════════════════════════════════════ */
+    .activity-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    @media (max-width: 1100px) {
+        .activity-grid { grid-template-columns: 1fr; }
+    }
+
+    .activity-left, .activity-right {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    /* ══ CARDS ════════════════════════════════════════════════════════ */
+    .analytics-card {
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+    }
+
+    .analytics-card__header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .analytics-card__title {
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .analytics-card__body {
+        padding: 16px 20px;
+    }
+
+    /* ══ TRANSACTION ITEMS ════════════════════════════════════════════ */
+    .transaction-item {
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .transaction-item:last-child {
+        border-bottom: none;
+    }
+
+    .transaction-item__title {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--terra);
+        margin-bottom: 8px;
+    }
+
+    .transaction-item__row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .transaction-item__total {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        font-weight: 700;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px dashed var(--border);
+    }
+
+    /* ══ LEAKAGE ITEMS ════════════════════════════════════════════════ */
+    .leakage-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+    }
+
+    .leakage-item:last-child {
+        border-bottom: none;
+    }
+
+    .leakage-item__amount {
+        font-weight: 600;
+    }
+
+    /* ══ METRIC CARD ══════════════════════════════════════════════════ */
+    .metric-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .metric-card__label {
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .metric-card__value {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--green);
+    }
+
+    /* ══ BAR CHART ════════════════════════════════════════════════════ */
+    .bar-chart {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        height: 120px;
+        padding-top: 10px;
+    }
+
+    .bar-col {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        height: 100%;
+    }
+
+    .bar {
+        width: 100%;
+        border-radius: 4px 4px 0 0;
+        background: linear-gradient(to top, var(--terra-dk), var(--terra-lt));
+        min-height: 2px;
+        margin-top: auto;
+        transition: height .3s ease;
+    }
+
+    .bar:hover {
+        opacity: .8;
+    }
+
+    .bar-label {
+        font-size: 9px;
+        font-weight: 600;
+        opacity: .5;
+        white-space: nowrap;
+    }
+
+    .chart-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    .chart-title {
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .chart-select {
+        padding: 5px 12px;
+        border-radius: 6px;
+        border: 1.5px solid var(--border);
+        background: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: var(--font);
+        cursor: pointer;
+    }
+
+    .chart-trend {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--green);
+    }
+
+    .chart-trend .vs {
+        font-size: 11px;
+        font-weight: 500;
+        opacity: .6;
+    }
+
+    .chart-stats {
+        text-align: right;
+    }
+
+    .chart-stats__value {
+        font-size: 22px;
+        font-weight: 800;
+    }
+
+    .chart-stats__label {
+        font-size: 11px;
+        opacity: .5;
+    }
+
+    .chart-stats__trend {
+        font-size: 10px;
+        color: var(--green);
+        font-weight: 600;
+    }
+
+    /* ══ INVENTORY TABLE ══════════════════════════════════════════════ */
+    .inventory-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .inventory-table thead th {
+        text-align: left;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 14px 16px;
+        background: var(--cream);
+        border-bottom: 2px solid var(--border);
+    }
+
+    .inventory-table tbody td {
+        padding: 14px 16px;
+        font-size: 13px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .inventory-table tbody tr:hover {
+        background: rgba(180,83,83,.03);
+    }
+
+    /* ══ STATUS BADGES ════════════════════════════════════════════════ */
+    .status-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .status-badge.severe { background: rgba(220,38,38,.1); color: #dc2626; }
+    .status-badge.moderate { background: rgba(234,179,8,.1); color: #b45309; }
+    .status-badge.none, .status-badge.normal, .status-badge.stocked { 
+        background: rgba(22,163,74,.1); color: #16a34a; 
+    }
+    .status-badge.low { background: rgba(220,38,38,.1); color: #dc2626; }
+
+    /* ══ EMPTY STATE ══════════════════════════════════════════════════ */
+    .empty-state {
+        text-align: center;
+        padding: 32px;
+        color: var(--brown);
+        opacity: .4;
+        font-size: 13px;
+    }
+</style>
+
+{{-- ═══ BUSINESS TABS (with toggle as first tab) ═══ --}}
+<div class="analytics-tabs">
+    <button class="analytics-tab active" id="viewToggleTab" onclick="toggleView()">
+        <span class="analytics-tab__icon" style="background: #B45353; color: #fff;">I</span>
+        <span id="toggleTabText">Inventory</span>
+    </button>
+    @foreach($branches as $branch)
+        <button class="analytics-tab {{ ($selectedBranchId ?? null) == $branch->id ? 'active' : '' }}" data-business="{{ $branch->id }}" onclick="switchBusiness('{{ $branch->id }}', this)">
+            {{ $branch->name }}
+        </button>
+    @endforeach
+</div>
+
+{{-- ═══ VIEW LABEL ═══ --}}
+<div class="view-label">
+    <button class="view-label__btn" id="viewLabelBtn">
+        <span id="viewLabelText">Current Activity</span>
+    </button>
+</div>
+
+{{-- ═══ ACTIVITY VIEW ═══ --}}
+<div id="activityView">
+    <div class="activity-grid">
+        {{-- Left Column --}}
+        <div class="activity-left">
+            {{-- Recent Transactions --}}
+            <div class="analytics-card">
+                <div class="analytics-card__header">
+                    <div class="analytics-card__title">Recent Transaction</div>
+                </div>
+                <div class="analytics-card__body">
+                    @php
+                        $exampleTxns = collect([
+                            (object) ['product' => (object) ['name' => 'Classic Milk Tea', 'price' => 130], 'total_amount' => 130],
+                            (object) ['product' => (object) ['name' => 'Black Forest Milk Tea', 'price' => 150], 'total_amount' => 150],
+                            (object) ['product' => (object) ['name' => 'Cheese Dog Set', 'price' => 180], 'total_amount' => 180],
+                        ]);
+                        $displayTxns = $recentTransactions->isNotEmpty() ? $recentTransactions->take(5) : $exampleTxns;
+                    @endphp
+                    @foreach($displayTxns as $index => $txn)
+                        <div class="transaction-item">
+                            <div class="transaction-item__title">Transaction {{ $displayTxns->count() - $index }}</div>
+                            @if($txn->product)
+                                <div class="transaction-item__row">
+                                    <span>1 {{ $txn->product->name }}</span>
+                                    <span>&#8369;{{ number_format($txn->product->price ?? 0, 0) }}</span>
+                                </div>
+                            @endif
+                            <div class="transaction-item__total">
+                                <span>TOTAL:</span>
+                                <span>&#8369;{{ number_format($txn->total_amount, 0) }}</span>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            {{-- Current Leakage --}}
+            <div class="analytics-card">
+                <div class="analytics-card__header">
+                    <div class="analytics-card__title">Current Leakage</div>
+                </div>
+                <div class="analytics-card__body">
+                    @php
+                        $exampleLeaks = collect([
+                            ['name' => 'Tapioca Pearls', 'amount' => 1500, 'unit' => 'g'],
+                            ['name' => 'Brown Sugar Syrup', 'amount' => 800, 'unit' => 'ml'],
+                            ['name' => 'Plastic Cups', 'amount' => 80, 'unit' => 'pcs'],
+                        ]);
+                        $displayLeaks = $currentLeakage->isNotEmpty() ? $currentLeakage : $exampleLeaks;
+                    @endphp
+                    @foreach($displayLeaks as $leak)
+                        <div class="leakage-item">
+                            <span>{{ $leak['name'] }}</span>
+                            <span class="leakage-item__amount" style="color: {{ $leak['amount'] > 50 ? '#dc2626' : 'var(--brown)' }}">
+                                {{ number_format($leak['amount']) }} {{ $leak['unit'] }}
+                            </span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
+        {{-- Right Column --}}
+        <div class="activity-right">
+            {{-- Flags Detected --}}
+            <div class="analytics-card">
+                <div class="analytics-card__header">
+                    <div class="analytics-card__title">Flags Detected</div>
+                </div>
+                <div class="analytics-card__body">
+                    @php
+                        $exampleAlerts = collect([
+                            (object) ['ingredient' => (object) ['name' => 'Tapioca Pearls'], 'severity' => 'severe'],
+                            (object) ['ingredient' => (object) ['name' => 'Brown Sugar Syrup'], 'severity' => 'moderate'],
+                            (object) ['ingredient' => (object) ['name' => 'Coffee Beans'], 'severity' => 'low'],
+                        ]);
+                        $displayAlerts = $activeAlerts->isNotEmpty() ? $activeAlerts->take(3) : $exampleAlerts;
+                    @endphp
+                    @foreach($displayAlerts as $alert)
+                        <div class="leakage-item">
+                            <span>{{ $alert->ingredient->name ?? 'Unknown' }}</span>
+                            <span class="status-badge {{ $alert->severity }}">{{ ucfirst($alert->severity) }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            {{-- Total Profit Margin --}}
+            <div class="analytics-card">
+                <div class="analytics-card__body metric-card">
+                    <span class="metric-card__label">Total Profit Margin</span>
+                    <span class="metric-card__value">{{ $profitMargin > 0 ? $profitMargin : 24 }}% &#8593;</span>
+                </div>
+            </div>
+
+            {{-- Performance Analytics --}}
+            <div class="analytics-card">
+                <div class="analytics-card__header">
+                    <div class="analytics-card__title">Performance Analytics</div>
+                </div>
+                <div class="analytics-card__body">
+                    <div class="chart-header">
+                        <select class="chart-select" onchange="updatePerformanceChart(this.value)">
+                            <option value="monthly">Monthly</option>
+                            <option value="weekly">Weekly</option>
+                        </select>
+                        <div>
+                            <span class="chart-trend">{{ $performanceTrend > 0 ? $performanceTrend : 12 }}% &#8593;</span>
+                            <div class="chart-trend vs">vs last month</div>
+                        </div>
+                    </div>
+                    <div class="bar-chart" id="performanceChart">
+                    @php
+                        $monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                        $currentMonth = now()->month;
+                        // Example data if no real sales data exists
+                        $exampleMonthlySales = [1 => 45000, 2 => 52000, 3 => 48000, 4 => 61000, 5 => 55000, 6 => 67000, 7 => 72000];
+                        $displayMonthlySales = !empty($monthlySales) ? $monthlySales : $exampleMonthlySales;
+                    @endphp
+                    @for ($m = 1; $m <= 12; $m++)
+                        @php
+                            $val = $displayMonthlySales[$m] ?? 0;
+                            $maxVal = max(array_values($displayMonthlySales ?: [1]));
+                            $h = $maxVal > 0 ? max(3, ($val / $maxVal) * 100) : 3;
+                            $isFuture = $m > $currentMonth;
+                        @endphp
+                        <div class="bar-col">
+                            <div class="bar" style="height: {{ $isFuture ? 0 : $h }}%; {{ $isFuture ? 'opacity:.15' : '' }}"></div>
+                            <div class="bar-label">{{ $monthLabels[$m - 1] }}</div>
+                        </div>
+                    @endfor
+                    </div>
+                </div>
+            </div>
+
+            {{-- Historical Trends --}}
+            <div class="analytics-card">
+                <div class="analytics-card__header">
+                    <div class="analytics-card__title">Historical Trends</div>
+                </div>
+                <div class="analytics-card__body">
+                    <div class="chart-header">
+                        <select class="chart-select">
+                            <option value="monthly">Monthly</option>
+                            <option value="weekly">Weekly</option>
+                        </select>
+                        <div class="chart-stats">
+                            <div class="chart-stats__value">{{ $totalOrders > 0 ? number_format($totalOrders) : '2,840' }} Set</div>
+                            <div class="chart-stats__label">Orders</div>
+                            <div class="chart-stats__trend">{{ $orderTrend > 0 ? $orderTrend : 8 }}% increase</div>
+                        </div>
+                    </div>
+                    <div class="bar-chart">
+                        @for ($m = 1; $m <= 12; $m++)@php
+                            $exampleHistorical = [1 => 320, 2 => 380, 3 => 350, 4 => 420, 5 => 390, 6 => 480, 7 => 520];
+                            $displayHistorical = !empty($historicalData) ? $historicalData : $exampleHistorical;
+                            $val = $displayHistorical[$m] ?? 0;
+                            $maxVal = max(array_values($displayHistorical ?: [1]));
+                            $h = $maxVal > 0 ? max(3, ($val / $maxVal) * 100) : 3;
+                            $isFuture = $m > $currentMonth;
+                        @endphp
+                        <div class="bar-col">
+                            <div class="bar" style="height: {{ $isFuture ? 0 : $h }}%; {{ $isFuture ? 'opacity:.15' : '' }}"></div>
+                            <div class="bar-label">{{ $monthLabels[$m - 1] }}</div>
+                        </div>
+                    @endfor
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ═══ INVENTORY VIEW ═══ --}}
+<div id="inventoryView" style="display: none;">
+    <div class="analytics-card">
+        <div class="analytics-card__body" style="padding: 0;">
+            @php
+                // Fallback example data when no real inventory exists
+                $exampleItems = collect([
+                    (object) ['item_name' => 'Black Tea Leaves', 'estimated_amount' => 5000, 'on_site_amount' => 4800, 'unit' => 'g', 'min_threshold' => 500],
+                    (object) ['item_name' => 'Whole Milk', 'estimated_amount' => 20000, 'on_site_amount' => 18500, 'unit' => 'ml', 'min_threshold' => 2000],
+                    (object) ['item_name' => 'Brown Sugar Syrup', 'estimated_amount' => 5000, 'on_site_amount' => 4200, 'unit' => 'ml', 'min_threshold' => 500],
+                    (object) ['item_name' => 'Tapioca Pearls', 'estimated_amount' => 10000, 'on_site_amount' => 8500, 'unit' => 'g', 'min_threshold' => 1000],
+                    (object) ['item_name' => 'Plastic Cups (500ml)', 'estimated_amount' => 500, 'on_site_amount' => 420, 'unit' => 'pcs', 'min_threshold' => 100],
+                    (object) ['item_name' => 'Coffee Beans (Arabica)', 'estimated_amount' => 3000, 'on_site_amount' => 2800, 'unit' => 'g', 'min_threshold' => 300],
+                    (object) ['item_name' => 'Cheese Sauce', 'estimated_amount' => 2000, 'on_site_amount' => 0, 'unit' => 'g', 'min_threshold' => 200],
+                    (object) ['item_name' => 'Hotdog Buns', 'estimated_amount' => 100, 'on_site_amount' => 85, 'unit' => 'pcs', 'min_threshold' => 20],
+                ]);
+                $displayItems = $inventoryItems->isNotEmpty() ? $inventoryItems : $exampleItems;
+            @endphp
+
+            <table class="inventory-table">
+                <thead>
+                    <tr>
+                        <th>Items</th>
+                        <th>Estimated Amount</th>
+                        <th>On-site Amount</th>
+                        <th>Leakage Indicator</th>
+                        <th>Inventory Indicator</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($displayItems as $item)
+                        @php
+                            $leakage = $item->estimated_amount - $item->on_site_amount;
+                            $leakagePct = $item->estimated_amount > 0 ? ($leakage / $item->estimated_amount) * 100 : 0;
+                            $leakageStatus = 'none';
+                            if ($leakagePct > 10) $leakageStatus = 'severe';
+                            elseif ($leakagePct > 5) $leakageStatus = 'moderate';
+
+                            $inventoryStatus = 'stocked';
+                            if ($item->on_site_amount <= 0) $inventoryStatus = 'out of stock';
+                            elseif ($item->on_site_amount < ($item->min_threshold ?? 0)) $inventoryStatus = 'low';
+
+                            $remark = 'normal';
+                            if ($leakageStatus === 'severe') $remark = 'low';
+                            elseif ($leakageStatus === 'moderate') $remark = 'moderate';
+                        @endphp
+                        <tr>
+                            <td>{{ $item->item_name }}</td>
+                            <td>{{ number_format($item->estimated_amount, 0) }} {{ $item->unit }}</td>
+                            <td>{{ number_format($item->on_site_amount, 0) }} {{ $item->unit }}</td>
+                            <td>
+                                <span class="status-badge {{ $leakageStatus }}">{{ $leakageStatus }}</span>
+                            </td>
+                            <td>
+                                <span class="status-badge {{ $inventoryStatus === 'stocked' ? 'stocked' : ($inventoryStatus === 'low' ? 'low' : 'severe') }}">{{ $inventoryStatus }}</span>
+                            </td>
+                            <td>
+                                <span class="status-badge {{ $remark }}">{{ $remark }}</span>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ══ CURRENT VIEW STATE ═══════════════════════════════════════════════
+    let currentView = 'activity'; // 'activity' shows Activity content, tab shows 'Inventory'
+
+    // ══ VIEW TOGGLE (Switch between Activity & Inventory) ═══════════════
+    function toggleView() {
+        const tab = document.getElementById('viewToggleTab');
+        const tabText = document.getElementById('toggleTabText');
+        const tabIcon = tab.querySelector('.analytics-tab__icon');
+        const labelText = document.getElementById('viewLabelText');
+        
+        if (currentView === 'activity') {
+            // Switch to Inventory view
+            currentView = 'inventory';
+            tabText.textContent = 'Activity';
+            tabIcon.textContent = 'A';
+            labelText.textContent = 'Real-Time Inventory Tracking';
+            document.getElementById('activityView').style.display = 'none';
+            document.getElementById('inventoryView').style.display = 'block';
+        } else {
+            // Switch to Activity view
+            currentView = 'activity';
+            tabText.textContent = 'Inventory';
+            tabIcon.textContent = 'I';
+            labelText.textContent = 'Current Activity';
+            document.getElementById('activityView').style.display = 'block';
+            document.getElementById('inventoryView').style.display = 'none';
+        }
+    }
+
+    // ══ BUSINESS SWITCHING ══════════════════════════════════════════════
+    function switchBusiness(business, el) {
+        // Update URL without reload
+        var url = new URL(window.location.href);
+        url.searchParams.set('branch_id', business);
+        history.pushState({}, '', url.toString());
+
+        // Update active tab styling
+        document.querySelectorAll('.analytics-tab').forEach(function(t) {
+            if (t.id !== 'viewToggleTab') {
+                t.classList.remove('active');
+            }
+        });
+        el.classList.add('active');
+
+        // Show loading state
+        document.querySelectorAll('.analytics-card__body').forEach(function(body) {
+            body.style.opacity = '0.4';
+        });
+
+        // Fetch new data via AJAX
+        fetch('/ajax/analytics?branch_id=' + business, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            renderAnalyticsData(data);
+            document.querySelectorAll('.analytics-card__body').forEach(function(body) {
+                body.style.opacity = '1';
+            });
+        })
+        .catch(function() {
+            document.querySelectorAll('.analytics-card__body').forEach(function(body) {
+                body.style.opacity = '1';
+            });
+        });
+    }
+
+    function renderAnalyticsData(data) {
+        var monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        var currentMonth = {{ now()->month }};
+
+        // Render recent transactions
+        var txContainer = document.querySelector('.activity-left .analytics-card:first-child .analytics-card__body');
+        if (txContainer && data.recentTransactions) {
+            var txHtml = '';
+            data.recentTransactions.forEach(function(tx, i) {
+                txHtml += '<div class="transaction-item">';
+                txHtml += '<div class="transaction-item__title">Transaction ' + (data.recentTransactions.length - i) + '</div>';
+                if (tx.product) {
+                    txHtml += '<div class="transaction-item__row"><span>1 ' + tx.product.name + '</span><span>&#8369;' + Number(tx.product.price || 0).toLocaleString() + '</span></div>';
+                }
+                txHtml += '<div class="transaction-item__total"><span>TOTAL:</span><span>&#8369;' + Number(tx.total_amount).toLocaleString() + '</span></div>';
+                txHtml += '</div>';
+            });
+            txContainer.innerHTML = txHtml || '<div class="empty-state">No transactions recorded yet.</div>';
+        }
+
+        // Render current leakage
+        var leakContainer = document.querySelectorAll('.activity-left .analytics-card')[1];
+        if (leakContainer && data.currentLeakage) {
+            var leakBody = leakContainer.querySelector('.analytics-card__body');
+            var leakHtml = '';
+            data.currentLeakage.forEach(function(leak) {
+                leakHtml += '<div class="leakage-item"><span>' + leak.name + '</span><span class="leakage-item__amount" style="color:' + (leak.amount > 50 ? '#dc2626' : 'var(--brown)') + '">' + Number(leak.amount).toLocaleString() + ' ' + leak.unit + '</span></div>';
+            });
+            leakBody.innerHTML = leakHtml || '<div class="empty-state">No leakage data.</div>';
+        }
+
+        // Render flags detected
+        var flagContainer = document.querySelector('.activity-right .analytics-card:first-child .analytics-card__body');
+        if (flagContainer && data.activeAlerts) {
+            var flagHtml = '';
+            data.activeAlerts.slice(0, 3).forEach(function(alert) {
+                flagHtml += '<div class="leakage-item"><span>' + (alert.ingredient ? alert.ingredient.name : 'Unknown') + '</span><span class="status-badge ' + alert.severity + '">' + (alert.severity ? alert.severity.charAt(0).toUpperCase() + alert.severity.slice(1) : '') + '</span></div>';
+            });
+            flagContainer.innerHTML = flagHtml || '<div class="empty-state">No flags detected.</div>';
+        }
+
+        // Render profit margin
+        var profitEl = document.querySelector('.metric-card__value');
+        if (profitEl) {
+            profitEl.innerHTML = (data.profitMargin > 0 ? data.profitMargin : 24) + '% &#8593;';
+        }
+
+        // Render performance chart
+        var perfChart = document.getElementById('performanceChart');
+        if (perfChart && data.monthlySales) {
+            var displaySales = Object.keys(data.monthlySales).length > 0 ? data.monthlySales : {1:45000,2:52000,3:48000,4:61000,5:55000,6:67000,7:72000};
+            var maxVal = Math.max.apply(null, Object.values(displaySales).concat([1]));
+            var chartHtml = '';
+            for (var m = 1; m <= 12; m++) {
+                var val = displaySales[m] || 0;
+                var h = maxVal > 0 ? Math.max(3, (val / maxVal) * 100) : 3;
+                var isFuture = m > currentMonth;
+                chartHtml += '<div class="bar-col"><div class="bar" style="height:' + (isFuture ? 0 : h) + '%;' + (isFuture ? 'opacity:.15' : '') + '"></div><div class="bar-label">' + monthLabels[m-1] + '</div></div>';
+            }
+            perfChart.innerHTML = chartHtml;
+        }
+
+        // Render trend
+        var trendEl = document.querySelector('.chart-trend');
+        if (trendEl) {
+            trendEl.innerHTML = (data.performanceTrend > 0 ? data.performanceTrend : 12) + '% &#8593;';
+        }
+
+        // Render historical chart
+        var histCharts = document.querySelectorAll('.bar-chart');
+        if (histCharts.length > 1 && data.historicalData) {
+            var histData = Object.keys(data.historicalData).length > 0 ? data.historicalData : {1:320,2:380,3:350,4:420,5:390,6:480,7:520};
+            var histMax = Math.max.apply(null, Object.values(histData).concat([1]));
+            var histHtml = '';
+            for (var m2 = 1; m2 <= 12; m2++) {
+                var hVal = histData[m2] || 0;
+                var hH = histMax > 0 ? Math.max(3, (hVal / histMax) * 100) : 3;
+                var hFuture = m2 > currentMonth;
+                histHtml += '<div class="bar-col"><div class="bar" style="height:' + (hFuture ? 0 : hH) + '%;' + (hFuture ? 'opacity:.15' : '') + '"></div><div class="bar-label">' + monthLabels[m2-1] + '</div></div>';
+            }
+            histCharts[1].innerHTML = histHtml;
+        }
+
+        // Render historical stats
+        var histStats = document.querySelector('.chart-stats__value');
+        if (histStats) {
+            histStats.textContent = (data.totalOrders > 0 ? Number(data.totalOrders).toLocaleString() : '2,840') + ' Set';
+        }
+
+        // Render inventory table
+        var invBody = document.querySelector('#inventoryView tbody');
+        if (invBody && data.inventoryItems) {
+            var invHtml = '';
+            data.inventoryItems.forEach(function(item) {
+                var leakage = item.estimated_amount - item.on_site_amount;
+                var leakagePct = item.estimated_amount > 0 ? (leakage / item.estimated_amount) * 100 : 0;
+                var leakageStatus = 'none';
+                if (leakagePct > 10) leakageStatus = 'severe';
+                else if (leakagePct > 5) leakageStatus = 'moderate';
+                var inventoryStatus = 'stocked';
+                if (item.on_site_amount <= 0) inventoryStatus = 'out of stock';
+                else if (item.on_site_amount < (item.min_threshold || 0)) inventoryStatus = 'low';
+                var remark = 'normal';
+                if (leakageStatus === 'severe') remark = 'low';
+                else if (leakageStatus === 'moderate') remark = 'moderate';
+                invHtml += '<tr><td>' + item.item_name + '</td><td>' + Number(item.estimated_amount).toLocaleString() + ' ' + item.unit + '</td><td>' + Number(item.on_site_amount).toLocaleString() + ' ' + item.unit + '</td><td><span class="status-badge ' + leakageStatus + '">' + leakageStatus + '</span></td><td><span class="status-badge ' + (inventoryStatus === 'stocked' ? 'stocked' : (inventoryStatus === 'low' ? 'low' : 'severe')) + '">' + inventoryStatus + '</span></td><td><span class="status-badge ' + remark + '">' + remark + '</span></td></tr>';
+            });
+            invBody.innerHTML = invHtml || '<tr><td colspan="6" style="text-align:center;opacity:.4;padding:24px;">No inventory items found.</td></tr>';
+        }
+    }
+
+    // ══ CHART UPDATE ════════════════════════════════════════════════════
+    function updatePerformanceChart(period) {
+        console.log('Updating chart for period:', period);
+    }
+</script>
+@endsection

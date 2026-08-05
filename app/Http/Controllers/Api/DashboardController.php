@@ -41,11 +41,11 @@ class DashboardController extends Controller
         $from     = $request->from ?? now()->startOfWeek()->toDateString();
         $to       = $request->to   ?? now()->toDateString();
 
-        $summary = \App\Models\Transaction::selectRaw('DATE(created_at) as date, COUNT(*) as sales, SUM(products.price * transactions.quantity) as revenue')
+        $summary = \App\Models\Transaction::selectRaw('DATE(transactions.created_at) as date, COUNT(*) as sales, SUM(products.price * transactions.quantity) as revenue')
             ->join('products', 'products.id', '=', 'transactions.product_id')
             ->whereBetween(\Illuminate\Support\Facades\DB::raw('DATE(transactions.created_at)'), [$from, $to])
             ->when($branchId, fn($q) => $q->where('transactions.branch_id', $branchId))
-            ->groupBy(\Illuminate\Support\Facades\DB::raw('DATE(created_at)'))
+            ->groupBy(\Illuminate\Support\Facades\DB::raw('DATE(transactions.created_at)'))
             ->orderBy('date')
             ->get();
 

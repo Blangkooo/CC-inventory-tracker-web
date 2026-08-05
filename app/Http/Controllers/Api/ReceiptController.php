@@ -47,11 +47,11 @@ class ReceiptController extends Controller
 
         return response()->json([
             'message' => 'Receipt scanned successfully',
-            'receipt' => $receipt,
+            'receipt' => $receipt->load('matchedTransaction.product', 'branch', 'user'),
             'ocr_text' => $rawText,
             'parsed_amount' => $parsedAmount,
             'reconciliation_status' => $receipt->reconciliation_status,
-            'matched_transaction' => $receipt->matchedTransaction,
+            'matched_transaction' => $receipt->relationLoaded('matchedTransaction') ? $receipt->matchedTransaction : null,
         ], 201);
     }
 

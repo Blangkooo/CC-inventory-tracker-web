@@ -15,18 +15,27 @@ class OcrService
         }
     }
 
-    // Looks for patterns like "TOTAL: 130.00", "Total P130.00", "AMOUNT DUE: 65.00"
+    /**
+     * Looks for patterns like "TOTAL: 130.00", "Total P1,250.00", "AMOUNT DUE: 65.00"
+     * Supports thousands-separated amounts (e.g. 1,250.00, PHP 1,500.50).
+     */
     public function parseTotalAmount(string $ocrText): ?float
     {
+        // Capture group:  1+ digits, optionally (separator + 1+ digits), then dot + exactly 2 digits
+        // Handles: 130.00, 1,250.00, 12,345.67, 500.50
+        $numberPattern = '\d+(?:[.,]\d+)*\.\d{2}';
+
         $patterns = [
-            '/(?:total|amount due|grand total|subtotal)[^\d]*(\d+[\.,]\d{2})/i',
-            '/(?:₱|php|p)\s*(\d+[\.,]\d{2})/i',
-            '/(\d+[\.,]\d{2})\s*(?:total|due)/i',
+            '/'.'(?:total|amount due|grand total|subtotal)'.'[^\d]*'.'('.$numberPattern.')'.'/i',
+            '/'.'(?:₱|php|p)'.'\s*'.'('.$numberPattern.')'.'/i',
+            '/'.'('.$numberPattern.')'.'\s*(?:total|due)'.'/i',
         ];
 
         foreach ($patterns as $pattern) {
             if (preg_match($pattern, $ocrText, $matches)) {
-                return (float) str_replace(',', '', $matches[1]);
+                // Strip any thousands separators (commas) before casting
+                $cleaned = str_replace(',', '', $matches[1]);
+                return (float) $cleaned;
             }
         }
 

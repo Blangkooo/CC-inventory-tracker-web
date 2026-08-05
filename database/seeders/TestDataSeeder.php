@@ -2,7 +2,12 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Branch;
+use App\Models\BranchStock;
+use App\Models\Ingredient;
+use App\Models\Product;
+use App\Models\Recipe;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class TestDataSeeder extends Seeder
@@ -12,36 +17,47 @@ class TestDataSeeder extends Seeder
      */
     public function run(): void
     {
-        $branch = \App\Models\Branch::create([
+        // Skip if data already exists
+        if (User::count() > 0) {
+            $this->command->info('Users already exist. Skipping TestDataSeeder.');
+            return;
+        }
+
+        $branch = Branch::create([
             'name'     => 'Main Branch',
             'location' => 'Quezon City',
+            'status'   => 'active',
         ]);
 
-        \App\Models\User::create([
+        User::create([
             'name'      => 'Juan',
-            'pin_hash'  => \Illuminate\Support\Facades\Hash::make('1234'),
-            'role'      => 'cashier',
+            'email'     => 'juan@test.com',
+            'pin'       => '1234',
+            'password'  => 'password',
+            'role'      => User::ROLE_STAFF,
             'branch_id' => $branch->id,
         ]);
 
-        $product = \App\Models\Product::create([
-            'name'  => 'Milk Tea',
-            'price' => 45.00,
+        $ingredient = Ingredient::create(['name' => 'Tea Powder', 'unit' => 'g']);
+
+        $product = Product::create([
+            'name'     => 'Milk Tea',
+            'category' => 'Drinks',
+            'price'    => 45.00,
         ]);
 
-        \App\Models\Recipe::create([
-            'product_id'      => $product->id,
-            'ingredient_name' => 'Tea Powder',
-            'quantity'        => 0.05,
-            'unit'            => 'kg',
+        Recipe::create([
+            'product_id'        => $product->id,
+            'ingredient_id'     => $ingredient->id,
+            'size'              => Recipe::SIZE_REGULAR,
+            'quantity_required' => 50,
         ]);
 
-        \App\Models\StockLevel::create([
-            'branch_id'       => $branch->id,
-            'ingredient_name' => 'Tea Powder',
-            'quantity'        => 10,
-            'unit'            => 'kg',
-            'updated_at'      => now(),
+        BranchStock::create([
+            'branch_id'         => $branch->id,
+            'ingredient_id'     => $ingredient->id,
+            'current_quantity'  => 1000,
+            'min_threshold'     => 100,
         ]);
 
         $this->command->info('Done! Branch ID: ' . $branch->id . ', Product ID: ' . $product->id);
