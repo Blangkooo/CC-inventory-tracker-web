@@ -6,6 +6,7 @@ use App\Http\Controllers\BranchesController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IngredientController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\PaymentsController;
 use App\Http\Controllers\RecipesController;
 use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Auth;
@@ -534,9 +535,11 @@ Route::middleware('auth')->group(function () {
         ]);
     })->name('calendar.meetings.delete');
 
-    Route::get('/payments', function () {
-        return view('payments.index');
-    })->name('payments');
+    Route::get('/payments', [PaymentsController::class, 'index'])->name('payments');
+    Route::post('/payments', [PaymentsController::class, 'store'])->name('payments.store');
+    Route::put('/payments/{payment}', [PaymentsController::class, 'update'])->name('payments.update');
+    Route::post('/payments/{payment}/mark-paid', [PaymentsController::class, 'markPaid'])->name('payments.mark-paid');
+    Route::delete('/payments/{payment}', [PaymentsController::class, 'destroy'])->name('payments.destroy');
 
     Route::get('/help', function () {
         return view('help.index');

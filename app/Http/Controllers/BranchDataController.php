@@ -68,7 +68,7 @@ class BranchDataController extends Controller
             ])
             ->values()->take(5);
 
-        $monthlySales = Transaction::selectRaw("strftime('%m', created_at) as month, SUM(total_amount) as total")
+        $monthlySales = Transaction::selectRaw("DATE_FORMAT(created_at, '%m') as month, SUM(total_amount) as total")
             ->whereYear('created_at', now()->year)
             ->when(true, $branchScope)
             ->groupBy('month')

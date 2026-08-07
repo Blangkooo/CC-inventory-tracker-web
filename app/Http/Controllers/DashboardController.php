@@ -40,7 +40,7 @@ class DashboardController extends Controller
             ->count();
 
         // ── Monthly sales for KPI chart (Jan–Dec of current year) ─────
-        $monthlySales = Transaction::selectRaw("strftime('%m', created_at) as month, SUM(total_amount) as total")
+        $monthlySales = Transaction::selectRaw("DATE_FORMAT(created_at, '%m') as month, SUM(total_amount) as total")
             ->whereYear('created_at', now()->year)
             ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
             ->groupBy('month')
