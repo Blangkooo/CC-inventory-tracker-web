@@ -1,4 +1,70 @@
 @php
+    // ── Placeholder fallbacks ─────────────────────────────────────────
+    if (!isset($branches) || $branches->isEmpty()) {
+        $branches = collect([
+            (object)['id'=>1,'name'=>'QC Main Branch'],
+            (object)['id'=>2,'name'=>'Makati Outlet'],
+            (object)['id'=>3,'name'=>'BGC Branch'],
+            (object)['id'=>4,'name'=>'Cebu City Branch'],
+        ]);
+    }
+    if (!isset($categories) || $categories->isEmpty()) {
+        $categories = collect(['Drinks','Goods','Sets']);
+    }
+    if (!isset($allIngredients) || $allIngredients->isEmpty()) {
+        $allIngredients = collect([
+            (object)['id'=>1,'name'=>'Flour','unit'=>'g'],
+            (object)['id'=>2,'name'=>'Sugar','unit'=>'g'],
+            (object)['id'=>3,'name'=>'Butter','unit'=>'g'],
+            (object)['id'=>4,'name'=>'Milk','unit'=>'ml'],
+            (object)['id'=>5,'name'=>'Chocolate Syrup','unit'=>'ml'],
+        ]);
+    }
+
+    if (!isset($products) || $products->isEmpty()) {
+        $makeProd = fn($id,$name,$cat,$ings) => (object)[
+            'id'=>$id, 'name'=>$name, 'category'=>$cat, 'price'=>0, 'procedure'=>'',
+            'recipes'=>collect(array_map(fn($i)=>(object)[
+                'id'=>0,
+                'ingredient_id'=>0,
+                'ingredient'=>(object)['id'=>0,'name'=>$i[0],'unit'=>$i[2]],
+                'size'=>(object)['regular'=>$i[1],'large'=>$i[3]],
+            ], $ings)),
+        ];
+        $products = collect([
+            $makeProd(1,'Black Forest Milk Tea','Drinks',[
+                ['Black Tea Base','200ml','ml','300ml'],
+                ['Whole Milk','60ml','ml','90ml'],
+                ['Chocolate Syrup','30ml','ml','45ml'],
+                ['Cherry Syrup','15ml','ml','22ml'],
+                ['Flavor Powder','25g','g','38g'],
+                ['Sugar','20g','g','30g'],
+                ['Ice','1 cup','cup','1.5 cups'],
+            ]),
+            $makeProd(2,'Classic Milk Tea','Drinks',[
+                ['Black Tea Base','200ml','ml','300ml'],
+                ['Whole Milk','80ml','ml','120ml'],
+                ['Brown Sugar Syrup','25ml','ml','40ml'],
+                ['Tapioca Pearls','50g','g','80g'],
+                ['Ice','1 cup','cup','1.5 cups'],
+            ]),
+            $makeProd(3,'Taro Milk Tea','Drinks',[
+                ['Taro Powder','30g','g','45g'],
+                ['Whole Milk','100ml','ml','150ml'],
+                ['Sugar Syrup','20ml','ml','30ml'],
+                ['Ice','1 cup','cup','1.5 cups'],
+            ]),
+            $makeProd(4,'Cheese Dog Set','Sets',[
+                ['Hotdog Bun','1 pc','pc','2 pc'],
+                ['Hotdog','1 pc','pc','2 pc'],
+                ['Cheese Sauce','30g','g','60g'],
+                ['Ketchup','10g','g','20g'],
+            ]),
+        ]);
+    }
+
+    // ── Pre-compute JSON-safe product data for the edit modal ──────
+    // (Must be AFTER the fallback block so placeholders are included.)
     $productsData = $products->map(function ($p) {
         return [
             'id' => $p->id,
@@ -22,316 +88,336 @@
         ];
     })->values();
 @endphp
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recipes — NITA</title>
-    @include('partials._shared-styles')
+@extends('layouts.sidebar')
 
-    <style>
-        .workspace { padding: 20px 32px; }
+@section('title', 'Recipes')
 
-        .recipe-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-        @media (max-width: 1100px) { .recipe-grid { grid-template-columns: 1fr; } }
+@section('content')
+<style>@keyframes modalIn{from{opacity:0;transform:translateY(20px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}</style>
 
-        .search-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+<div class="max-w-[1400px] mx-auto px-8 py-6 flex gap-5 max-[900px]:p-4">
 
-        .search-input {
-            width: 280px; height: 38px; padding: 0 14px;
-            background: #fff; border: 1.5px solid var(--border); border-radius: 8px;
-            font-size: 13px; color: var(--brown); font-family: var(--font);
-            transition: border-color .15s ease;
-        }
-
-        .search-input::placeholder { color: rgba(92,45,27,.4); }
-        .search-input:focus { outline: none; border-color: var(--terra); }
-
-        .cat-pills { display: flex; gap: 6px; }
-
-        .cat-pill {
-            padding: 7px 18px; border-radius: 999px; font-size: 12px; font-weight: 600;
-            border: 1.5px solid var(--border); background: #fff; color: var(--brown);
-            cursor: pointer; transition: all .15s ease;
-        }
-
-        .cat-pill.is-active { background: var(--terra); color: #fff; border-color: var(--terra); }
-
-        .recipe-card {
-            background: #fff; border: 1px solid var(--border);
-            border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
-        }
-
-        .recipe-card__head {
-            display: flex; align-items: center; gap: 8px;
-            padding: 12px 16px; border-bottom: 1px solid var(--border);
-        }
-
-        .recipe-card__head svg { flex-shrink: 0; opacity: .6; }
-        .recipe-card__name { font-size: 14px; font-weight: 700; }
-
-        .recipe-table { width: 100%; border-collapse: collapse; }
-
-        .recipe-table thead th {
-            text-align: left; font-size: 9px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .05em; opacity: .45; padding: 8px 16px;
-            background: rgba(92,45,27,.03); border-bottom: 1px solid var(--border);
-        }
-
-        .recipe-table tbody td {
-            padding: 8px 16px; font-size: 12px; vertical-align: top; line-height: 1.5;
-            border-bottom: 1px solid rgba(92,45,27,.06);
-        }
-
-        .recipe-table tbody tr:last-child td { border-bottom: none; }
-
-        .recipe-card__foot {
-            display: flex; align-items: center; gap: 10px; justify-content: flex-end;
-            padding: 10px 16px; border-top: 1px solid var(--border);
-            background: rgba(92,45,27,.02);
-        }
-
-        .recipe-card__foot-label { font-size: 12px; font-weight: 600; opacity: .6; }
-
-        .btn-edit {
-            padding: 7px 20px; background: #fff; color: var(--brown);
-            border: 1.5px solid var(--border); border-radius: 8px;
-            font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--font);
-            transition: all .15s ease;
-        }
-
-        .btn-edit:hover { background: var(--brown); color: var(--cream); border-color: var(--brown); }
-
-        .modal-overlay {
-            position: fixed; inset: 0; z-index: 1000;
-            background: rgba(92,45,27,.45);
-            display: none; align-items: center; justify-content: center;
-            padding: 24px; backdrop-filter: blur(2px);
-        }
-
-        .modal-overlay.is-open { display: flex; }
-
-        .modal-box {
-            background: #fff; border-radius: 16px;
-            box-shadow: 0 8px 40px rgba(92,45,27,.2);
-            width: 100%; max-width: 720px; max-height: 90vh;
-            display: flex; flex-direction: column; animation: modalIn .2s ease;
-        }
-
-        @keyframes modalIn {
-            from { opacity: 0; transform: translateY(20px) scale(.97); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--border); }
-        .modal-header h2 { font-size: 17px; font-weight: 800; }
-
-        .modal-close { width: 32px; height: 32px; border-radius: 8px; border: none; background: transparent; color: var(--brown); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; }
-        .modal-close:hover { background: rgba(92,45,27,.08); }
-        .modal-body { flex: 1; overflow-y: auto; padding: 24px; }
-        .modal-body .field { margin-bottom: 16px; }
-        .modal-body .field-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; opacity: .6; margin-bottom: 6px; }
-        .modal-body input, .modal-body select, .modal-body textarea { width: 100%; padding: 0 14px; height: 42px; background: var(--cream); border: 1.5px solid var(--border); border-radius: 10px; font-size: 13px; color: var(--brown); font-family: var(--font); transition: border-color .15s, box-shadow .15s; }
-        .modal-body input:focus, .modal-body select:focus, .modal-body textarea:focus { outline: none; border-color: var(--terra); box-shadow: 0 0 0 3px rgba(188,97,75,.12); }
-        .modal-body textarea { height: auto; min-height: 80px; padding: 10px 14px; resize: vertical; }
-
-        .ingredient-row { display: grid; grid-template-columns: 2fr 1fr 1fr 80px 36px; gap: 8px; align-items: center; margin-bottom: 8px; }
-        .ingredient-row select, .ingredient-row input { height: 38px; }
-        .ingredient-row .unit-badge { font-size: 11px; font-weight: 600; opacity: .5; text-align: center; }
-
-        .btn-remove-ingredient { width: 36px; height: 36px; border-radius: 8px; border: 1.5px solid #fecaca; background: #fef2f2; color: #991b1b; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; flex-shrink: 0; }
-        .btn-remove-ingredient:hover { background: #991b1b; color: #fff; border-color: #991b1b; }
-
-        .btn-add-ingredient { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; margin-top: 4px; background: var(--cream); border: 1.5px dashed var(--border); border-radius: 10px; font-size: 12px; font-weight: 600; color: var(--brown); cursor: pointer; font-family: var(--font); transition: all .15s; }
-        .btn-add-ingredient:hover { border-color: var(--terra); color: var(--terra); background: rgba(188,97,75,.06); }
-
-        .procedures-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
-        .modal-footer { display: flex; align-items: center; gap: 10px; justify-content: flex-end; padding: 16px 24px; border-top: 1px solid var(--border); background: rgba(92,45,27,.02); }
-
-        .btn-save { padding: 9px 24px; background: var(--terra); color: #fff; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: var(--font); transition: background .15s; }
-        .btn-save:hover { background: #a8523e; }
-        .btn-save:disabled { opacity: .5; cursor: not-allowed; }
-
-        .btn-cancel { padding: 9px 20px; background: #fff; color: var(--brown); border: 1.5px solid var(--border); border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: all .15s; }
-        .btn-cancel:hover { background: rgba(92,45,27,.05); }
-
-        .btn-delete-product { padding: 9px 16px; margin-right: auto; background: #fef2f2; color: #991b1b; border: 1.5px solid #fecaca; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: all .15s; }
-        .btn-delete-product:hover { background: #991b1b; color: #fff; border-color: #991b1b; }
-
-        .save-status { font-size: 12px; font-weight: 600; padding: 8px 14px; border-radius: 8px; display: none; }
-        .save-status.is-visible { display: inline-block; }
-        .save-status--success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-        .save-status--error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
-
-        .ingredient-headers { display: grid; grid-template-columns: 2fr 1fr 1fr 80px 36px; gap: 8px; align-items: center; margin-bottom: 6px; }
-        .ingredient-headers span { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; opacity: .4; }
-
-        .size-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
-        .size-tag--regular { background: rgba(92,45,27,.08); color: var(--brown); }
-        .size-tag--large { background: rgba(188,97,75,.12); color: var(--terra); }
-
-        @media (max-width: 900px) { .search-row { flex-direction: column; align-items: stretch; } .search-input { width: 100%; } .ingredient-row { grid-template-columns: 1fr 1fr; } .ingredient-headers { display: none; } }
-    </style>
-</head>
-<body>
-
-<nav class="nav">
-    <div class="nav__inner">
-        <div class="nav__left">
-            <a href="{{ url('/dashboard') }}" class="nav__logo"><img src="{{ asset('images/logo.svg') }}" alt="NITA"></a>
-            <div class="nav__pills">
-                <a href="{{ url('/business/recipes') }}" class="nav__pill is-active">Business</a>
-                <a href="{{ url('/logistics') }}" class="nav__pill">Logistics</a>
+    {{-- Branch Sidebar --}}
+    <div class="w-[108px] shrink-0 bg-accent rounded-[var(--radius-card)] shadow-sm flex flex-col items-center px-2.5 py-3.5 gap-2.5 max-[900px]:hidden">
+        @php $userBranchId = auth()->user()->branch_id; @endphp
+        <div class="w-full bg-white rounded-[10px] border border-[rgba(92,45,27,.2)] px-2 py-2.5 text-center">
+            <div class="mb-1.5">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#BC614B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/>
+                </svg>
             </div>
+            <div class="text-[11px] font-bold leading-tight">{{ $branches->count() }} {{ Str::plural('Branch', $branches->count()) }}</div>
+            <div class="text-[9px] font-semibold opacity-50 uppercase tracking-[.03em] mt-0.5">All Locations</div>
         </div>
-        <div class="nav__right">
-            <a href="{{ url('/alerts') }}" class="nav__icon" title="Alerts"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></a>
-            <a href="{{ url('/alerts') }}" class="nav__icon" title="Messages" style="text-decoration:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></a>
-            <div class="nav__sep"></div>
-            <div class="nav__user">
-                <div class="nav__avatar">A</div>
-                <div class="nav__user-info"><div class="nav__user-name">Admin Owner</div><div class="nav__user-email">admin@nita.com</div></div>
-            </div>
+
+        <div class="w-full h-px bg-white/20"></div>
+
+        <div class="flex flex-col items-center gap-2 w-full">
+            @foreach ($branches as $branch)
+                @php $initials = collect(explode(' ', $branch->name))->map(fn($w) => strtoupper($w[0]))->take(2)->implode(''); @endphp
+                <a href="#" class="{{ $branch->id === $userBranchId ? 'bg-[#5c2d1b] text-cream border-[#5c2d1b]' : 'bg-[rgba(250,249,247,.85)] text-[#5c2d1b] hover:bg-[#5c2d1b] hover:text-white hover:border-[#5c2d1b]' }} w-[42px] h-[42px] rounded-full border-[1.5px] border-[rgba(92,45,27,.3)] flex items-center justify-center text-[10px] font-bold cursor-pointer transition-all duration-150 no-underline shrink-0" title="{{ $branch->name }}">{{ $initials }}</a>
+            @endforeach
         </div>
     </div>
-</nav>
 
-<div class="shell">
-    @include('partials._sidebar')
+    {{-- Main Content --}}
+    <div class="flex-1 min-w-0 flex flex-col gap-5">
 
-    <main style="padding: 0;">
-        @php $currentBusinessTab = 'recipes'; @endphp
-        @include('partials._business-header')
+        <div class="flex items-center justify-between flex-wrap gap-3">
+            <div class="flex items-baseline gap-2.5">
+                <h1 class="text-[22px] font-extrabold">Businesses</h1>
+                <span class="text-[15px] font-normal opacity-50">/ {{ auth()->user()->isOwner() ? 'Owner' : 'Manager' }}</span>
+            </div>
+            @include('partials._business-tabs', ['active' => 'recipes'])
+        </div>
 
-        <div style="padding: 20px 32px;">
-        <div class="search-row">
-            <input type="text" class="search-input" id="recipe-search" placeholder="Search product name…">
-            <div class="cat-pills" id="cat-pills">
-                <span class="cat-pill is-active" data-cat="">All</span>
+        <div class="flex items-center gap-2.5 max-[900px]:flex-col max-[900px]:items-stretch">
+            <input type="text" class="w-[280px] h-[38px] px-3.5 bg-white border-[1.5px] border-line rounded-lg text-[13px] text-[#5c2d1b] font-sans transition-[border-color] duration-150 placeholder:text-[rgba(92,45,27,.4)] focus:outline-none focus:border-accent max-[900px]:w-full" id="recipe-search" placeholder="Search product name…">
+            <div class="flex gap-1.5" id="cat-pills">
+                <span class="cat-pill py-[7px] px-[18px] rounded-full text-xs font-semibold border-[1.5px] cursor-pointer transition-all duration-150 bg-accent text-white border-accent" data-cat="">All</span>
                 @foreach ($categories as $cat)
-                    <span class="cat-pill" data-cat="{{ $cat }}">{{ $cat }}</span>
+                    <span class="cat-pill py-[7px] px-[18px] rounded-full text-xs font-semibold border-[1.5px] cursor-pointer transition-all duration-150 bg-white text-[#5c2d1b] border-line" data-cat="{{ $cat }}">{{ $cat }}</span>
                 @endforeach
             </div>
         </div>
 
-        <div class="recipe-grid">
         @forelse ($products as $product)
-        <div class="recipe-card" data-cat="{{ $product->category }}" data-name="{{ strtolower($product->name) }}">
-            <div class="recipe-card__head">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#BC614B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>
-                <span class="recipe-card__name">{{ $product->name }}</span>
-                <span style="margin-left:auto;font-size:11px;font-weight:600;opacity:.45;text-transform:uppercase;letter-spacing:.04em">&#8369;{{ number_format($product->price ?? 0, 2) }}@if ($product->category) &middot; {{ $product->category }}@endif</span>
+        <div class="recipe-card card overflow-hidden" data-cat="{{ $product->category }}" data-name="{{ strtolower($product->name) }}">
+            <div class="flex items-center gap-2.5 px-6 py-[18px] border-b border-line">
+                <svg class="shrink-0 opacity-60" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#BC614B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/>
+                    <line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/>
+                </svg>
+                <span class="text-base font-extrabold">{{ $product->name }}</span>
+
+                @if (($product->availability ?? 'available') === 'discontinued')
+                    <span class="badge-gray" title="This product has been discontinued.">Not Available</span>
+                @elseif (($product->availability ?? 'available') === 'out_of_stock')
+                    <span class="badge-red" title="Out of stock: {{ $product->missing_ingredients->implode(', ') }}">Not Available</span>
+                @endif
+
+                <span class="ml-auto text-[11px] font-semibold opacity-45 uppercase tracking-[.04em]">
+                    &#8369;{{ number_format($product->price ?? 0, 2) }}
+                    @if ($product->category)
+                        &middot; {{ $product->category }}
+                    @endif
+                </span>
             </div>
+
+            @if (($product->availability ?? 'available') === 'out_of_stock')
+                <div class="flex items-start gap-2 px-6 py-2.5 bg-[rgba(214,48,49,.05)] border-b border-line text-[11px] font-semibold text-accent-2">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="mt-px shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <span>Cannot be served — out of stock: {{ $product->missing_ingredients->implode(', ') }}</span>
+                </div>
+            @elseif (($product->availability ?? 'available') === 'discontinued')
+                <div class="flex items-start gap-2 px-6 py-2.5 bg-black/[.03] border-b border-line text-[11px] font-semibold text-ink-2">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="mt-px shrink-0"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                    <span>Discontinued — kept for reference only.</span>
+                </div>
+            @endif
+
             @if ($product->recipes->isEmpty())
-                <div style="padding:20px 24px;font-size:13px;opacity:.4">No recipe ingredients defined yet.</div>
+                <div class="px-6 py-5 text-[13px] opacity-40">No recipe ingredients defined yet.</div>
             @else
                 @php
                     $grouped = [];
                     foreach ($product->recipes as $r) {
                         $ingId = $r->ingredient_id;
-                        if (!isset($grouped[$ingId])) $grouped[$ingId] = ['ingredient' => $r->ingredient, 'regular' => null, 'large' => null, 'regular_id' => null, 'large_id' => null];
-                        if ($r->size === 'regular') { $grouped[$ingId]['regular'] = $r->quantity_required; $grouped[$ingId]['regular_id'] = $r->id; }
-                        else { $grouped[$ingId]['large'] = $r->quantity_required; $grouped[$ingId]['large_id'] = $r->id; }
+                        if (!isset($grouped[$ingId])) {
+                            $grouped[$ingId] = [
+                                'ingredient' => $r->ingredient,
+                                'regular' => null,
+                                'large' => null,
+                                'regular_id' => null,
+                                'large_id' => null,
+                            ];
+                        }
+                        if ($r->size === 'regular') {
+                            $grouped[$ingId]['regular'] = $r->quantity_required;
+                            $grouped[$ingId]['regular_id'] = $r->id;
+                        } else {
+                            $grouped[$ingId]['large'] = $r->quantity_required;
+                            $grouped[$ingId]['large_id'] = $r->id;
+                        }
                     }
                 @endphp
-                @php
-                    $displayLimit = 3;
-                    $groupedArr = array_values($grouped);
-                    $visibleIngredients = array_slice($groupedArr, 0, $displayLimit);
-                    $hiddenCount = count($groupedArr) - $displayLimit;
-                @endphp
-                @if (count($groupedArr) > 0)
-                <table class="recipe-table">
-                    <thead><tr><th>Ingredient</th><th><span class="size-tag size-tag--regular">Regular</span></th><th><span class="size-tag size-tag--large">Large</span></th><th>Unit</th></tr></thead>
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr>
+                            <th class="text-left text-[10px] font-bold uppercase tracking-[.06em] opacity-45 px-6 py-3 bg-[rgba(92,45,27,.03)] border-b border-line">Ingredient</th>
+                            <th class="text-left text-[10px] font-bold uppercase tracking-[.06em] opacity-45 px-6 py-3 bg-[rgba(92,45,27,.03)] border-b border-line"><span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-[.04em] bg-[rgba(92,45,27,.08)] text-[#5c2d1b]">Regular</span></th>
+                            <th class="text-left text-[10px] font-bold uppercase tracking-[.06em] opacity-45 px-6 py-3 bg-[rgba(92,45,27,.03)] border-b border-line"><span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-[.04em] bg-[rgba(188,97,75,.12)] text-accent">Large</span></th>
+                            <th class="text-left text-[10px] font-bold uppercase tracking-[.06em] opacity-45 px-6 py-3 bg-[rgba(92,45,27,.03)] border-b border-line">Unit</th>
+                        </tr>
+                    </thead>
                     <tbody>
-                        @foreach ($visibleIngredients as $g)
+                        @foreach ($grouped as $ingId => $g)
                             <tr>
-                                <td><strong>{{ $g['ingredient']->name ?? '—' }}</strong></td>
-                                <td>{{ $g['regular'] !== null ? rtrim(rtrim(number_format($g['regular'], 3), '0'), '.') : '—' }}</td>
-                                <td>{{ $g['large'] !== null ? rtrim(rtrim(number_format($g['large'], 3), '0'), '.') : '—' }}</td>
-                                <td>{{ $g['ingredient']->unit ?? '—' }}</td>
+                                <td class="px-6 py-4 text-[13px] align-top leading-[1.7] border-b border-[rgba(92,45,27,.06)]"><strong class="font-semibold">{{ $g['ingredient']->name ?? '—' }}</strong></td>
+                                <td class="px-6 py-4 text-[13px] align-top leading-[1.7] border-b border-[rgba(92,45,27,.06)]">{{ $g['regular'] !== null ? rtrim(rtrim(number_format($g['regular'], 3), '0'), '.') : '—' }}</td>
+                                <td class="px-6 py-4 text-[13px] align-top leading-[1.7] border-b border-[rgba(92,45,27,.06)]">{{ $g['large'] !== null ? rtrim(rtrim(number_format($g['large'], 3), '0'), '.') : '—' }}</td>
+                                <td class="px-6 py-4 text-[13px] align-top leading-[1.7] border-b border-[rgba(92,45,27,.06)]">{{ $g['ingredient']->unit ?? '—' }}</td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
-                @endif
-                @if ($hiddenCount > 0)
-                    <div style="padding:6px 16px;font-size:11px;font-weight:600;color:var(--terra);background:rgba(180,83,83,.04);border-top:1px solid var(--border);">
-                        +{{ $hiddenCount }} more ingredient{{ $hiddenCount > 1 ? 's' : '' }}
-                    </div>
-                @endif
             @endif
-            <div class="recipe-card__foot">
-                <span class="recipe-card__foot-label">{{ $product->recipes->count() }} ingredient{{ $product->recipes->count() !== 1 ? 's' : '' }}</span>
-                <button class="btn-edit" data-product-id="{{ $product->id }}">Edit</button>
+
+            <div class="flex items-center gap-3 justify-end px-6 py-3.5 border-t border-line bg-[rgba(92,45,27,.02)]">
+                <span class="text-xs font-semibold opacity-60 mr-auto">{{ $product->recipes->count() }} ingredient{{ $product->recipes->count() !== 1 ? 's' : '' }}</span>
+                <button class="btn-edit px-5 py-[7px] bg-white text-[#5c2d1b] border-[1.5px] border-line rounded-lg text-xs font-semibold cursor-pointer font-sans transition-all duration-150 hover:bg-[#5c2d1b] hover:text-cream hover:border-[#5c2d1b]" data-product-id="{{ $product->id }}">Edit</button>
             </div>
         </div>
         @empty
-            <div style="text-align:center;padding:40px;opacity:.35;font-size:14px;grid-column:1/-1">No products with recipes found.</div>
+            <div class="text-center py-10 opacity-35 text-sm">No products with recipes found.</div>
         @endforelse
-        </div>
 
+        {{-- Filter JS --}}
         <script>
         (function () {
             var activeCat = '';
             var search = document.getElementById('recipe-search');
             var pills = document.querySelectorAll('#cat-pills .cat-pill');
             var cards = document.querySelectorAll('.recipe-card');
+
             function filter() {
                 var q = search.value.toLowerCase().trim();
-                cards.forEach(function (card) { card.style.display = ((!activeCat || card.dataset.cat === activeCat) && (!q || card.dataset.name.includes(q))) ? '' : 'none'; });
+                cards.forEach(function (card) {
+                    var catMatch = !activeCat || card.dataset.cat === activeCat;
+                    var nameMatch = !q || card.dataset.name.includes(q);
+                    card.style.display = catMatch && nameMatch ? '' : 'none';
+                });
             }
-            pills.forEach(function (pill) { pill.addEventListener('click', function () { pills.forEach(function (p) { p.classList.remove('is-active'); }); this.classList.add('is-active'); activeCat = this.dataset.cat; filter(); }); });
+
+            pills.forEach(function (pill) {
+                pill.addEventListener('click', function () {
+                    pills.forEach(function (p) {
+                        p.classList.remove('bg-accent', 'text-white', 'border-accent');
+                        p.classList.add('bg-white', 'text-[#5c2d1b]', 'border-line');
+                    });
+                    this.classList.remove('bg-white', 'text-[#5c2d1b]', 'border-line');
+                    this.classList.add('bg-accent', 'text-white', 'border-accent');
+                    activeCat = this.dataset.cat;
+                    filter();
+                });
+            });
+
             search.addEventListener('input', filter);
         })();
         </script>
-        </div>
-    </main>
+
+    </div>
 </div>
 
+{{-- ═══════════════════════════════════════════════════════════════════
+     EDIT MODAL
+     ═══════════════════════════════════════════════════════════════════ --}}
 <div class="modal-overlay" id="recipe-modal">
-    <div class="modal-box">
-        <div class="modal-header"><h2 id="modal-title">Edit Recipe</h2><button class="modal-close" onclick="closeModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
-        <div class="modal-body">
-            <input type="hidden" id="edit-product-id">
-            <div class="field"><div class="field-label">Product Name</div><input type="text" id="edit-product-name" placeholder="e.g. Classic Milk Tea"></div>
-            <div class="field" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div><div class="field-label">Category</div><input type="text" id="edit-product-category" placeholder="e.g. Milk Tea"></div><div><div class="field-label">Price (₱)</div><input type="number" id="edit-product-price" step="0.01" min="0" placeholder="0.00"></div></div>
-            <div style="margin-top:20px">
-                <div class="field-label" style="margin-bottom:8px">Ingredients</div>
-                <div class="ingredient-headers"><span>Ingredient</span><span>Regular Amt</span><span>Large Amt</span><span>Unit</span><span></span></div>
-                <div id="ingredient-list"></div>
-                <button class="btn-add-ingredient" onclick="addIngredientRow()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Ingredient</button>
-            </div>
-            <div class="procedures-section"><div class="field-label">Preparation Procedure</div><textarea id="edit-product-procedure" placeholder="Step-by-step preparation instructions…"></textarea></div>
-            <div class="save-status" id="save-status"></div>
+    <div class="bg-card rounded-[16px] shadow-[0_8px_40px_rgba(92,45,27,.2)] w-full max-w-[720px] max-h-[90vh] flex flex-col" style="animation:modalIn .2s ease">
+        <div class="flex items-center justify-between px-6 py-5 border-b border-line">
+            <h2 class="text-[17px] font-extrabold" id="modal-title">Edit Recipe</h2>
+            <button class="w-8 h-8 rounded-lg border-none bg-transparent text-[#5c2d1b] cursor-pointer flex items-center justify-center transition-[background] duration-150 hover:bg-[rgba(92,45,27,.08)]" onclick="closeModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
         </div>
-        <div class="modal-footer">
-            <button class="btn-delete-product" id="btn-delete-product" onclick="deleteProduct()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Delete</button>
+
+        <div class="flex-1 overflow-y-auto px-6 py-6">
+            <input type="hidden" id="edit-product-id">
+
+            <div class="form-group">
+                <div class="form-label">Product Name</div>
+                <input type="text" class="form-input" id="edit-product-name" placeholder="e.g. Classic Milk Tea">
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div class="form-group">
+                    <div class="form-label">Category</div>
+                    <input type="text" class="form-input" id="edit-product-category" placeholder="e.g. Milk Tea">
+                </div>
+                <div class="form-group">
+                    <div class="form-label">Price (&#8369;)</div>
+                    <input type="number" class="form-input" id="edit-product-price" step="0.01" min="0" placeholder="0.00">
+                </div>
+            </div>
+
+            {{-- Ingredients --}}
+            <div class="mt-5">
+                <div class="form-label mb-2">Ingredients</div>
+
+                <div class="grid grid-cols-[2fr_1fr_1fr_80px_36px] gap-2 items-center mb-1.5 max-[900px]:hidden">
+                    <span class="text-[10px] font-bold uppercase tracking-[.05em] opacity-40">Ingredient</span>
+                    <span class="text-[10px] font-bold uppercase tracking-[.05em] opacity-40">Regular Amt</span>
+                    <span class="text-[10px] font-bold uppercase tracking-[.05em] opacity-40">Large Amt</span>
+                    <span class="text-[10px] font-bold uppercase tracking-[.05em] opacity-40">Unit</span>
+                    <span></span>
+                </div>
+
+                <div id="ingredient-list"></div>
+
+                <button class="inline-flex items-center gap-1.5 px-4 py-2 mt-1 bg-cream border-[1.5px] border-dashed border-line rounded-[10px] text-xs font-semibold text-[#5c2d1b] cursor-pointer font-sans transition-all duration-150 hover:border-accent hover:text-accent hover:bg-[rgba(188,97,75,.06)]" onclick="addIngredientRow()">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Add Ingredient
+                </button>
+            </div>
+
+            {{-- Procedure --}}
+            <div class="mt-5 pt-5 border-t border-line">
+                <div class="form-label">Preparation Procedure</div>
+                <textarea class="form-input" id="edit-product-procedure" placeholder="Step-by-step preparation instructions…"></textarea>
+            </div>
+
+            <div class="hidden text-xs font-semibold px-3.5 py-2 rounded-lg mt-3" id="save-status"></div>
+        </div>
+
+        <div class="flex items-center gap-2.5 justify-end px-6 py-4 border-t border-line bg-[rgba(92,45,27,.02)]">
+            <button class="px-4 py-[9px] mr-auto bg-[#fef2f2] text-[#991b1b] border-[1.5px] border-[#fecaca] rounded-[10px] text-xs font-semibold cursor-pointer font-sans transition-all duration-150 hover:bg-[#991b1b] hover:text-white hover:border-[#991b1b]" id="btn-delete-product" onclick="deleteProduct()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+                Delete
+            </button>
             <button class="btn-cancel" onclick="closeModal()">Cancel</button>
             <button class="btn-save" id="btn-save" onclick="saveRecipe()">Save Changes</button>
         </div>
     </div>
 </div>
 
+{{-- ═══════════════════════════════════════════════════════════════════
+     INGREDIENT TEMPLATE (hidden, cloned by JS)
+     ═══════════════════════════════════════════════════════════════════ --}}
 <template id="ingredient-row-template">
-    <div class="ingredient-row" data-ingredient-row>
-        <select><option value="">Select ingredient…</option>@foreach ($allIngredients as $ing)<option value="{{ $ing->id }}" data-unit="{{ $ing->unit }}">{{ $ing->name }}</option>@endforeach</select>
-        <input type="number" step="0.001" min="0.001" placeholder="Regular qty" data-size="regular">
-        <input type="number" step="0.001" min="0.001" placeholder="Large qty" data-size="large">
-        <span class="unit-badge" data-unit-display></span>
-        <button class="btn-remove-ingredient" onclick="removeIngredientRow(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="grid grid-cols-[2fr_1fr_1fr_80px_36px] gap-2 items-center mb-2 max-[900px]:grid-cols-[1fr_1fr]" data-ingredient-row>
+        <select class="form-input !h-[38px]">
+            <option value="">Select ingredient…</option>
+            @foreach ($allIngredients as $ing)
+                <option value="{{ $ing->id }}" data-unit="{{ $ing->unit }}">{{ $ing->name }}</option>
+            @endforeach
+        </select>
+        <input type="number" class="form-input !h-[38px]" step="0.001" min="0.001" placeholder="Regular qty" data-size="regular">
+        <input type="number" class="form-input !h-[38px]" step="0.001" min="0.001" placeholder="Large qty" data-size="large">
+        <span class="text-[11px] font-semibold opacity-50 text-center" data-unit-display></span>
+        <button class="w-9 h-9 rounded-lg border-[1.5px] border-[#fecaca] bg-[#fef2f2] text-[#991b1b] cursor-pointer flex items-center justify-center transition-all duration-150 shrink-0 hover:bg-[#991b1b] hover:text-white hover:border-[#991b1b]" onclick="removeIngredientRow(this)" title="Remove ingredient">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+        </button>
     </div>
 </template>
 
+{{-- ═══════════════════════════════════════════════════════════════════
+     RECIPE DATA (page-embedded JSON)
+     ═══════════════════════════════════════════════════════════════════ --}}
 <script>
+// ── All ingredients lookup ──
 var ALL_INGREDIENTS = @json($allIngredients->map(fn($i) => ['id' => $i->id, 'name' => $i->name, 'unit' => $i->unit]));
-var CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';
+
+// ── CSRF token ──
+var CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content
+    || document.querySelector('input[name="_token"]')?.value
+    || '{{ csrf_token() }}';
+
+// ── Modal state ──
 var _editingProductId = null;
-var _originalRecipeIds = [];
 
-function openModal(id) { _editingProductId = id; document.getElementById('recipe-modal').classList.add('is-open'); document.getElementById('modal-title').textContent = 'Loading…'; document.getElementById('btn-save').disabled = true; _originalRecipeIds = []; fetch('/business/recipes/product/' + id + '/data', { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } }).then(r => r.json()).then(d => populateModal(d)).catch(() => { var p = PRODUCTS_DATA.find(x => x.id == id); if (p) populateModal(p); else { document.getElementById('modal-title').textContent = 'Edit Recipe'; document.getElementById('btn-save').disabled = false; } }); }
+// ── Open modal ──
+function openModal(productId) {
+    _editingProductId = productId;
+    document.getElementById('recipe-modal').classList.add('is-open');
+    document.getElementById('modal-title').textContent = 'Loading…';
+    document.getElementById('btn-save').disabled = true;
+    fetchProductData(productId);
+}
 
+// ── Fetch product data via API ──
+function fetchProductData(productId) {
+    fetch('/business/recipes/product/' + productId + '/data', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+        populateModal(data);
+    })
+    .catch(function () {
+        populateFromCard(productId);
+    });
+}
+
+// ── Populate from server-rendered page data ──
+function populateFromCard(productId) {
+    var product = PRODUCTS_DATA.find(function (p) { return p.id == productId; });
+    if (product) {
+        populateModal(product);
+    } else {
+        document.getElementById('modal-title').textContent = 'Edit Recipe';
+        document.getElementById('btn-save').disabled = false;
+    }
+}
+
+// ── Populate modal form ──
 function populateModal(data) {
     document.getElementById('edit-product-id').value = data.id;
     document.getElementById('edit-product-name').value = data.name || '';
@@ -339,52 +425,260 @@ function populateModal(data) {
     document.getElementById('edit-product-price').value = data.price || 0;
     document.getElementById('edit-product-procedure').value = data.procedure || '';
     document.getElementById('modal-title').textContent = 'Edit: ' + (data.name || 'Recipe');
-    var list = document.getElementById('ingredient-list'); list.innerHTML = '';
+
+    var list = document.getElementById('ingredient-list');
+    list.innerHTML = '';
+
     if (data.recipes && data.recipes.length > 0) {
-        var grouped = {}; _originalRecipeIds = [];
-        data.recipes.forEach(function (r) { _originalRecipeIds.push(r.id); var ig = r.ingredient_id; if (!grouped[ig]) grouped[ig] = { ingredient_id: ig, ingredient: r.ingredient, regular_id: null, large_id: null, regular: null, large: null }; if (r.size === 'regular') { grouped[ig].regular_id = r.id; grouped[ig].regular = r.quantity_required; } else { grouped[ig].large_id = r.id; grouped[ig].large = r.quantity_required; } });
-        Object.keys(grouped).forEach(function (ig) { addIngredientRow(grouped[ig]); });
+        var grouped = {};
+        data.recipes.forEach(function (r) {
+            var ingId = r.ingredient_id;
+            if (!grouped[ingId]) {
+                grouped[ingId] = {
+                    ingredient_id: ingId,
+                    ingredient: r.ingredient,
+                    regular_id: null,
+                    large_id: null,
+                    regular: null,
+                    large: null
+                };
+            }
+            if (r.size === 'regular') {
+                grouped[ingId].regular_id = r.id;
+                grouped[ingId].regular = r.quantity_required;
+            } else {
+                grouped[ingId].large_id = r.id;
+                grouped[ingId].large = r.quantity_required;
+            }
+        });
+
+        Object.keys(grouped).forEach(function (ingId) {
+            addIngredientRow(grouped[ingId]);
+        });
     }
+
     document.getElementById('btn-save').disabled = false;
 }
 
+// ── Add ingredient row ──
 function addIngredientRow(data) {
-    data = data || {}; var t = document.getElementById('ingredient-row-template').content.cloneNode(true); var row = t.querySelector('[data-ingredient-row]'); var sel = row.querySelector('select'); var unit = row.querySelector('[data-unit-display]');
-    if (data.ingredient_id) { sel.value = data.ingredient_id; var o = sel.options[sel.selectedIndex]; if (o) unit.textContent = o.dataset.unit || ''; }
-    if (data.regular) row.querySelector('[data-size="regular"]').value = data.regular;
-    if (data.large) row.querySelector('[data-size="large"]').value = data.large;
+    data = data || {};
+    var template = document.getElementById('ingredient-row-template');
+    var clone = template.content.cloneNode(true);
+    var row = clone.querySelector('[data-ingredient-row]');
+
+    var select = row.querySelector('select');
+    var regInput = row.querySelector('[data-size="regular"]');
+    var lrgInput = row.querySelector('[data-size="large"]');
+    var unitDisplay = row.querySelector('[data-unit-display]');
+
+    if (data.ingredient_id) {
+        select.value = data.ingredient_id;
+        var selected = select.options[select.selectedIndex];
+        if (selected) {
+            unitDisplay.textContent = selected.dataset.unit || '';
+        }
+    }
+
+    if (data.regular) regInput.value = data.regular;
+    if (data.large) lrgInput.value = data.large;
+
     if (data.regular_id) row.dataset.regularId = data.regular_id;
     if (data.large_id) row.dataset.largeId = data.large_id;
-    sel.addEventListener('change', function () { var o = sel.options[sel.selectedIndex]; unit.textContent = o ? (o.dataset.unit || '') : ''; });
-    document.getElementById('ingredient-list').appendChild(t);
-}
 
-function removeIngredientRow(btn) { var r = btn.closest('[data-ingredient-row]'); if (r) r.remove(); }
-
-function saveRecipe() {
-    var name = document.getElementById('edit-product-name').value.trim(); if (!name) { alert('Please enter a product name.'); return; }
-    var btn = document.getElementById('btn-save'); btn.disabled = true;
-    var status = document.getElementById('save-status'); status.className = 'save-status'; status.textContent = 'Saving…'; status.classList.add('is-visible');
-    var pid = document.getElementById('edit-product-id').value; if (!pid) return;
-    var requests = [fetch('/business/recipes/product/' + pid, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': CSRF_TOKEN }, body: JSON.stringify({ name: document.getElementById('edit-product-name').value, category: document.getElementById('edit-product-category').value, price: parseFloat(document.getElementById('edit-product-price').value) || 0, procedure: document.getElementById('edit-product-procedure').value }) })];
-    var rows = document.querySelectorAll('#ingredient-list [data-ingredient-row]'); var added = {};
-    rows.forEach(function (row) { var sel = row.querySelector('select'); var iid = sel.value; if (!iid) return; var rq = parseFloat(row.querySelector('[data-size="regular"]').value); var lq = parseFloat(row.querySelector('[data-size="large"]').value); var ri = row.dataset.regularId; var li = row.dataset.largeId;
-        if (rq > 0) { var k = iid + '-r'; if (!added[k]) { added[k] = true; requests.push(ri ? fetch('/business/recipes/ingredient/' + ri, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': CSRF_TOKEN }, body: JSON.stringify({ quantity_required: rq }) }) : fetch('/business/recipes/product/' + pid + '/ingredient', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': CSRF_TOKEN }, body: JSON.stringify({ ingredient_id: iid, size: 'regular', quantity_required: rq }) })); } }
-        if (lq > 0) { var k = iid + '-l'; if (!added[k]) { added[k] = true; requests.push(li ? fetch('/business/recipes/ingredient/' + li, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': CSRF_TOKEN }, body: JSON.stringify({ quantity_required: lq }) }) : fetch('/business/recipes/product/' + pid + '/ingredient', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': CSRF_TOKEN }, body: JSON.stringify({ ingredient_id: iid, size: 'large', quantity_required: lq }) })); } }
+    select.addEventListener('change', function () {
+        var opt = select.options[select.selectedIndex];
+        unitDisplay.textContent = opt ? (opt.dataset.unit || '') : '';
     });
-    var cur = []; rows.forEach(function (row) { if (row.dataset.regularId) cur.push(String(row.dataset.regularId)); if (row.dataset.largeId) cur.push(String(row.dataset.largeId)); });
-    _originalRecipeIds.forEach(function (id) { if (cur.indexOf(String(id)) === -1) requests.push(fetch('/business/recipes/ingredient/' + id + '/delete', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': CSRF_TOKEN } })); });
-    Promise.all(requests).then(function (res) { if (res.every(function (r) { return r.ok; })) { status.className = 'save-status is-visible save-status--success'; status.textContent = 'Saved!'; setTimeout(function () { closeModal(); location.reload(); }, 800); } else { status.className = 'save-status is-visible save-status--error'; status.textContent = 'Something went wrong.'; btn.disabled = false; } }).catch(function () { status.className = 'save-status is-visible save-status--error'; status.textContent = 'Network error.'; btn.disabled = false; });
+
+    document.getElementById('ingredient-list').appendChild(clone);
 }
 
-function deleteProduct() { if (!confirm('Delete this product?')) return; var pid = document.getElementById('edit-product-id').value; fetch('/business/recipes/product/' + pid + '/delete', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': CSRF_TOKEN } }).then(r => r.json()).then(() => { closeModal(); location.reload(); }); }
-function closeModal() { document.getElementById('recipe-modal').classList.remove('is-open'); _editingProductId = null; }
-document.addEventListener('click', function (e) { if (e.target === document.getElementById('recipe-modal')) closeModal(); });
-document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
-document.addEventListener('DOMContentLoaded', function () { document.querySelectorAll('.btn-edit').forEach(function (btn) { btn.addEventListener('click', function () { openModal(this.dataset.productId); }); }); });
+// ── Remove ingredient row ──
+function removeIngredientRow(btn) {
+    var row = btn.closest('[data-ingredient-row]');
+    if (row) row.remove();
+}
+
+// ── Save recipe ──
+function saveRecipe() {
+    var name = document.getElementById('edit-product-name').value.trim();
+    if (!name) {
+        alert('Please enter a product name.');
+        document.getElementById('edit-product-name').focus();
+        return;
+    }
+
+    var btn = document.getElementById('btn-save');
+    btn.disabled = true;
+    var status = document.getElementById('save-status');
+    status.className = 'text-xs font-semibold px-3.5 py-2 rounded-lg mt-3 inline-block';
+    status.textContent = 'Saving…';
+
+    var productId = document.getElementById('edit-product-id').value;
+    if (!productId) return;
+
+    var productData = {
+        name: document.getElementById('edit-product-name').value,
+        category: document.getElementById('edit-product-category').value,
+        price: parseFloat(document.getElementById('edit-product-price').value) || 0,
+        procedure: document.getElementById('edit-product-procedure').value,
+    };
+
+    var requests = [];
+
+    requests.push(
+        fetch('/business/recipes/product/' + productId, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': CSRF_TOKEN },
+            body: JSON.stringify(productData)
+        })
+    );
+
+    var rows = document.querySelectorAll('#ingredient-list [data-ingredient-row]');
+    var addedIngredients = {};
+
+    rows.forEach(function (row) {
+        var select = row.querySelector('select');
+        var ingredientId = select.value;
+        if (!ingredientId) return;
+
+        var regularQty = parseFloat(row.querySelector('[data-size="regular"]').value);
+        var largeQty = parseFloat(row.querySelector('[data-size="large"]').value);
+        var regularId = row.dataset.regularId;
+        var largeId = row.dataset.largeId;
+
+        if (regularQty && regularQty > 0) {
+            var key = ingredientId + '-regular';
+            if (!addedIngredients[key]) {
+                addedIngredients[key] = true;
+                if (regularId) {
+                    requests.push(
+                        fetch('/business/recipes/ingredient/' + regularId, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': CSRF_TOKEN },
+                            body: JSON.stringify({ quantity_required: regularQty })
+                        })
+                    );
+                } else {
+                    requests.push(
+                        fetch('/business/recipes/product/' + productId + '/ingredient', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': CSRF_TOKEN },
+                            body: JSON.stringify({ ingredient_id: ingredientId, size: 'regular', quantity_required: regularQty })
+                        })
+                    );
+                }
+            }
+        }
+
+        if (largeQty && largeQty > 0) {
+            var key = ingredientId + '-large';
+            if (!addedIngredients[key]) {
+                addedIngredients[key] = true;
+                if (largeId) {
+                    requests.push(
+                        fetch('/business/recipes/ingredient/' + largeId, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': CSRF_TOKEN },
+                            body: JSON.stringify({ quantity_required: largeQty })
+                        })
+                    );
+                } else {
+                    requests.push(
+                        fetch('/business/recipes/product/' + productId + '/ingredient', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': CSRF_TOKEN },
+                            body: JSON.stringify({ ingredient_id: ingredientId, size: 'large', quantity_required: largeQty })
+                        })
+                    );
+                }
+            }
+        }
+    });
+
+    Promise.all(requests)
+    .then(function (responses) {
+        var allOk = responses.every(function (r) { return r.ok; });
+        if (allOk) {
+            status.className = 'text-xs font-semibold px-3.5 py-2 rounded-lg mt-3 inline-block bg-green-50 text-green-800 border border-green-200';
+            status.textContent = 'Saved successfully!';
+            setTimeout(function () {
+                closeModal();
+                refreshPage();
+            }, 800);
+        } else {
+            status.className = 'text-xs font-semibold px-3.5 py-2 rounded-lg mt-3 inline-block bg-red-50 text-red-800 border border-red-200';
+            status.textContent = 'Something went wrong. Check your inputs and try again.';
+            btn.disabled = false;
+        }
+    })
+    .catch(function () {
+        status.className = 'text-xs font-semibold px-3.5 py-2 rounded-lg mt-3 inline-block bg-red-50 text-red-800 border border-red-200';
+        status.textContent = 'Network error. Please try again.';
+        btn.disabled = false;
+    });
+}
+
+// ── Delete product ──
+function deleteProduct() {
+    if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) return;
+
+    var productId = document.getElementById('edit-product-id').value;
+    if (!productId) return;
+
+    var btn = document.getElementById('btn-delete-product');
+    btn.disabled = true;
+
+    fetch('/business/recipes/product/' + productId + '/delete', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': CSRF_TOKEN }
+    })
+    .then(function (r) { return r.json(); })
+    .then(function () {
+        closeModal();
+        refreshPage();
+    })
+    .catch(function () {
+        btn.disabled = false;
+        alert('Failed to delete product.');
+    });
+}
+
+// ── Close modal ──
+function closeModal() {
+    document.getElementById('recipe-modal').classList.remove('is-open');
+    _editingProductId = null;
+}
+
+// ── Refresh page ──
+function refreshPage() {
+    window.location.reload();
+}
+
+// ── Close on overlay click ──
+document.addEventListener('click', function (e) {
+    var overlay = document.getElementById('recipe-modal');
+    if (e.target === overlay) closeModal();
+});
+
+// ── Escape key closes modal ──
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeModal();
+});
+
+// ── Wire up all Edit buttons ──
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.btn-edit').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var productId = this.dataset.productId;
+            if (productId) openModal(productId);
+        });
+    });
+});
+
+// ── Embed product data from server-side render ──
 var PRODUCTS_DATA = @json($productsData);
 </script>
 
-@include('partials._settings-drawer')
-</body>
-</html>
+@endsection

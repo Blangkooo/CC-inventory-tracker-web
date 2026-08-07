@@ -3,11 +3,11 @@
 use App\Http\Controllers\AlertsController;
 use App\Http\Controllers\AuthOnboardingController;
 use App\Http\Controllers\BranchesController;
+use App\Http\Controllers\BusinessRecipesController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IngredientController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\PaymentsController;
-use App\Http\Controllers\RecipesController;
 use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -194,20 +194,21 @@ Route::middleware('auth')->group(function () {
             'inventoryItems' => $inventoryItems,
         ]);
     })->name('analytics');
-    Route::get('/recipes', [RecipesController::class, 'index'])->name('recipes');
+    Route::get('/recipes', BusinessRecipesController::class)->name('recipes');
+    Route::get('/business/recipes', BusinessRecipesController::class)->name('business.recipes');
 
     // ── Recipes CRUD (AJAX endpoints) ─────────────────────────────────
-    Route::get('/business/recipes/product/{product}/data', [RecipesController::class, 'getProductData'])
+    Route::get('/business/recipes/product/{product}/data', [BusinessRecipesController::class, 'getProductData'])
         ->name('business.recipes.product.data');
-    Route::put('/business/recipes/product/{product}', [RecipesController::class, 'updateProduct'])
+    Route::put('/business/recipes/product/{product}', [BusinessRecipesController::class, 'updateProduct'])
         ->name('business.recipes.product.update');
-    Route::post('/business/recipes/product/{product}/ingredient', [RecipesController::class, 'addIngredient'])
+    Route::post('/business/recipes/product/{product}/ingredient', [BusinessRecipesController::class, 'addIngredient'])
         ->name('business.recipes.product.ingredient');
-    Route::put('/business/recipes/ingredient/{recipe}', [RecipesController::class, 'updateIngredient'])
+    Route::put('/business/recipes/ingredient/{recipe}', [BusinessRecipesController::class, 'updateIngredient'])
         ->name('business.recipes.ingredient.update');
-    Route::post('/business/recipes/ingredient/{recipe}/delete', [RecipesController::class, 'removeIngredient'])
+    Route::post('/business/recipes/ingredient/{recipe}/delete', [BusinessRecipesController::class, 'removeIngredient'])
         ->name('business.recipes.ingredient.delete');
-    Route::post('/business/recipes/product/{product}/delete', [RecipesController::class, 'deleteProduct'])
+    Route::post('/business/recipes/product/{product}/delete', [BusinessRecipesController::class, 'destroyProduct'])
         ->name('business.recipes.product.delete');
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory');
     Route::get('/branches', [BranchesController::class, 'index'])->name('branches');
