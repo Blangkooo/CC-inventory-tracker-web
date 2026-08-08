@@ -148,9 +148,42 @@
                                class="w-full h-9 px-2.5 rounded-lg border border-line text-[13.5px] font-medium bg-transparent">
                     </div>
 
+                    <label class="block text-[13.5px] font-medium mb-1.5">Receipt/Log Retention</label>
+                    <p class="text-[11.5px] opacity-55 mb-2.5 leading-snug">Receipt photos (OCR scans + payment proofs) older than this are purged from storage nightly; the underlying records stay for audit history. Legal documents are never auto-purged.</p>
+                    <div class="mb-3.5">
+                        <span class="block text-[11px] opacity-55 mb-1">Months</span>
+                        <input type="number" id="retentionMonths" value="{{ $retentionMonths }}" step="1" min="1" max="120"
+                               class="w-full h-9 px-2.5 rounded-lg border border-line text-[13.5px] font-medium bg-transparent">
+                    </div>
+
                     <button type="button" onclick="saveSystemSettings()"
                             class="w-full h-9 rounded-lg bg-accent text-white text-[13px] font-bold border-0 cursor-pointer transition-opacity duration-150 hover:opacity-90">
                         Save Settings
+                    </button>
+                </div>
+            </div>
+
+            {{-- Payment Categories (owner only) --}}
+            <div class="mb-5">
+                <h3 class="text-[11px] font-bold uppercase tracking-[.06em] opacity-50 mb-2">Payment Categories</h3>
+                <p class="text-[11.5px] opacity-55 mb-2.5 leading-snug">Categories available when recording an outgoing payment. "other" can't be removed — it's the fallback.</p>
+                <div id="categoryChips" class="flex flex-wrap gap-1.5 mb-3">
+                    @foreach ($paymentCategories as $cat)
+                        <span class="flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full border border-line bg-accent-light text-[12px] font-semibold">
+                            {{ str_replace('_', ' ', $cat) }}
+                            @if ($cat !== 'other')
+                                <button type="button" onclick="removeCategory('{{ $cat }}')"
+                                        class="w-4 h-4 flex items-center justify-center rounded-full bg-[rgba(0,0,0,.08)] border-0 cursor-pointer text-[11px] leading-none hover:bg-[rgba(214,48,49,.18)] hover:text-red-600">&times;</button>
+                            @endif
+                        </span>
+                    @endforeach
+                </div>
+                <div class="flex gap-2">
+                    <input type="text" id="newCategoryInput" placeholder="e.g. ice delivery"
+                           class="flex-1 h-9 px-2.5 rounded-lg border border-line text-[13px] font-medium bg-transparent">
+                    <button type="button" onclick="addCategory()"
+                            class="h-9 px-3.5 rounded-lg bg-accent text-white text-[12.5px] font-bold border-0 cursor-pointer transition-opacity duration-150 hover:opacity-90">
+                        Add
                     </button>
                 </div>
             </div>
@@ -181,6 +214,7 @@
             const variancePct = parseFloat(document.getElementById('varianceThresholdPct').value) / 100;
             const variancePhp = parseFloat(document.getElementById('varianceThresholdPhp').value);
             const lowStockPct = parseFloat(document.getElementById('lowStockThresholdPct').value) / 100;
+            const retentionMonths = parseInt(document.getElementById('retentionMonths').value, 10);
 
             fetch('{{ route('settings.update') }}', {
                 method: 'POST',
@@ -193,6 +227,7 @@
                     variance_threshold_pct: variancePct,
                     variance_threshold_php: variancePhp,
                     low_stock_threshold_pct: lowStockPct,
+                    receipt_retention_months: retentionMonths,
                 }),
             })
                 .then(res => res.json())
@@ -204,6 +239,55 @@
                     }
                 })
                 .catch(() => showToast('Failed to update settings', 'error'));
+        }
+
+        function addCategory() {
+            const input = document.getElementById('newCategoryInput');
+            const slug = input.value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+            if (!slug) { showToast('Enter a category name', 'error'); return; }
+
+            fetch('{{ route('settings.payment-categories.store') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+                body: JSON.stringify({ category: slug }),
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        input.value = '';
+                        showToast('Category added', 'success');
+                        setTimeout(() => location.reload(), 600);
+                    } else {
+                        showToast(data.message || 'Failed to add category', 'error');
+                    }
+                })
+                .catch(() => showToast('Failed to add category', 'error'));
+        }
+
+        function removeCategory(category) {
+            if (!confirm(`Remove the "${category.replace(/_/g, ' ')}" category?`)) return;
+
+            fetch(`{{ url('/settings/payment-categories') }}/${encodeURIComponent(category)}`, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('Category removed', 'success');
+                        setTimeout(() => location.reload(), 600);
+                    } else {
+                        showToast(data.message || 'Failed to remove category', 'error');
+                    }
+                })
+                .catch(() => showToast('Failed to remove category', 'error'));
         }
     </script>
 

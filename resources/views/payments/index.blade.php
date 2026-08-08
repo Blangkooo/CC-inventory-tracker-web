@@ -51,7 +51,7 @@
                             </a>
                         @endif
                     </td>
-                    <td>{{ ucfirst($payment->category) }}</td>
+                    <td>{{ ucwords(str_replace('_', ' ', $payment->category)) }}</td>
                     <td>{{ $payment->branch?->name ?? '—' }}</td>
                     <td>{{ ucfirst(str_replace('_', ' ', $payment->method)) }}</td>
                     <td class="font-bold text-accent">&#8369;{{ number_format($payment->amount, 2) }}</td>
@@ -85,7 +85,7 @@
                     <div class="form-label">Category</div>
                     <select class="form-input" id="pCategory">
                         @foreach ($categories as $cat)
-                            <option value="{{ $cat }}">{{ ucfirst($cat) }}</option>
+                            <option value="{{ $cat }}">{{ ucwords(str_replace('_', ' ', $cat)) }}</option>
                         @endforeach
                     </select>
                 </div>

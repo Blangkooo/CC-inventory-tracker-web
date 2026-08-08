@@ -340,6 +340,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
     Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
+    Route::post('/settings/payment-categories', [SettingsController::class, 'addPaymentCategory'])->name('settings.payment-categories.store');
+    Route::delete('/settings/payment-categories/{category}', [SettingsController::class, 'removePaymentCategory'])->name('settings.payment-categories.destroy');
 
     // ── Pricing Simulator ─────────────────────────────────────────────
     Route::get('/pricing', [\App\Http\Controllers\PricingController::class, 'index'])

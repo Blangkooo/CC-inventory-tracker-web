@@ -45,7 +45,7 @@ class PaymentsController extends Controller
     {
         $validated = $request->validate([
             'branch_id' => ['required', 'exists:branches,id'],
-            'category' => ['required', 'in:'.implode(',', WebPaymentsController::CATEGORIES)],
+            'category' => ['required', 'in:'.implode(',', WebPaymentsController::categories())],
             'payee' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'min:0'],
             'method' => ['required', 'in:cash,bank_transfer,gcash,check,other'],
@@ -75,7 +75,7 @@ class PaymentsController extends Controller
         $this->authorizeBranch($payment->branch_id);
 
         $validated = $request->validate([
-            'category' => ['required', 'in:'.implode(',', WebPaymentsController::CATEGORIES)],
+            'category' => ['required', 'in:'.implode(',', WebPaymentsController::categories())],
             'payee' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'min:0'],
             'method' => ['required', 'in:cash,bank_transfer,gcash,check,other'],
