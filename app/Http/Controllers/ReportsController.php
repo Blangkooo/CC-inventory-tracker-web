@@ -48,7 +48,7 @@ class ReportsController extends Controller
                 fputcsv($out, $row);
             }
             fclose($out);
-        }, "{$type}-report-".now()->format('Y-m-d').'.csv');
+        }, "{$type}-report-".now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
     }
 
     public function exportPdf(string $type): Response
