@@ -553,6 +553,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
     Route::put('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
     Route::put('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');
+    Route::post('/settings/payment-categories', [SettingsController::class, 'addPaymentCategory'])->name('settings.payment-categories.store');
+    Route::delete('/settings/payment-categories/{category}', [SettingsController::class, 'removePaymentCategory'])->name('settings.payment-categories.destroy');
 
     // ── AJAX Branch Data Endpoints ────────────────────────────────────
     Route::get('/ajax/analytics', [\App\Http\Controllers\BranchDataController::class, 'analytics'])->name('ajax.analytics');

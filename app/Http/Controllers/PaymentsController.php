@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppSetting;
 use App\Models\Branch;
 use App\Models\Payment;
 use Illuminate\Http\JsonResponse;
@@ -10,11 +11,24 @@ use Illuminate\View\View;
 
 class PaymentsController extends Controller
 {
-    /** Kept in step with the `category` enum on the payments table. */
-    public const CATEGORIES = [
+    /** Seed value for the owner-editable list kept in AppSetting('payment_categories'). */
+    public const DEFAULT_CATEGORIES = [
         'rent', 'utilities', 'supplier', 'salary', 'maintenance',
         'packaging', 'utensils', 'gas', 'wages', 'other',
     ];
+
+    /**
+     * Owners manage this list from Settings; it is no longer a fixed enum.
+     * 'other' is always present — it's the column default and the fallback
+     * every payment falls back to if its category is ever removed.
+     */
+    public static function categories(): array
+    {
+        $stored = json_decode(AppSetting::get('payment_categories', ''), true);
+        $categories = is_array($stored) && $stored !== [] ? $stored : self::DEFAULT_CATEGORIES;
+
+        return in_array('other', $categories, true) ? $categories : [...$categories, 'other'];
+    }
 
     public function index(): View
     {
@@ -39,7 +53,7 @@ class PaymentsController extends Controller
             'payments' => $payments,
             'branches' => $branches,
             'totals' => $totals,
-            'categories' => self::CATEGORIES,
+            'categories' => self::categories(),
         ]);
     }
 
@@ -50,7 +64,7 @@ class PaymentsController extends Controller
 
         $validated = $request->validate([
             'branch_id' => [$isManager ? 'nullable' : 'required', 'exists:branches,id'],
-            'category' => ['required', 'in:'.implode(',', self::CATEGORIES)],
+            'category' => ['required', 'in:'.implode(',', self::categories())],
             'payee' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'min:0'],
             'method' => ['required', 'in:cash,bank_transfer,gcash,check,other'],
@@ -77,7 +91,7 @@ class PaymentsController extends Controller
     public function update(Request $request, Payment $payment): JsonResponse
     {
         $validated = $request->validate([
-            'category' => ['required', 'in:'.implode(',', self::CATEGORIES)],
+            'category' => ['required', 'in:'.implode(',', self::categories())],
             'payee' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'min:0'],
             'method' => ['required', 'in:cash,bank_transfer,gcash,check,other'],
