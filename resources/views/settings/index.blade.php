@@ -5,7 +5,7 @@
 @section('content')
 @php $user = auth()->user(); @endphp
 
-<div class="card" style="max-width:560px">
+<div class="card p-5" style="max-width:560px">
     <div class="flex items-center gap-3.5 p-4 mb-6 bg-accent-light border border-line rounded-xl">
         <div class="w-[46px] h-[46px] rounded-full bg-accent text-white flex items-center justify-center text-lg font-extrabold shrink-0 uppercase">{{ mb_substr($user->name, 0, 1) }}</div>
         <div>
