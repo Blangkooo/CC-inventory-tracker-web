@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Staff Dashboard — NITA</title>
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -95,6 +96,26 @@
         .task-btn:hover { border-color: var(--terra); color: var(--terra); }
         .task-btn.is-done { background: var(--green-bg); border-color: var(--green); color: var(--green); }
         .task-btn.is-danger:hover { border-color: #c8433f; color: #c8433f; }
+        .task-btn:disabled { opacity: .45; cursor: not-allowed; }
+        .task-btn:disabled:hover { border-color: var(--border); color: var(--brown); }
+
+        /* ── CLOSE SHIFT MODAL ── */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(92,45,27,.35); z-index: 100; align-items: center; justify-content: center; }
+        .modal-overlay.is-open { display: flex; }
+        .modal-box { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); width: 420px; max-width: 92vw; max-height: 82vh; display: flex; flex-direction: column; }
+        .modal-box__head { padding: 18px 20px 14px; border-bottom: 1px solid var(--border); }
+        .modal-box__head h2 { font-size: 16px; }
+        .modal-box__head p { font-size: 12px; color: rgba(92,45,27,.65); margin-top: 3px; }
+        .modal-box__body { padding: 14px 20px; overflow-y: auto; flex: 1; }
+        .close-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(92,45,27,.08); }
+        .close-row__name { flex: 1; font-size: 13px; font-weight: 600; }
+        .close-row__opening { font-size: 11px; color: rgba(92,45,27,.55); width: 90px; text-align: right; }
+        .close-row input { width: 90px; padding: 6px 8px; border: 1.5px solid var(--border); border-radius: 8px; font-family: var(--font); font-size: 13px; }
+        .modal-box__foot { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
+        .modal-box__foot button { flex: 1; padding: 10px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; font-family: var(--font); }
+        .modal-box__foot .btn-cancel { background: #fff; border: 1.5px solid var(--border); color: var(--brown); }
+        .modal-box__foot .btn-confirm { background: #c8433f; border: 1.5px solid #c8433f; color: #fff; }
+        .modal-box__foot .btn-confirm:disabled { opacity: .6; cursor: not-allowed; }
 
         .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
         .stat-card {
@@ -210,7 +231,7 @@
             Prep and Set-up
         </button>
 
-        <button type="button" class="task-btn is-danger" onclick="comingSoon('Close')">
+        <button type="button" class="task-btn is-danger" onclick="openCloseShiftModal()" {{ $hasVerifiedStock ? '' : 'disabled title="Verify Stock first"' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
             Close
         </button>
@@ -263,10 +284,87 @@
 
 </div>
 
+{{-- CLOSE SHIFT MODAL — physical counts feed the same variance/threshold
+     check the owner's Shift API already uses, so a real discrepancy alert
+     fires here exactly like it would from the API. --}}
+<div class="modal-overlay" id="closeShiftModal">
+    <div class="modal-box">
+        <div class="modal-box__head">
+            <h2>Close Shift — Physical Count</h2>
+            <p>Enter what's actually on hand for each ingredient. Off-count items get flagged for the manager.</p>
+        </div>
+        <form id="closeShiftForm" onsubmit="submitCloseShift(event)">
+            @csrf
+            <div class="modal-box__body">
+                @forelse ($closingCandidates as $c)
+                    @php
+                        // Plain fixed-point, no thousands separator — a comma in
+                        // an <input type="number"> value makes the browser treat
+                        // it as invalid and silently blank the field.
+                        $openingDisplay = rtrim(rtrim(number_format((float) $c->opening_quantity, 3, '.', ''), '0'), '.') ?: '0';
+                    @endphp
+                    <div class="close-row">
+                        <div class="close-row__name">{{ $c->ingredient?->name ?? 'Ingredient' }}</div>
+                        <div class="close-row__opening">opened {{ $openingDisplay }}</div>
+                        <input type="number" step="0.001" min="0" required
+                               data-ingredient-id="{{ $c->ingredient_id }}"
+                               value="{{ $openingDisplay }}">
+                    </div>
+                @empty
+                    <p style="font-size:13px;color:rgba(92,45,27,.65)">No ingredients to count — run "Verify Stock" first.</p>
+                @endforelse
+            </div>
+            <div class="modal-box__foot">
+                <button type="button" class="btn-cancel" onclick="closeCloseShiftModal()">Cancel</button>
+                <button type="submit" class="btn-confirm" id="closeShiftSubmitBtn" {{ $closingCandidates->isEmpty() ? 'disabled' : '' }}>Confirm Close</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
     function comingSoon(label) {
         alert(label + ' — coming soon.');
     }
+
+    function openCloseShiftModal() {
+        document.getElementById('closeShiftModal').classList.add('is-open');
+    }
+
+    function closeCloseShiftModal() {
+        document.getElementById('closeShiftModal').classList.remove('is-open');
+    }
+
+    async function submitCloseShift(e) {
+        e.preventDefault();
+        const btn = document.getElementById('closeShiftSubmitBtn');
+        btn.disabled = true; btn.textContent = 'Closing…';
+
+        const closing_counts = [...document.querySelectorAll('#closeShiftForm input[data-ingredient-id]')].map(input => ({
+            ingredient_id: parseInt(input.dataset.ingredientId, 10),
+            closing_quantity_actual: parseFloat(input.value),
+        }));
+
+        const csrf = document.querySelector('meta[name="csrf-token"]').content;
+        const res = await fetch('{{ route('staff.close-shift') }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+            body: JSON.stringify({ closing_counts }),
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok) {
+            alert(data.message || 'Shift closed.');
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error closing shift.');
+            btn.disabled = false; btn.textContent = 'Confirm Close';
+        }
+    }
+
+    document.getElementById('closeShiftModal').addEventListener('click', e => {
+        if (e.target.id === 'closeShiftModal') closeCloseShiftModal();
+    });
 </script>
 
 </body>

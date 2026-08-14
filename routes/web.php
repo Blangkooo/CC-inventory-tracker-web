@@ -158,6 +158,8 @@ Route::middleware('auth')->group(function () {
         ->name('staff.clock-out');
     Route::post('/staff/verify-stock', [\App\Http\Controllers\StaffDashboardController::class, 'verifyStock'])
         ->name('staff.verify-stock');
+    Route::post('/staff/close-shift', [\App\Http\Controllers\StaffDashboardController::class, 'closeShift'])
+        ->name('staff.close-shift');
     Route::get('/recipes', [RecipesController::class, 'index'])->name('recipes');
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory');
     Route::get('/branches', [BranchesController::class, 'index'])->name('branches');
