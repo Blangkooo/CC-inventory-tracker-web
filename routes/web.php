@@ -65,6 +65,7 @@ Route::middleware('auth')->group(function () {
 
     // ── Static Pages ──────────────────────────────────────────────────
     Route::get('/help-center', fn () => view('pages.help-center'))->name('help-center');
+    Route::get('/help', fn () => view('help.index'))->name('help');
     Route::get('/about', fn () => view('pages.about'))->name('about');
 
     // ── Mail/Messages ─────────────────────────────────────────────────
@@ -406,6 +407,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/recipes', \App\Http\Controllers\BusinessRecipesController::class)->name('recipes');
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory');
     Route::get('/branches', [BranchesController::class, 'index'])->name('branches');
+    Route::post('/branches', [BranchesController::class, 'store'])->name('branches.store');
     Route::get('/branches/{branch}', [BranchesController::class, 'show'])->whereNumber('branch')->name('branches.show');
     Route::get('/alerts', [AlertsController::class, 'index'])->name('alerts');
 
@@ -623,6 +625,20 @@ Route::middleware('auth')->group(function () {
         Route::post('/suppliers/{supplier}/purchases', [\App\Http\Controllers\SupplierController::class, 'addPurchase'])
             ->name('suppliers.add-purchase');
     });
+
+    // ── AJAX Branch Data Endpoints (main design — kept as-is) ───────────
+    Route::get('/ajax/analytics', [\App\Http\Controllers\BranchDataController::class, 'analytics'])->name('ajax.analytics');
+    Route::get('/ajax/reports', [\App\Http\Controllers\BranchDataController::class, 'reports'])->name('ajax.reports');
+    Route::get('/ajax/workers', [\App\Http\Controllers\BranchDataController::class, 'workers'])->name('ajax.workers');
+    Route::get('/ajax/summary', [\App\Http\Controllers\BranchDataController::class, 'summary'])->name('ajax.summary');
+    Route::get('/ajax/logistics', [\App\Http\Controllers\BranchDataController::class, 'logistics'])->name('ajax.logistics');
+    Route::get('/ajax/branches', [\App\Http\Controllers\BranchDataController::class, 'branches'])->name('ajax.branches');
+
+    // ── Ingredients (main design — kept as-is) ──────────────────────────
+    Route::get('/ingredients', [\App\Http\Controllers\IngredientController::class, 'index'])->name('ingredients');
+    Route::post('/ingredients', [\App\Http\Controllers\IngredientController::class, 'store'])->name('ingredients.store');
+    Route::put('/ingredients/{ingredient}', [\App\Http\Controllers\IngredientController::class, 'update'])->name('ingredients.update');
+    Route::delete('/ingredients/{ingredient}', [\App\Http\Controllers\IngredientController::class, 'destroy'])->name('ingredients.destroy');
 });
 
 // ── Logout ───────────────────────────────────────────────────────────

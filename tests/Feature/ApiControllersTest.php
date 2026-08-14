@@ -216,8 +216,13 @@ class ApiControllersTest extends TestCase
                 'client_uuid' => 'insufficient-stock-txn',
             ]);
 
-        $response->assertStatus(422)
-            ->assertJsonStructure(['error', 'needed', 'available']);
+        // Jesse's Q3 decision (see project memory): a short ingredient no
+        // longer blocks the sale — it deducts past zero, the transaction is
+        // still recorded, and the response carries a warning for reconciliation
+        // instead of a hard 422. Refusing a paying customer over a stock
+        // mismatch was the thing being fixed here.
+        $response->assertStatus(201)
+            ->assertJsonPath('stock_warnings.0.ingredient_id', $this->ingredient->id);
     }
 
     public function test_transaction_store_unique_client_uuid(): void

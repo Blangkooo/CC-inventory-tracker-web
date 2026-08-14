@@ -53,7 +53,12 @@ class DashboardController extends Controller
         $leakThis = $leakFor($thisMonth, now());
         $leakLast = $leakFor($lastMonth, $thisMonth);
 
-        $monthlyTotals = Transaction::selectRaw('MONTH(created_at) as m, SUM(total_amount) as total')
+        // MONTH() is MySQL-only; SQLite (the test suite) needs strftime instead.
+        $monthExpr = DB::connection()->getDriverName() === 'sqlite'
+            ? "CAST(strftime('%m', created_at) AS INTEGER)"
+            : 'MONTH(created_at)';
+
+        $monthlyTotals = Transaction::selectRaw("{$monthExpr} as m, SUM(total_amount) as total")
             ->whereYear('created_at', now()->year)
             ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
             ->groupBy('m')
