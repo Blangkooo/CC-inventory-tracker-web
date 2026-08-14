@@ -10,7 +10,10 @@ return new class extends Migration
      * (packaging, utensils, gas, wages) alongside the existing overheads.
      *
      * Laravel's schema builder can't alter an enum in place, so both
-     * directions are raw MODIFY statements.
+     * directions are raw MODIFY statements — MySQL-only syntax. SQLite
+     * (used by the test suite) never enforced the enum as a real constraint
+     * in the first place, so there is nothing to widen there; skip rather
+     * than error the whole migration run.
      */
     private const NEW = ['rent', 'utilities', 'supplier', 'salary', 'maintenance', 'packaging', 'utensils', 'gas', 'wages', 'other'];
 
@@ -18,11 +21,19 @@ return new class extends Migration
 
     public function up(): void
     {
+        if (DB::connection()->getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::statement($this->modifyTo(self::NEW));
     }
 
     public function down(): void
     {
+        if (DB::connection()->getDriverName() !== 'mysql') {
+            return;
+        }
+
         // Fold the retired categories into 'other' so no row violates the
         // narrower enum when it is put back.
         DB::table('payments')

@@ -16,7 +16,9 @@ class PurgeStaleReceipts extends Command
 {
     public function handle(): int
     {
-        $months = (int) AppSetting::get('receipt_retention_months', 24);
+        // A malformed/zero/blank setting must never resolve to a same-day
+        // cutoff — that would purge every current receipt in one run.
+        $months = max(1, (int) AppSetting::get('receipt_retention_months', 24));
         $cutoff = now()->subMonths($months);
         $dryRun = (bool) $this->option('dry-run');
 

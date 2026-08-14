@@ -164,6 +164,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
             Payments
         </a>
+        <a href="{{ route('receipts.index') }}" class="sidebar__link {{ str_starts_with($currentRoute, 'receipts') ? 'is-active' : '' }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>
+            Receipts
+        </a>
         <a href="{{ route('salary.index') }}" class="sidebar__link {{ str_starts_with($currentRoute, 'salary') ? 'is-active' : '' }}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
             Salary
@@ -231,10 +235,16 @@
             <a href="{{ route('alerts') }}" class="topbar__icon" title="Help">
                 <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </a>
-            <a href="{{ route('alerts') }}" class="topbar__icon" title="{{ $pendingAlertCount }} pending alerts">
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                @if ($pendingAlertCount > 0)<span class="dot"></span>@endif
-            </a>
+            <div class="relative">
+                <button type="button" class="topbar__icon" id="notifBellBtn" title="Notifications" onclick="toggleNotifDropdown()">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    <span id="notifDot" class="dot" style="display:none"></span>
+                </button>
+                <div id="notifDropdown" class="card p-0" style="display:none;position:absolute;right:0;top:calc(100% + 8px);width:340px;max-height:400px;overflow-y:auto;z-index:200;">
+                    <div id="notifList" class="p-3 text-[12px] text-ink-3">Loading…</div>
+                    <a href="{{ route('alerts') }}" class="flex items-center justify-center py-2.5 text-[12px] font-semibold text-accent no-underline hover:underline border-t border-line">View all alerts</a>
+                </div>
+            </div>
 
             <span class="topbar__divider"></span>
 
@@ -263,6 +273,68 @@
         @yield('content')
     </div>
 </div>
+
+<script>
+    (function () {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        const dropdown = document.getElementById('notifDropdown');
+        const list = document.getElementById('notifList');
+        const dot = document.getElementById('notifDot');
+
+        function escapeHtml(s) {
+            const div = document.createElement('div');
+            div.textContent = s ?? '';
+            return div.innerHTML;
+        }
+
+        function renderNotifications(data) {
+            dot.style.display = data.unread_count > 0 ? '' : 'none';
+
+            if (data.notifications.length === 0) {
+                list.innerHTML = '<div class="p-3 text-[12px] text-ink-3">No notifications yet.</div>';
+                return;
+            }
+
+            list.innerHTML = data.notifications.map(n => `
+                <div class="px-3 py-2.5 border-b border-line ${n.read_at ? 'opacity-55' : ''} cursor-pointer hover:bg-accent-light"
+                     onclick="markNotifRead(${n.id}, this)">
+                    <div class="text-[12.5px] font-bold">${escapeHtml(n.title)}</div>
+                    <div class="text-[11.5px] text-ink-2 mt-0.5">${escapeHtml(n.message)}</div>
+                </div>
+            `).join('');
+        }
+
+        // One fetch on page load covers both the dot state and the dropdown's
+        // contents — no need for a second round-trip when the bell is clicked.
+        fetch('{{ route('notifications.index') }}', { headers: { 'Accept': 'application/json' } })
+            .then(res => res.json())
+            .then(renderNotifications)
+            .catch(() => { list.innerHTML = '<div class="p-3 text-[12px] text-red-600">Failed to load notifications.</div>'; });
+
+        window.toggleNotifDropdown = function () {
+            dropdown.style.display = dropdown.style.display !== 'none' ? 'none' : '';
+        };
+
+        window.markNotifRead = function (id, el) {
+            fetch(`{{ url('/notifications') }}/${id}/read`, {
+                method: 'PUT',
+                headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+            }).then(res => {
+                if (res.ok) {
+                    el.classList.add('opacity-55');
+                    const remaining = list.querySelectorAll('div:not(.opacity-55)').length;
+                    dot.style.display = remaining > 0 ? '' : 'none';
+                }
+            });
+        };
+
+        document.addEventListener('click', function (e) {
+            if (!dropdown.contains(e.target) && e.target.id !== 'notifBellBtn' && !document.getElementById('notifBellBtn').contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+    })();
+</script>
 
 </body>
 </html>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesBranchAccess;
 use App\Models\AppSetting;
 use App\Models\Branch;
 use App\Models\Payment;
@@ -11,6 +12,8 @@ use Illuminate\View\View;
 
 class PaymentsController extends Controller
 {
+    use AuthorizesBranchAccess;
+
     /** Seed value for the owner-editable list kept in AppSetting('payment_categories'). */
     public const DEFAULT_CATEGORIES = [
         'rent', 'utilities', 'supplier', 'salary', 'maintenance',
@@ -90,6 +93,8 @@ class PaymentsController extends Controller
 
     public function update(Request $request, Payment $payment): JsonResponse
     {
+        $this->authorizeBranch($payment->branch_id);
+
         $validated = $request->validate([
             'category' => ['required', 'in:'.implode(',', self::categories())],
             'payee' => ['required', 'string', 'max:255'],
@@ -113,6 +118,8 @@ class PaymentsController extends Controller
 
     public function markPaid(Payment $payment): JsonResponse
     {
+        $this->authorizeBranch($payment->branch_id);
+
         $payment->update(['status' => 'paid', 'paid_at' => now()]);
 
         return response()->json(['success' => true, 'payment' => $payment->load('branch', 'recorder')]);
@@ -120,6 +127,8 @@ class PaymentsController extends Controller
 
     public function destroy(Payment $payment): JsonResponse
     {
+        $this->authorizeBranch($payment->branch_id);
+
         $payment->delete();
 
         return response()->json(['success' => true]);

@@ -29,7 +29,7 @@ Route::get('/auth/register/step-3', [AuthOnboardingController::class, 'showRegis
 
 // ── Staff / Worker PIN Login (Branch + Worker ID) ────────────────────
 Route::get('/staff/login', [\App\Http\Controllers\StaffAuthController::class, 'showLogin'])->name('staff.login');
-Route::post('/staff/login', [\App\Http\Controllers\StaffAuthController::class, 'login'])->name('staff.login.post');
+Route::post('/staff/login', [\App\Http\Controllers\StaffAuthController::class, 'login'])->middleware('throttle:pin-login')->name('staff.login.post');
 
 // ── Path A: Business Owner Onboarding ────────────────────────────────
 Route::get('/auth/register/owner/step-2', [AuthOnboardingController::class, 'showOwnerStep2']);
@@ -60,7 +60,7 @@ Route::post('/login', function () {
     return back()
         ->withInput(request()->only('email'))
         ->withErrors(['email' => 'These credentials do not match our records.']);
-})->name('login.post');
+})->middleware('throttle:login')->name('login.post');
 
 // ── Authenticated Pages ──────────────────────────────────────────────
 
@@ -88,6 +88,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/calendar/events', [CalendarController::class, 'store'])->name('calendar.events.store');
         Route::put('/calendar/events/{event}', [CalendarController::class, 'update'])->name('calendar.events.update');
         Route::delete('/calendar/events/{event}', [CalendarController::class, 'destroy'])->name('calendar.events.destroy');
+
+        // ── Receipt OCR Scanning + Reconciliation ────────────────────────
+        Route::get('/receipts', [\App\Http\Controllers\ReceiptsController::class, 'index'])->name('receipts.index');
+        Route::post('/receipts', [\App\Http\Controllers\ReceiptsController::class, 'store'])->name('receipts.store');
 
         // ── Salary ────────────────────────────────────────────────────
         Route::get('/salary', [SalaryController::class, 'index'])->name('salary.index');
@@ -159,6 +163,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/branches', [BranchesController::class, 'index'])->name('branches');
     Route::get('/branches/{branch}', [BranchesController::class, 'show'])->whereNumber('branch')->name('branches.show');
     Route::get('/alerts', [AlertsController::class, 'index'])->name('alerts');
+
+    // ── Notification inbox (bell dropdown) ───────────────────────────
+    Route::get('/notifications', [\App\Http\Controllers\NotificationsController::class, 'index'])->name('notifications.index');
+    Route::put('/notifications/{notification}/read', [\App\Http\Controllers\NotificationsController::class, 'markRead'])->name('notifications.read');
 
     // ── Business Pages (static structural placeholders) ───────────────
     Route::get('/business/recipes', \App\Http\Controllers\BusinessRecipesController::class)
@@ -349,23 +357,25 @@ Route::middleware('auth')->group(function () {
     Route::get('/pricing/simulate', [\App\Http\Controllers\PricingController::class, 'simulate'])
         ->name('pricing.simulate');
 
-    // ── Supplier Directory ──────────────────────────────────────────────
-    Route::get('/suppliers', [\App\Http\Controllers\SupplierController::class, 'index'])
-        ->name('suppliers.index');
-    Route::post('/suppliers', [\App\Http\Controllers\SupplierController::class, 'store'])
-        ->name('suppliers.store');
-    Route::get('/suppliers/{supplier}', [\App\Http\Controllers\SupplierController::class, 'show'])
-        ->name('suppliers.show');
-    Route::put('/suppliers/{supplier}', [\App\Http\Controllers\SupplierController::class, 'update'])
-        ->name('suppliers.update');
-    Route::delete('/suppliers/{supplier}', [\App\Http\Controllers\SupplierController::class, 'destroy'])
-        ->name('suppliers.destroy');
-    Route::post('/suppliers/{supplier}/ingredients', [\App\Http\Controllers\SupplierController::class, 'linkIngredient'])
-        ->name('suppliers.link-ingredient');
-    Route::delete('/suppliers/{supplier}/ingredients/{ingredient}', [\App\Http\Controllers\SupplierController::class, 'unlinkIngredient'])
-        ->name('suppliers.unlink-ingredient');
-    Route::post('/suppliers/{supplier}/purchases', [\App\Http\Controllers\SupplierController::class, 'addPurchase'])
-        ->name('suppliers.add-purchase');
+    // ── Supplier Directory (owner/manager only — pricing data) ─────────
+    Route::middleware('role:super_admin,manager')->group(function () {
+        Route::get('/suppliers', [\App\Http\Controllers\SupplierController::class, 'index'])
+            ->name('suppliers.index');
+        Route::post('/suppliers', [\App\Http\Controllers\SupplierController::class, 'store'])
+            ->name('suppliers.store');
+        Route::get('/suppliers/{supplier}', [\App\Http\Controllers\SupplierController::class, 'show'])
+            ->name('suppliers.show');
+        Route::put('/suppliers/{supplier}', [\App\Http\Controllers\SupplierController::class, 'update'])
+            ->name('suppliers.update');
+        Route::delete('/suppliers/{supplier}', [\App\Http\Controllers\SupplierController::class, 'destroy'])
+            ->name('suppliers.destroy');
+        Route::post('/suppliers/{supplier}/ingredients', [\App\Http\Controllers\SupplierController::class, 'linkIngredient'])
+            ->name('suppliers.link-ingredient');
+        Route::delete('/suppliers/{supplier}/ingredients/{ingredient}', [\App\Http\Controllers\SupplierController::class, 'unlinkIngredient'])
+            ->name('suppliers.unlink-ingredient');
+        Route::post('/suppliers/{supplier}/purchases', [\App\Http\Controllers\SupplierController::class, 'addPurchase'])
+            ->name('suppliers.add-purchase');
+    });
 });
 
 // ── Logout ───────────────────────────────────────────────────────────

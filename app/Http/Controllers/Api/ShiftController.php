@@ -144,7 +144,7 @@ class ShiftController extends Controller
                     $thresholdPct = (float) AppSetting::get('variance_threshold_pct', 0.05);
                     $thresholdPhp = (float) AppSetting::get('variance_threshold_php', 100);
 
-                    $pct = (float) $expected !== 0.0 ? abs($variance) / abs($expected) : 1.0;
+                    $pct = ((float) $expected) !== 0.0 ? abs($variance) / abs($expected) : 1.0;
                     $unitCost = (float) (Ingredient::find($count['ingredient_id'])?->primarySupplier()?->pivot?->unit_cost ?? 0);
                     $phpImpact = abs($variance) * $unitCost;
 
