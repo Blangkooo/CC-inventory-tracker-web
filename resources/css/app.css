@@ -1,35 +1,27 @@
 @import 'tailwindcss';
 
+@source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
-@source '../../resources/views/**/*.blade.php';
-
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
-    
-    /* NITA Custom Colors */
-    --color-cream: #FDF5D6;
-    --color-cream-dark: #F5EDCE;
-    --color-brown: #5C2D1B;
-    --color-brown-light: #7A4A35;
-    --color-terra: #BC614B;
-    --color-terra-dark: #A8523E;
-    --color-terra-light: rgba(188, 97, 75, 0.12);
-    --color-border: rgba(92, 45, 27, 0.16);
-    --color-border-light: rgba(92, 45, 27, 0.08);
-}
+@source '../../node_modules/flowbite/dist/**/*.js';
 
 /*
- * ─────────────────────────────────────────────────────────────────────
- * Ported from tailwind-migration for the real (non-mockup) Payments page.
- * Separate token namespace (--color-accent, --color-ink, etc.) from the
- * tokens above (--color-terra, --color-brown, etc.) — no name collisions,
- * so the rest of the app's pages are unaffected. Only pages using
- * layouts.sidebar (currently just Payments) pull from this block.
- * ─────────────────────────────────────────────────────────────────────
+ * NITA design tokens.
+ *
+ * Tailwind v4 emits every @theme entry as a real CSS variable on :root, so
+ * these double as the source of truth for both utility classes (bg-card,
+ * text-ink-2, rounded-card) and the hand-written CSS still left in the
+ * blade files. The legacy --accent / --text / --border aliases below bridge
+ * the two while pages are migrated one at a time.
  */
 @theme {
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* Pure white everywhere except the top bar. Warmth is a deliberate
+       accent, not a wash — spending it on the whole canvas is what made an
+       earlier pass read as "too much cream, not clean." Cards separate from
+       the page via --color-line and --shadow-card, not a tinted background. */
     --color-bg: #ffffff;
     --color-card: #ffffff;
 
@@ -48,18 +40,23 @@
 
     --color-line: #f0ece4;
 
+    /* Neutral fills: sidebar active pill, hover states, subtle panel backgrounds. */
     --color-surface-2: #f4f4f6;
     --color-surface-3: #ebebef;
 
-    --color-cream-nita: #f3ddb0;
+    /* Butter yellow pairs with the accent across the charts. */
+    --color-cream: #f3ddb0;
     --color-cream-deep: #ecc98a;
 
+    /* Top bar matches the page — pure white throughout, no tinted band. */
     --color-topbar: #ffffff;
 
+    /* Severity dots on the flag summary. */
     --color-sev-high: #e63946;
     --color-sev-med: #f5a623;
     --color-sev-low: #fbbf24;
 
+    /* Near-black used for high-emphasis buttons (Export) and the brand mark. */
     --color-ink-strong: #16161a;
 
     --radius-card: 14px;
@@ -70,6 +67,13 @@
     --spacing-sidebar: 200px;
 }
 
+/*
+ * Shared component classes.
+ *
+ * These were duplicated across the two sidebar layouts that used to exist.
+ * They live here so there is one definition, and so Tailwind utilities can be
+ * mixed into the same markup. Page-specific styling stays in its blade file.
+ */
 @layer components {
     .card {
         background: var(--color-card);
@@ -87,6 +91,14 @@
     .card__title { font-size: 13px; font-weight: 700; }
     .card__body { padding: 16px 20px; }
 
+    .card-panel {
+        background: var(--color-card);
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+    }
+
     .badge {
         display: inline-block;
         font-size: 10px;
@@ -102,6 +114,68 @@
     .badge.blue,  .badge-blue  { background: rgba(108, 92, 231, 0.08); color: var(--color-blue); }
 
     .empty-state { text-align: center; padding: 32px; font-size: 13px; color: var(--color-ink-3); }
+    .all-clear {
+        color: var(--color-green);
+        font-size: 13px;
+        font-weight: 600;
+        text-align: center;
+        padding: 36px 8px;
+    }
+
+    .filter-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+    .tab {
+        padding: 7px 16px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--color-ink-2);
+        cursor: pointer;
+        border: 1.5px solid transparent;
+        background: transparent;
+        transition: all 0.15s;
+        text-decoration: none;
+        font-family: var(--font-sans);
+    }
+    .tab:hover  { color: var(--color-ink); background: rgba(0, 0, 0, 0.03); }
+    .tab.active { background: var(--color-accent-light); color: var(--color-accent); border-color: var(--color-accent); }
+
+    .toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+    }
+    .select-filter {
+        height: 38px;
+        padding: 0 14px;
+        background: var(--color-card);
+        border: 1.5px solid var(--color-line);
+        border-radius: 10px;
+        font-size: 13px;
+        color: var(--color-ink);
+        font-family: var(--font-sans);
+        cursor: pointer;
+    }
+
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table thead th {
+        text-align: left;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--color-ink-3);
+        padding: 12px 16px;
+        background: rgba(0, 0, 0, 0.01);
+        border-bottom: 1px solid var(--color-line);
+    }
+    .data-table tbody td { padding: 13px 16px; font-size: 13px; border-bottom: 1px solid var(--color-line); }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+    .data-table tbody tr:hover { background: var(--color-accent-light); }
+    .cell-primary  { font-weight: 600; }
+    .variance-cell { color: var(--color-accent-2); font-weight: 700; }
 
     .btn-primary {
         display: inline-flex;
@@ -120,7 +194,99 @@
     }
     .btn-primary:hover { background: #d35e47; }
 
-    /* ── App shell: top bar + sidebar (layouts.sidebar only) ─────────── */
+    .btn-pill {
+        padding: 5px 14px;
+        background: var(--color-accent-light);
+        color: var(--color-accent);
+        border: 1px solid rgba(225, 112, 85, 0.3);
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: var(--font-sans);
+        transition: all 0.15s;
+        text-decoration: none;
+    }
+    .btn-pill:hover { background: var(--color-accent); color: #fff; }
+
+    .summary-cards { display: flex; gap: 16px; margin-bottom: 20px; }
+    .summary-card {
+        flex: 1;
+        background: var(--color-card);
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-card);
+        padding: 20px;
+        text-align: center;
+    }
+    .summary-count { font-size: 32px; font-weight: 800; }
+    .summary-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-ink-3);
+        margin-top: 4px;
+    }
+    .summary-card.green .summary-count { color: var(--color-green); }
+    .summary-card.amber .summary-count { color: var(--color-accent); }
+    .summary-card.red   .summary-count { color: var(--color-accent-2); }
+
+    .master-detail { display: grid; grid-template-columns: 200px 1fr; gap: 20px; }
+    .widget {
+        background: var(--color-card);
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
+    .widget-head { padding: 14px 20px; border-bottom: 1px solid var(--color-line); }
+    .widget-head h2 { font-size: 13px; font-weight: 700; }
+
+    .biz-list { display: flex; flex-direction: column; padding: 6px; }
+    .biz-list a {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        color: var(--color-ink-2);
+        transition: background 0.12s;
+    }
+    .biz-list a:hover  { background: rgba(0, 0, 0, 0.03); }
+    .biz-list a.active { background: var(--color-accent-light); color: var(--color-accent); font-weight: 700; }
+    .biz-list .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .biz-list .dot.green { background: var(--color-green); }
+    .biz-list .dot.red   { background: var(--color-accent-2); }
+
+    .detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .detail-header h2 { font-size: 18px; font-weight: 800; }
+    .detail-sub { font-size: 12px; color: var(--color-ink-3); margin-left: auto; }
+
+    .dash-main { display: flex; flex-direction: column; gap: 16px; }
+    .two-up { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .stat-card {
+        background: var(--color-card);
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-card);
+        padding: 20px;
+    }
+    .stat-label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--color-ink-3);
+    }
+    .stat-value { font-size: 30px; font-weight: 800; margin: 6px 0 4px; }
+    .stat-note  { font-size: 11px; color: var(--color-ink-3); }
+
+    /* ── App shell: top bar ─────────────────────────────────────────── */
     .topbar {
         display: flex;
         align-items: center;
@@ -150,9 +316,11 @@
         cursor: pointer;
         text-decoration: none;
         transition: all 0.15s;
-        position: relative;
     }
+    /* Hovers inside the cream band are warm — the neutral grey used elsewhere
+       reads as a dirty smudge against it. */
     .topbar__icon:hover { background: rgba(92, 45, 27, 0.07); color: var(--color-ink); }
+    .topbar__icon { position: relative; }
     .topbar__icon .dot {
         position: absolute;
         top: 7px;
@@ -166,6 +334,19 @@
 
     .topbar__divider { width: 1px; height: 24px; background: rgba(92, 45, 27, 0.14); margin: 0 8px; }
 
+    .topnav { display: flex; align-items: center; gap: 6px; }
+    .topnav__pill {
+        padding: 8px 18px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--color-ink-2);
+        text-decoration: none;
+        transition: all 0.15s;
+    }
+    .topnav__pill:hover { background: rgba(92, 45, 27, 0.07); color: var(--color-ink); }
+    .topnav__pill.is-active { background: var(--color-accent); color: #fff; }
+
     .topbar__user {
         display: flex;
         align-items: center;
@@ -177,7 +358,12 @@
     .topbar__user:hover { background: rgba(92, 45, 27, 0.07); }
     .topbar__user-name  { font-size: 13px; font-weight: 700; line-height: 1.3; }
     .topbar__user-email { font-size: 11px; color: var(--color-ink-3); line-height: 1.3; }
+
+    /* The title and the account block hold their size; the centre nav is the
+       one that gives way, so a long email can't push the bar past the
+       viewport and force the page to scroll sideways. */
     .topbar__title, .topbar__actions { flex-shrink: 0; }
+    .topnav { min-width: 0; overflow: hidden; }
     .topbar__user-name, .topbar__user-email {
         display: block;
         max-width: 160px;
@@ -201,22 +387,349 @@
         text-transform: uppercase;
     }
 
-    .sidebar__link {
+    /* ── App shell: search + primary action row ─────────────────────── */
+    .search-bar {
         display: flex;
         align-items: center;
         gap: 10px;
-        padding: 10px 14px;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 500;
-        text-decoration: none;
-        color: var(--color-ink-2);
-        transition: background 0.12s;
+        flex: 1;
+        max-width: 420px;
+        height: 40px;
+        padding: 0 14px;
+        background: var(--color-card);
+        border: 1px solid var(--color-line);
+        border-radius: 10px;
+        color: var(--color-ink-3);
+        transition: border-color 0.15s;
     }
-    .sidebar__link:hover  { background: rgba(0, 0, 0, 0.03); }
-    .sidebar__link.is-active { background: var(--color-accent-light); color: var(--color-accent); font-weight: 700; }
-    .sidebar__logout { background: rgba(214, 48, 49, 0.08); color: #d63031; }
-    .sidebar__divider { height: 1px; background: var(--color-line); margin: 10px 14px; }
+    .search-bar:focus-within { border-color: var(--color-accent); }
+    .search-bar input {
+        flex: 1;
+        border: none;
+        outline: none;
+        background: none;
+        font-family: var(--font-sans);
+        font-size: 13px;
+        color: var(--color-ink);
+    }
+    .search-bar input::placeholder { color: var(--color-ink-3); }
+    .search-bar kbd {
+        font-family: var(--font-sans);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--color-ink-3);
+        background: var(--color-surface-2);
+        border-radius: 5px;
+        padding: 2px 6px;
+    }
+
+    .btn-dark {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 40px;
+        padding: 0 18px;
+        background: var(--color-ink-strong);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.15s;
+    }
+    .btn-dark:hover { opacity: 0.85; }
+
+    /* ── Deltas: the "+6% vs last month" pattern ────────────────────── */
+    .delta {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+    .delta--up   { background: rgba(0, 184, 148, 0.1); color: var(--color-green); }
+    .delta--down { background: rgba(214, 48, 49, 0.08); color: var(--color-accent-2); }
+    .delta-note  { font-size: 11px; color: var(--color-ink-3); margin-left: 6px; }
+
+    /* ── Outlined panels ────────────────────────────────────────────────
+       Same quiet treatment as .ncard: hairline edge, faint lift, colour
+       reserved for the data inside. */
+    .panel {
+        background: var(--color-card);
+        border: 1px solid var(--color-line);
+        border-radius: 16px;
+        padding: 18px 20px;
+        box-shadow: var(--shadow-card);
+    }
+
+    .panel__head {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding-bottom: 10px;
+        margin-bottom: 14px;
+        border-bottom: 1.5px solid var(--color-line);
+    }
+    .panel__head svg { width: 19px; height: 19px; flex-shrink: 0; color: var(--color-ink); }
+    .panel__title { font-size: 15px; font-weight: 800; letter-spacing: -0.01em; }
+    .panel__aside { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+
+    /* Section heading: "Performance Summary | May" */
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 21px;
+        font-weight: 800;
+        color: var(--color-accent);
+        letter-spacing: -0.02em;
+    }
+    .section-title__main { color: var(--color-accent); }
+    .section-title__pipe { color: var(--color-accent); opacity: 0.45; font-weight: 400; }
+    .section-title__sub  { color: var(--color-accent); opacity: 0.8; }
+
+    /* Legend / status dots */
+    .dot-item { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; }
+    .dot-item::before {
+        content: '';
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        background: var(--dot, var(--color-ink-3));
+    }
+    .dot-item--high { --dot: var(--color-sev-high); }
+    .dot-item--med  { --dot: var(--color-sev-med); }
+    .dot-item--low  { --dot: var(--color-sev-low); }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 14px; }
+    .legend .dot-item { font-size: 10.5px; font-weight: 600; color: var(--color-ink-2); }
+
+    /* Callout used to annotate a chart's leading value */
+    .chart-callout { line-height: 1.25; }
+    .chart-callout__value { font-size: 13px; font-weight: 800; }
+    .chart-callout__label { font-size: 9.5px; font-weight: 600; color: var(--color-ink-3); }
+
+    .figure-value { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+    .figure-label { font-size: 11px; font-weight: 600; color: var(--color-ink-3); text-align: center; }
+
+    /* ── Tiles ──────────────────────────────────────────────────────────
+       The dashboard surfaces: white, hairline border, barely-there shadow. */
+    .tile {
+        background: var(--color-card);
+        border: 1px solid var(--color-line);
+        border-radius: 14px;
+        padding: 20px 22px;
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.03);
+    }
+    .tile__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+    .tile__title { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+
+    .tile__label { font-size: 14px; font-weight: 500; color: var(--color-ink-2); }
+    .tile__figure { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; margin-top: 8px; }
+
+    /* Bordered control pills: "Last Year ⌄", "See All" */
+    .pill-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        height: 34px;
+        padding: 0 13px;
+        background: var(--color-card);
+        border: 1px solid var(--color-line);
+        border-radius: 9px;
+        font-family: var(--font-sans);
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--color-ink);
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.15s;
+    }
+    .pill-btn:hover { background: var(--color-surface-2); }
+    .pill-btn svg { width: 14px; height: 14px; color: var(--color-ink-2); }
+
+    .icon-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        background: var(--color-card);
+        border: 1px solid var(--color-line);
+        border-radius: 9px;
+        color: var(--color-ink-2);
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .icon-btn:hover { background: var(--color-surface-2); color: var(--color-ink); }
+
+    /* Underline tabs */
+    .utabs { display: flex; gap: 4px; border-bottom: 1px solid var(--color-line); }
+    .utab {
+        padding: 9px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--color-ink-3);
+        text-decoration: none;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+        cursor: pointer;
+        font-family: var(--font-sans);
+        transition: all 0.15s;
+    }
+    .utab:hover { color: var(--color-ink); }
+    .utab.is-active { color: var(--color-ink); border-bottom-color: var(--color-accent); }
+
+    /* Calendar day strip */
+    .daystrip { display: flex; align-items: center; gap: 2px; }
+    .daystrip__day {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1px;
+        flex: 1;
+        min-width: 42px;
+        padding: 7px 0;
+        border-radius: 10px;
+        text-decoration: none;
+        color: var(--color-ink);
+        transition: background 0.15s;
+    }
+    .daystrip__day:hover { background: var(--color-surface-2); }
+    .daystrip__num { font-size: 15px; font-weight: 700; line-height: 1.1; }
+    .daystrip__dow { font-size: 10.5px; font-weight: 500; color: var(--color-ink-3); }
+    .daystrip__day.is-today { background: var(--color-accent); color: #fff; }
+    .daystrip__day.is-today .daystrip__dow { color: rgb(255 255 255 / 0.85); }
+
+    /* Soft category tag */
+    .tag {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 7px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    .tag--accent { background: var(--color-accent-light); color: var(--color-accent); }
+    .tag--red    { background: rgb(230 57 70 / 0.09); color: var(--color-sev-high); }
+    .tag--amber  { background: rgb(245 166 35 / 0.13); color: #b45309; }
+    .tag--blue   { background: rgb(108 92 231 / 0.09); color: var(--color-blue); }
+
+    /* Overlapping avatar stack */
+    .avatar-stack { display: flex; align-items: center; }
+    .avatar-stack__item {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        border: 2px solid var(--color-card);
+        margin-left: -8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 9.5px;
+        font-weight: 800;
+        color: #fff;
+        text-transform: uppercase;
+    }
+    .avatar-stack__item:first-child { margin-left: 0; }
+    .avatar-stack__more { font-size: 12px; font-weight: 700; color: var(--color-ink-2); margin-left: 6px; }
+
+    /* Striped density bar (share of a whole, drawn as thin ticks) */
+    .density { display: flex; align-items: stretch; gap: 3px; height: 46px; }
+    .density__seg {
+        background-image: repeating-linear-gradient(90deg, currentColor 0 2px, transparent 2px 5px);
+        border-radius: 3px;
+        min-width: 2px;
+    }
+    .density__scale { display: flex; justify-content: space-between; font-size: 11px; color: var(--color-ink-3); margin-top: 8px; }
+
+    .legend-stat__top { display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 500; color: var(--color-ink-2); }
+    .legend-stat__swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+    .legend-stat__value { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+    .legend-stat__pct { font-size: 12px; font-weight: 500; color: var(--color-ink-3); margin-left: 4px; }
+
+    /* ── NITA reporting design ──────────────────────────────────────────
+       Outlined cards, terracotta figures, and a green arrow for the
+       month-over-month change. */
+    .ncard {
+        background: var(--color-card);
+        border: 1.5px solid var(--color-line);
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: var(--shadow-card);
+        max-width: 100%;
+    }
+
+    /* Several figures sharing one outline, split by hairline rules. */
+    .ncard--split { padding: 0; display: grid; }
+    .ncard--split > * { padding: 16px 18px; }
+    .ncard--split > * + * { border-left: 1.5px solid var(--color-line); }
+
+    .nstat__label { font-size: 13px; font-weight: 600; color: var(--color-ink); }
+    .nstat__value {
+        font-size: 30px;
+        font-weight: 700;
+        color: var(--color-accent);
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+        margin: 4px 0;
+    }
+
+    .trend { font-size: 12px; font-weight: 700; }
+    .trend--up   { color: var(--color-green); }
+    .trend--down { color: var(--color-accent-2); }
+    .trend--flat { color: var(--color-ink-3); }
+    .trend__note { font-size: 12px; font-weight: 500; color: var(--color-ink-3); margin-left: 4px; }
+
+    .nsection {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--color-accent);
+        letter-spacing: -0.01em;
+    }
+    .nsection__pipe { opacity: 0.4; font-weight: 400; }
+
+    /* Ranked list: "1. Coffee Shop" */
+    .rank-list { counter-reset: rank; font-size: 14px; }
+    .rank-list__item {
+        counter-increment: rank;
+        display: flex;
+        gap: 6px;
+        padding: 0;
+        color: var(--color-ink);
+    }
+    .rank-list__item::before { content: counter(rank) '.'; color: var(--color-ink-2); font-weight: 600; }
+
+    /* Goal dial: cream track with a terracotta wedge */
+    .goal { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .goal__pct { font-size: 20px; font-weight: 800; color: var(--color-accent); }
+    .goal__target { font-size: 10.5px; font-weight: 500; color: var(--color-ink-3); }
+
+    /* Gradient columns used by the KPI and status charts */
+    .gbar {
+        border-radius: 6px 6px 2px 2px;
+        background: linear-gradient(180deg,
+            color-mix(in srgb, var(--color-accent) 75%, white) 0%,
+            var(--color-accent) 32%,
+            rgb(225 112 85 / 0.22) 100%);
+        box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35);
+        min-height: 4px;
+    }
+    .gbar--soft {
+        background: linear-gradient(180deg,
+            color-mix(in srgb, var(--color-cream-deep) 75%, white) 0%,
+            var(--color-cream-deep) 32%,
+            rgb(236 201 138 / 0.3) 100%);
+        box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35);
+    }
 
     /* ── Shared modals ─────────────────────────────────────────── */
     .modal-overlay {
@@ -355,13 +868,25 @@
     .summary-table tr:last-child td { border-bottom: none; }
     .summary-table tr:hover td { background: var(--color-accent-light); }
     .summary-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+    /* ── Severity badges ───────────────────────────────────────── */
+    .severity-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 3px 10px; border-radius: 999px;
+        font-size: 10px; font-weight: 700; text-transform: uppercase;
+    }
+    .sev-none { background: rgba(0,184,148,.1); color: var(--color-green); }
+    .sev-mild { background: rgba(253,203,110,.15); color: #a16207; }
+    .sev-moderate { background: rgba(225,112,85,.1); color: #c2410c; }
+    .sev-severe { background: rgba(214,48,49,.1); color: #d63031; }
+    .badge-open { background: rgba(22,163,74,.1); color: #16a34a; }
+    .badge-closed { background: rgba(92,45,27,.06); color: rgba(92,45,27,.5); }
 }
 
 /*
- * Legacy bare aliases — layouts/sidebar.blade.php references these names
- * directly (var(--bg), var(--accent), etc.). Confirmed no collision: this
- * app has no pre-existing bare --border/--brown/--terra/--cream globals of
- * its own (its pages use --color-border/--color-brown/etc. directly).
+ * Legacy aliases. Page CSS written before the Tailwind migration references
+ * these names directly; they now resolve to the tokens above so there is a
+ * single place to change a colour. Remove an alias once no blade file uses it.
  */
 :root {
     --sidebar-w: var(--spacing-sidebar);
@@ -373,8 +898,35 @@
     --accent: var(--color-accent);
     --accent-2: var(--color-accent-2);
     --accent-light: var(--color-accent-light);
+    --blue: var(--color-blue);
+    --green: var(--color-green);
+    --orange: var(--color-orange);
+    --pink: var(--color-pink);
+    --border: var(--color-line);
     --shadow: var(--shadow-card);
     --shadow-md: var(--shadow-card-md);
     --radius: var(--radius-card);
     --font: var(--font-sans);
+}
+
+/*
+ * ─────────────────────────────────────────────────────────────────────
+ * main's legacy "terra/brown" design system, kept for the pages still on
+ * layouts.app (Calendar, Reports, Analytics, Logistics, business/summary,
+ * business/verification) that were deliberately left as-is during the
+ * tailwind-migration merge rather than ported. --color-cream renamed to
+ * --color-cream-legacy — tailwind-migration already defines --color-cream
+ * for its own (different) dashboard donut styling.
+ * ─────────────────────────────────────────────────────────────────────
+ */
+@theme {
+    --color-cream-legacy: #FDF5D6;
+    --color-cream-legacy-dark: #F5EDCE;
+    --color-brown: #5C2D1B;
+    --color-brown-light: #7A4A35;
+    --color-terra: #BC614B;
+    --color-terra-dark: #A8523E;
+    --color-terra-light: rgba(188, 97, 75, 0.12);
+    --color-border: rgba(92, 45, 27, 0.16);
+    --color-border-light: rgba(92, 45, 27, 0.08);
 }

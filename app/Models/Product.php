@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'category', 'price', 'procedure', 'is_active'])]
+#[Fillable(['name', 'category', 'price', 'price_large', 'procedure', 'is_active'])]
 class Product extends Model
 {
     use HasFactory;
@@ -16,8 +16,23 @@ class Product extends Model
     {
         return [
             'price' => 'decimal:2',
+            'price_large' => 'decimal:2',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * The price for a given recipe size — falls back to the regular price
+     * when no large-size price has been set yet, so existing products with
+     * only one price keep working unchanged.
+     */
+    public function priceForSize(string $size): float
+    {
+        if ($size === Recipe::SIZE_LARGE && $this->price_large !== null) {
+            return (float) $this->price_large;
+        }
+
+        return (float) $this->price;
     }
 
     public function recipes(): HasMany

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['branch_id', 'ingredient_id', 'current_quantity', 'min_threshold', 'last_updated_at'])]
+#[Fillable(['branch_id', 'ingredient_id', 'current_quantity', 'min_threshold', 'capacity', 'last_updated_at'])]
 class BranchStock extends Model
 {
     use HasFactory;
@@ -20,6 +20,7 @@ class BranchStock extends Model
         return [
             'current_quantity' => 'decimal:3',
             'min_threshold' => 'decimal:3',
+            'capacity' => 'decimal:3',
             'last_updated_at' => 'datetime',
         ];
     }

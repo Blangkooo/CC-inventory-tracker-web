@@ -32,6 +32,19 @@
 
         <p style="margin-top: 16px;">{{ $alert->details }}</p>
 
+        @if ($alert->ingredient && ($supplier = $alert->ingredient->primarySupplier()))
+            <div style="margin-top: 16px; padding: 12px 14px; background: #f9fafb; border-radius: 6px; border: 1px solid #e5e7eb;">
+                <strong style="font-size: 13px;">Reorder from:</strong>
+                <div style="font-size: 13px; margin-top: 4px;">
+                    {{ $supplier->name }}<br>
+                    @if ($supplier->contact_person) {{ $supplier->contact_person }}<br> @endif
+                    @if ($supplier->contact_number) {{ $supplier->contact_number }}<br> @endif
+                    @if ($supplier->address) {{ $supplier->address }}{{ $supplier->landmark ? ' ('.$supplier->landmark.')' : '' }} @endif
+                </div>
+                <a href="{{ url('/suppliers') }}" style="font-size: 13px; display: inline-block; margin-top: 8px;">View Supplier Directory &rarr;</a>
+            </div>
+        @endif
+
         <p style="color: #6b7280; font-size: 13px; margin-top: 24px;">
             Review this alert in the owner dashboard to mark it as reviewed or dismissed.
         </p>

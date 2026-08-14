@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Concerns\AuthorizesBranchAccess;
 use App\Http\Controllers\Controller;
+use App\Models\AppSetting;
 use App\Models\BranchStock;
 use App\Models\StockMovement;
 use Illuminate\Http\JsonResponse;
@@ -14,6 +15,21 @@ use Illuminate\Validation\Rule;
 class StockController extends Controller
 {
     use AuthorizesBranchAccess;
+
+    /**
+     * min_threshold is normally set explicitly, but when only capacity is
+     * given, derive it from the configurable Settings percentage (Trinity
+     * doc: "20-30% of total capacity") instead of leaving it at 0.
+     */
+    private function deriveThresholdFromCapacity(array $validated): array
+    {
+        if (isset($validated['capacity']) && ! isset($validated['min_threshold'])) {
+            $pct = (float) AppSetting::get('low_stock_threshold_pct', 0.25);
+            $validated['min_threshold'] = round($validated['capacity'] * $pct, 3);
+        }
+
+        return $validated;
+    }
 
     /**
      * Create the initial stock entry for a branch+ingredient pair.
@@ -29,9 +45,12 @@ class StockController extends Controller
             ],
             'current_quantity' => ['required', 'numeric', 'min:0'],
             'min_threshold' => ['sometimes', 'numeric', 'min:0'],
+            'capacity' => ['sometimes', 'numeric', 'min:0'],
         ]);
 
         $this->authorizeBranch((int) $validated['branch_id']);
+
+        $validated = $this->deriveThresholdFromCapacity($validated);
 
         $stock = DB::transaction(function () use ($validated, $request) {
             $stock = BranchStock::create($validated + ['last_updated_at' => now()]);
@@ -109,6 +128,48 @@ class StockController extends Controller
             ->paginate(20);
 
         return response()->json($movements);
+    }
+
+    /**
+     * Edit an existing branch_stock row's configuration — the low-stock
+     * threshold and/or its capacity. Changing the on-hand quantity goes
+     * through restock() (additive) or a shift close (counted), not here, so
+     * this never needs a StockMovement entry.
+     */
+    public function update(Request $request, BranchStock $branchStock): JsonResponse
+    {
+        $this->authorizeBranch($branchStock->branch_id);
+
+        $validated = $request->validate([
+            'min_threshold' => ['sometimes', 'numeric', 'min:0'],
+            'capacity' => ['sometimes', 'numeric', 'min:0'],
+        ]);
+
+        if ($validated === []) {
+            return response()->json([
+                'message' => 'Nothing to update — provide min_threshold and/or capacity.',
+            ], 422);
+        }
+
+        $validated = $this->deriveThresholdFromCapacity($validated);
+
+        $branchStock->update($validated);
+
+        return response()->json($branchStock->fresh()->load('ingredient'));
+    }
+
+    /**
+     * Remove a branch+ingredient stock row entirely (e.g. the branch no
+     * longer carries that ingredient). Movement history is kept for audit
+     * purposes — only the current-stock row goes away.
+     */
+    public function destroy(BranchStock $branchStock): JsonResponse
+    {
+        $this->authorizeBranch($branchStock->branch_id);
+
+        $branchStock->delete();
+
+        return response()->json(['message' => 'Stock entry deleted successfully.']);
     }
 
     /**

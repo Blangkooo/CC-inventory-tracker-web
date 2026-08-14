@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\AuthorizesBranchAccess;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
+    use AuthorizesBranchAccess;
+
     public function kpis(Request $request)
     {
         $branchId = $request->branch_id;
@@ -75,5 +78,85 @@ class DashboardController extends Controller
             ]);
 
         return response()->json($products);
+    }
+
+    /**
+     * Revenue for every month of a given year, plus the same twelve months
+     * one year earlier for a year-over-year comparison. Always exactly
+     * twelve values per series (zero-filled), so a chart never has to guess
+     * at a missing month.
+     */
+    public function trends(Request $request)
+    {
+        $branchId = $request->branch_id;
+        if ($branchId) {
+            $this->authorizeBranch((int) $branchId);
+        }
+
+        $year = (int) ($request->year ?? now()->year);
+
+        $monthlyRevenue = fn (int $y) => \App\Models\Transaction::selectRaw('MONTH(created_at) as m, SUM(total_amount) as total')
+            ->whereYear('created_at', $y)
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+            ->groupBy('m')
+            ->pluck('total', 'm');
+
+        $thisYear = $monthlyRevenue($year);
+        $lastYear = $monthlyRevenue($year - 1);
+
+        $series = fn ($totals) => collect(range(1, 12))
+            ->map(fn ($m) => round((float) ($totals[$m] ?? 0), 2))
+            ->values();
+
+        return response()->json([
+            'year' => $year,
+            'monthly_revenue' => $series($thisYear),
+            'monthly_revenue_prior_year' => $series($lastYear),
+            'yearly_total' => round($thisYear->sum(), 2),
+            'yearly_total_prior_year' => round($lastYear->sum(), 2),
+        ]);
+    }
+
+    /**
+     * Stock leakage (negative variance between expected and actual counts)
+     * over a date range, both as a total and broken down per branch — the
+     * same underlying figure the web dashboard's "Overall Value Saved" /
+     * "Least Leakage" cards read from, exposed here for the API/mobile side.
+     */
+    public function leakage(Request $request)
+    {
+        $branchId = $request->branch_id;
+        if ($branchId) {
+            $this->authorizeBranch((int) $branchId);
+        }
+
+        $from = $request->from ?? now()->startOfMonth()->toDateString();
+        $to = $request->to ?? now()->toDateString();
+
+        $baseQuery = fn () => \App\Models\ShiftStockCount::where('variance', '<', 0)
+            ->whereHas('shiftLog', fn ($q) => $q->whereBetween('shift_start', [$from, $to])
+                ->when($branchId, fn ($q2) => $q2->where('branch_id', $branchId)));
+
+        $totalLeakage = (float) $baseQuery()->sum(\Illuminate\Support\Facades\DB::raw('ABS(variance)'));
+
+        $byBranch = \App\Models\Branch::when($branchId, fn ($q) => $q->where('id', $branchId))
+            ->get()
+            ->map(fn ($b) => [
+                'branch_id' => $b->id,
+                'branch_name' => $b->name,
+                'leakage' => (float) \App\Models\ShiftStockCount::where('variance', '<', 0)
+                    ->whereHas('shiftLog', fn ($q) => $q->where('branch_id', $b->id)
+                        ->whereBetween('shift_start', [$from, $to]))
+                    ->sum(\Illuminate\Support\Facades\DB::raw('ABS(variance)')),
+            ])
+            ->sortBy('leakage')
+            ->values();
+
+        return response()->json([
+            'from' => $from,
+            'to' => $to,
+            'total_leakage' => round($totalLeakage, 3),
+            'by_branch' => $byBranch,
+        ]);
     }
 }

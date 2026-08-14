@@ -8,7 +8,7 @@
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --cream:  #FDF5D6;
+            --cream: #FFFFFF;
             --brown:  #5C2D1B;
             --terra:  #BC614B;
             --border: rgba(92,45,27,.16);

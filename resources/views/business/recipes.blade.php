@@ -225,6 +225,7 @@
 
             <div class="flex items-center gap-3 justify-end px-6 py-3.5 border-t border-line bg-[rgba(92,45,27,.02)]">
                 <span class="text-xs font-semibold opacity-60 mr-auto">{{ $product->recipes->count() }} ingredient{{ $product->recipes->count() !== 1 ? 's' : '' }}</span>
+                <button class="px-5 py-[7px] bg-accent text-white border-[1.5px] border-accent rounded-lg text-xs font-semibold cursor-pointer font-sans transition-all duration-150 hover:brightness-[.92]" onclick="openProfile({{ $product->id }})">Profile</button>
                 <button class="btn-edit px-5 py-[7px] bg-white text-[#5c2d1b] border-[1.5px] border-line rounded-lg text-xs font-semibold cursor-pointer font-sans transition-all duration-150 hover:bg-[#5c2d1b] hover:text-cream hover:border-[#5c2d1b]" data-product-id="{{ $product->id }}">Edit</button>
             </div>
         </div>
@@ -342,6 +343,26 @@
             </button>
             <button class="btn-cancel" onclick="closeModal()">Cancel</button>
             <button class="btn-save" id="btn-save" onclick="saveRecipe()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+{{-- ═══════════════════════════════════════════════════════════════════
+     INGREDIENT PROFILE DRILL-DOWN MODAL
+     ═══════════════════════════════════════════════════════════════════ --}}
+<div class="modal-overlay" id="profile-modal">
+    <div class="bg-card rounded-[16px] shadow-[0_8px_40px_rgba(92,45,27,.2)] w-full max-w-[720px] max-h-[90vh] flex flex-col" style="animation:modalIn .2s ease">
+        <div class="flex items-center justify-between px-6 py-5 border-b border-line">
+            <h2 class="text-[17px] font-extrabold" id="profile-title">Ingredient Profile</h2>
+            <button class="w-8 h-8 rounded-lg border-none bg-transparent text-[#5c2d1b] cursor-pointer flex items-center justify-center transition-[background] duration-150 hover:bg-[rgba(92,45,27,.08)]" onclick="closeProfile()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-6 py-6" id="profile-body">
+            <div class="text-center py-10 opacity-40 text-[13px]">Loading…</div>
         </div>
     </div>
 </div>
@@ -679,6 +700,128 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // ── Embed product data from server-side render ──
 var PRODUCTS_DATA = @json($productsData);
+
+// ═══════════════════════════════════════════════════════════════════
+// INGREDIENT PROFILE DRILL-DOWN
+// ═══════════════════════════════════════════════════════════════════
+function openProfile(productId) {
+    var modal = document.getElementById('profile-modal');
+    var body  = document.getElementById('profile-body');
+
+    document.getElementById('profile-title').textContent = 'Ingredient Profile';
+    body.innerHTML = '<div class="text-center py-10 opacity-40 text-[13px]">Loading…</div>';
+    modal.classList.add('is-open');
+
+    fetch('/business/recipes/product/' + productId + '/profile', {
+        headers: { 'Accept': 'application/json' }
+    })
+    .then(function (res) {
+        if (!res.ok) throw new Error('Failed to load profile (' + res.status + ')');
+        return res.json();
+    })
+    .then(renderProfile)
+    .catch(function (err) {
+        body.innerHTML = '<div class="text-center py-10 opacity-50 text-[13px]">'
+            + escapeHtml(err.message) + '</div>';
+    });
+}
+
+function closeProfile() {
+    document.getElementById('profile-modal').classList.remove('is-open');
+}
+
+function renderProfile(data) {
+    var p = data.product;
+    document.getElementById('profile-title').textContent = p.name;
+
+    var html = '';
+
+    data.sizes.forEach(function (s) {
+        var valueColor = s.margin_pct >= 60 ? '#00b894'
+                        : s.margin_pct >= 40 ? '#e17055'
+                        : '#d63031';
+
+        html += '<div class="text-[10px] font-bold uppercase tracking-[.06em] opacity-50 mb-1.5">' + escapeHtml(s.size) + '</div>'
+             +  '<div class="grid grid-cols-3 gap-3 p-[18px] mb-5 bg-accent-light border border-line rounded-xl">'
+             +    '<div class="text-center">'
+             +      '<div class="text-xl font-extrabold" style="color:' + valueColor + '">' + peso(p.price) + '</div>'
+             +      '<div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-55 mt-[3px]">Selling Price</div>'
+             +    '</div>'
+             +    '<div class="text-center">'
+             +      '<div class="text-xl font-extrabold" style="color:' + valueColor + '">' + peso(s.total_cost) + '</div>'
+             +      '<div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-55 mt-[3px]">Ingredient Cost</div>'
+             +    '</div>'
+             +    '<div class="text-center">'
+             +      '<div class="text-xl font-extrabold" style="color:' + valueColor + '">' + s.margin_pct + '%</div>'
+             +      '<div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-55 mt-[3px]">Gross Margin</div>'
+             +    '</div>'
+             +  '</div>';
+    });
+
+    if (!data.ingredients.length) {
+        html += '<div class="text-center py-[30px] opacity-40 text-[13px]">'
+             +  'No recipe ingredients defined yet.</div>';
+    } else {
+        html += '<table class="summary-table"><thead><tr>'
+             +  '<th>Ingredient</th><th>Size</th><th style="text-align:right">Qty</th>'
+             +  '<th style="text-align:right">Unit Cost</th><th style="text-align:right">Line Cost</th>'
+             +  '<th>Primary Supplier</th>'
+             +  '</tr></thead><tbody>';
+
+        data.ingredients.forEach(function (ing) {
+            var supplier = ing.supplier
+                ? '<div class="text-xs">'
+                +   '<div class="font-semibold">' + escapeHtml(ing.supplier.name) + '</div>'
+                +   (ing.supplier.contact_number
+                        ? '<div class="opacity-50 text-[11px]">' + escapeHtml(ing.supplier.contact_number) + '</div>'
+                        : '')
+                + '</div>'
+                : '<span class="text-xs opacity-40 italic">Not linked</span>';
+
+            html += '<tr>'
+                 +  '<td><strong>' + escapeHtml(ing.name) + '</strong></td>'
+                 +  '<td>' + escapeHtml(ing.size) + '</td>'
+                 +  '<td class="num">' + trimNum(ing.quantity_required) + ' ' + escapeHtml(ing.unit) + '</td>'
+                 +  '<td class="num">' + peso(ing.unit_cost) + '</td>'
+                 +  '<td class="num"><strong>' + peso(ing.line_cost) + '</strong></td>'
+                 +  '<td>' + supplier + '</td>'
+                 +  '</tr>';
+        });
+
+        html += '</tbody></table>';
+    }
+
+    var hints = data.sizes.filter(function (s) { return s.suggested_price_65 > 0; });
+    if (hints.length) {
+        html += '<div class="mt-4 p-2.5 px-3.5 rounded-lg bg-[rgba(0,184,148,.07)] border border-[rgba(0,184,148,.2)] text-xs font-semibold text-[#00b894]">Suggested price at 65% margin &mdash; '
+             +  hints.map(function (s) {
+                    return escapeHtml(s.size) + ': ' + peso(s.suggested_price_65);
+                }).join(' &middot; ')
+             +  '</div>';
+    }
+
+    document.getElementById('profile-body').innerHTML = html;
+}
+
+function peso(n) {
+    return '₱' + Number(n).toLocaleString('en-PH', {
+        minimumFractionDigits: 2, maximumFractionDigits: 2
+    });
+}
+
+function trimNum(n) {
+    return parseFloat(Number(n).toFixed(3)).toString();
+}
+
+function escapeHtml(s) {
+    var div = document.createElement('div');
+    div.textContent = s == null ? '' : String(s);
+    return div.innerHTML;
+}
+
+document.getElementById('profile-modal').addEventListener('click', function (e) {
+    if (e.target === this) closeProfile();
+});
 </script>
 
 @endsection

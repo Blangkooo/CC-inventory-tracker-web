@@ -1,456 +1,306 @@
-@extends('layouts.app')
+@extends('layouts.sidebar')
 
 @section('title', 'Dashboard')
 
 @section('content')
-<style>
-    /* ══ DASHBOARD-SPECIFIC STYLES ════════════════════════════════════ */
-    .main-grid {
-        display: grid;
-        grid-template-columns: 1fr 340px;
-        gap: 16px;
-    }
-
-    @media (max-width: 1100px) {
-        .main-grid { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 640px) {
-        .main-grid { gap: 12px; }
-        .group-card__section { padding: 14px 16px; }
-    }
-
-    /* ══ GROUPED CARD ══════════════════════════════════════════════════ */
-    .group-card {
-        background: #fff;
-        border: 1.5px solid var(--border);
-        border-radius: var(--radius);
-        overflow: hidden;
-    }
-
-    .group-card__section {
-        padding: 18px 20px;
-    }
-
-    .group-card__section + .group-card__section {
-        border-top: 1px solid var(--border);
-    }
-
-    /* ══ STAT ITEMS ════════════════════════════════════════════════════ */
-    .stats-row-inline {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 0;
-    }
-
-    .stat-item {
-        padding: 20px 24px;
-        text-align: center;
-    }
-
-    .stat-item + .stat-item {
-        border-left: 1px solid var(--border);
-    }
-
-    .stat-item__label { font-size: 13px; font-weight: 600; opacity: .6; margin-bottom: 8px; }
-    .stat-item__value { font-size: 42px; font-weight: 800; line-height: 1.1; margin-bottom: 8px; color: var(--terra); }
-    .stat-item__trend { font-size: 12px; font-weight: 600; }
-    .stat-item__trend.up { color: #16a34a; }
-    .stat-item__trend.down { color: #dc2626; }
-    .stat-item__trend .vs { opacity: .5; font-weight: 400; }
-
-    /* ══ CHART CARD ════════════════════════════════════════════════════ */
-    .chart-card { padding: 18px 20px; }
-    .chart-card__title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
-    .chart-card__total { font-size: 32px; font-weight: 800; margin-bottom: 2px; }
-    .chart-card__trend { font-size: 11px; font-weight: 600; color: #16a34a; margin-bottom: 14px; }
-    .chart-card__trend .vs { opacity: .5; font-weight: 400; }
-
-    .bar-chart { display: flex; align-items: flex-end; gap: 10px; height: 90px; }
-    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-    .bar {
-        width: 100%; border-radius: 4px 4px 0 0;
-        background: linear-gradient(to top, var(--terra-dk), var(--terra-lt));
-        min-height: 4px;
-    }
-    .bar-col__label { font-size: 9px; font-weight: 600; opacity: .5; white-space: nowrap; }
-
-    /* ══ FLAG SUMMARY ══════════════════════════════════════════════════ */
-    .flag-section__head {
-        display: flex; align-items: center; gap: 16px;
-        margin-bottom: 12px;
-    }
-    .flag-section__title { font-size: 13px; font-weight: 700; }
-
-    .flag-legend { display: flex; gap: 14px; }
-    .flag-legend__item { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 500; opacity: .6; }
-    .flag-legend__dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-
-    .flag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px 12px; }
-    .flag-row {
-        display: flex; align-items: center; gap: 8px;
-        padding: 5px 6px; border-radius: 6px; font-size: 12px; font-weight: 500;
-    }
-    .flag-pip { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-
-    /* ══ PERFORMANCE HEADER ════════════════════════════════════════════ */
-    .perf-header {
-        display: flex; align-items: baseline; gap: 10px;
-        margin: 20px 0 14px;
-    }
-    .perf-header__title { font-size: 18px; font-weight: 800; }
-    .perf-header__sep { color: var(--border); font-weight: 300; }
-    .perf-header__month { font-size: 18px; font-weight: 800; color: var(--terra); }
-
-    /* ══ PERF ROW ══════════════════════════════════════════════════════ */
-    .perf-row-inline {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 0;
-    }
-
-    .perf-item { padding: 16px 18px; }
-    .perf-item + .perf-item { border-left: 1px solid var(--border); }
-
-    .perf-item__label { font-size: 11px; font-weight: 600; opacity: .55; margin-bottom: 6px; }
-    .perf-item__value { font-size: 28px; font-weight: 800; line-height: 1.1; margin-bottom: 4px; }
-    .perf-item__trend { font-size: 11px; font-weight: 600; }
-    .perf-item__trend.up { color: #16a34a; }
-    .perf-item__trend.down { color: #dc2626; }
-    .perf-item__trend .vs { opacity: .5; font-weight: 400; }
-
-    .earner-list { list-style: none; }
-    .earner-list__item {
-        padding: 3px 0; font-size: 12px; font-weight: 500;
-        display: flex; align-items: center; gap: 5px;
-    }
-    .earner-list__num { font-weight: 700; opacity: .35; min-width: 14px; }
-
-    .goal-wrap { display: flex; flex-direction: column; align-items: center; text-align: center; }
-    .goal-circle {
-        width: 80px; height: 80px; border-radius: 50%;
-        position: relative; margin-bottom: 8px;
-        background: conic-gradient(
-            var(--terra) 0deg,
-            var(--terra) calc(var(--pct, 0) * 3.6deg),
-            var(--cream-2) calc(var(--pct, 0) * 3.6deg),
-            var(--cream-2) 360deg
-        );
-    }
-    .goal-circle::after {
-        content: ''; position: absolute; inset: 12px; border-radius: 50%; background: #fff;
-    }
-    .goal-circle__label {
-        position: absolute; inset: 0;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 14px; font-weight: 800; z-index: 1;
-    }
-    .goal-target { font-size: 10px; opacity: .5; font-weight: 500; }
-
-    /* ══ KPI PERFORMANCE ═══════════════════════════════════════════════ */
-    .kpi-card__head {
-        display: flex; align-items: center; justify-content: space-between;
-        margin-bottom: 4px;
-    }
-    .kpi-card__title { font-size: 13px; font-weight: 700; }
-    .kpi-card__year { font-size: 12px; font-weight: 500; opacity: .4; margin-left: 6px; }
-    .kpi-card__trend { font-size: 11px; font-weight: 600; color: #16a34a; margin-bottom: 12px; }
-    .kpi-card__trend .vs { opacity: .5; font-weight: 400; }
-
-    .kpi-dropdown {
-        padding: 4px 10px; border-radius: 6px;
-        border: 1.5px solid var(--border); background: #fff;
-        font-size: 11px; font-weight: 600; color: var(--brown);
-        font-family: var(--font); cursor: pointer;
-    }
-
-    .kpi-bars { display: flex; align-items: flex-end; gap: 5px; height: 120px; }
-    .kpi-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; }
-    .kpi-bar {
-        width: 100%; border-radius: 3px 3px 0 0;
-        background: linear-gradient(to top, var(--terra-dk), var(--terra-lt));
-        min-height: 2px; margin-top: auto;
-    }
-    .kpi-bar-col__label { font-size: 8px; font-weight: 600; opacity: .4; white-space: nowrap; }
-
-    @media (max-width: 1100px) {
-        .stats-row-inline, .perf-row-inline { grid-template-columns: 1fr 1fr; }
-        .flag-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 880px) {
-        .stats-row-inline, .perf-row-inline { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 640px) {
-        .stat-item__value { font-size: 28px; }
-        .perf-item__value { font-size: 22px; }
-        .chart-card__total { font-size: 24px; }
-        .flag-legend { flex-wrap: wrap; gap: 8px; }
-    }
-</style>
-
 @php
-    $fmt = fn($n) => $n >= 1_000_000
-        ? '&#8369;' . number_format($n / 1_000_000, 1) . 'M'
-        : ($n >= 1_000 ? '&#8369;' . number_format($n / 1_000, 1) . 'k' : '&#8369;' . number_format($n));
+    $peso = fn ($n) => '₱' . number_format((float) $n, 2);
 
-    $pctChange = function ($current, $previous) {
-        if ($previous == 0) return $current > 0 ? 100 : 0;
-        return round((($current - $previous) / $previous) * 100, 0);
-    };
-
-    $sevMap   = [];
-    $sevOrder = ['high' => 3, 'medium' => 2, 'low' => 1];
+    // ── Flag summary: worst pending severity per branch ─────────────────
+    $sevRank = ['low' => 1, 'medium' => 2, 'high' => 3];
+    $sevTone = ['high' => 'high', 'medium' => 'med', 'low' => 'low'];
+    $flagged = [];
     foreach ($recent_flags as $f) {
-        $bid = $f->branch_id;
-        if (!isset($sevMap[$bid]) || ($sevOrder[$f->severity] ?? 0) > ($sevOrder[$sevMap[$bid]] ?? 0)) {
-            $sevMap[$bid] = $f->severity;
+        $name = $f->branch->name ?? 'Unassigned';
+        $sev  = $f->severity ?? 'low';
+        if (! isset($flagged[$name]) || ($sevRank[$sev] ?? 0) > ($sevRank[$flagged[$name]] ?? 0)) {
+            $flagged[$name] = $sev;
         }
     }
-    $sevPipColors = ['high' => '#dc2626', 'medium' => '#f97316', 'low' => '#eab308'];
 
-    $revenuePct  = $pctChange($annual_revenue, $lastMonthRevenue);
-    $alertsPct   = $pctChange($pending_alerts, $lastMonthAlerts);
-    $lowStockPct = $pctChange($low_stock_count, $lastMonthLowStock);
+    // ── Rankings ────────────────────────────────────────────────────────
+    $earners  = $top_earners->filter(fn ($b) => (float) ($b->revenue ?? 0) > 0)->values();
+    $leakRows = collect($least_leakage);
 
-    $maxMonthly = max(array_values($monthly_sales ?: [1]));
+    // ── KPI chart ───────────────────────────────────────────────────────
+    $months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    $series = collect($monthly_revenue)->values();
+    $peak   = max((float) $series->max(), 1);
+    $bestIx = $series->search($series->max());
 
-    $revenueGoal    = max($annual_revenue * 1.2, 100_000);
-    $revenueGoalPct = min(100, ($annual_revenue / $revenueGoal) * 100);
-
-    $savedGoal    = max($value_saved * 1.6, 10_000);
-    $savedGoalPct = min(100, ($value_saved / $savedGoal) * 100);
-
-    $maxBranchSale = max(array_merge($branches_with_sales->pluck('today_sales')->toArray(), [1]));
+    // ── Employee Status (shared by the stat card and the branch chart) ──
+    $branchPeak = max(max($employees_by_branch->all() ?: [0]), 1);
+    $activePct  = $employees_total > 0 ? round(($employees_on_shift / $employees_total) * 100) : 0;
 @endphp
 
-<div class="main-grid">
-    {{-- ═══ LEFT COLUMN ═══ --}}
-    <div class="left-col">
+{{-- ══ Headline figures ══ --}}
+<div class="grid grid-cols-1 gap-5 mb-5 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="ncard relative">
+        <div class="absolute top-4 right-4 bg-red-50 rounded-lg p-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-red-600">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349M3.75 21V9.349m0 0a3.001 3.001 0 0 0 3.75-.615A2.993 2.993 0 0 0 9.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 0 0 2.25 1.016c.896 0 1.7-.393 2.25-1.015a3.001 3.001 0 0 0 3.75.614m-16.5 0a3.004 3.004 0 0 1-.621-4.72l1.189-1.19A1.5 1.5 0 0 1 5.378 3h13.243a1.5 1.5 0 0 1 1.06.44l1.19 1.189a3 3 0 0 1-.621 4.72M6.75 18h3.75a.75.75 0 0 0 .75-.75V13.5a.75.75 0 0 0-.75-.75H6.75a.75.75 0 0 0-.75.75v3.75c0 .414.336.75.75.75Z" />
+            </svg>
+        </div>
+        <div class="nstat__label">Total Branches</div>
+        <div class="nstat__value">{{ $total_branches }}</div>
+        <span class="trend__note ml-0">active locations</span>
+    </div>
+    <div class="ncard relative">
+        <div class="absolute top-4 right-4 bg-red-50 rounded-lg p-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-red-600">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+            </svg>
+        </div>
+        <div class="nstat__label">Pending Alerts</div>
+        <div class="nstat__value">{{ $pending_alerts }}</div>
+        @if ($delta_alerts)
+            <span class="trend trend--{{ $delta_alerts['direction'] === 'up' ? 'down' : 'up' }}">
+                {{ $delta_alerts['pct'] }}%{{ $delta_alerts['direction'] === 'up' ? '↑' : '↓' }}
+            </span>
+            <span class="trend__note">vs last month</span>
+        @else
+            <span class="trend__note ml-0">unreviewed discrepancies</span>
+        @endif
+    </div>
+    <div class="ncard relative">
+        <div class="absolute top-4 right-4 bg-red-50 rounded-lg p-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-red-600">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+            </svg>
+        </div>
+        <div class="nstat__label">Low Stock Items</div>
+        <div class="nstat__value">{{ $low_stock_count }}</div>
+        <span class="trend__note ml-0">at or below threshold</span>
+    </div>
+    <div class="ncard relative">
+        <div class="absolute top-4 right-4 bg-red-50 rounded-lg p-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-red-600">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+            </svg>
+        </div>
+        <div class="text-base font-semibold">Employee Status</div>
+        <div class="nstat__value" style="color: var(--color-ink); font-size: 36px;">{{ $employees_on_shift }}</div>
+        <span class="text-[11px] font-semibold" style="color: #0d9488">{{ $activePct }}% active today</span>
 
-        {{-- ── STATS ROW ── --}}
-        <div class="group-card" style="margin-bottom:16px;">
-            <div class="group-card__section" style="padding:0;">
-                <div class="stats-row-inline">
-                    <div class="stat-item">
-                        <div class="stat-item__label">Total Branches</div>
-                        <div class="stat-item__value">{{ $total_branches }}</div>
-                        @if ($lastMonthRevenue > 0)
-                            <div class="stat-item__trend {{ $revenuePct >= 0 ? 'up' : 'down' }}">
-                                {{ abs($revenuePct) }}%
-                                {{ $revenuePct >= 0 ? '&#8593;' : '&#8595;' }}
-                                <span class="vs">vs last month</span>
-                            </div>
-                        @endif
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-item__label">Pending Alerts</div>
-                        <div class="stat-item__value">{{ $pending_alerts }}</div>
-                        <div class="stat-item__trend {{ $alertsPct <= 0 ? 'up' : 'down' }}">
-                            {{ abs($alertsPct) }}%
-                            {{ $alertsPct <= 0 ? '&#8593;' : '&#8595;' }}
-                            <span class="vs">vs last month</span>
-                        </div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-item__label">Low Stock Items</div>
-                        <div class="stat-item__value">{{ $low_stock_count }}</div>
-                        @if ($lastMonthLowStock > 0)
-                            <div class="stat-item__trend {{ $lowStockPct <= 0 ? 'up' : 'down' }}">
-                                {{ abs($lowStockPct) }}%
-                                {{ $lowStockPct <= 0 ? '&#8593;' : '&#8595;' }}
-                                <span class="vs">vs last month</span>
-                            </div>
-                        @endif
-                    </div>
-                </div>
+        @if ($employees_by_branch->isNotEmpty())
+            <div class="mt-3 flex h-[20px] items-end gap-1">
+                @foreach ($employees_by_branch as $label => $count)
+                    <div class="gbar flex-1" style="height: {{ max(3, ($count / $branchPeak) * 18) }}px" title="{{ $label }}: {{ $count }} on shift"></div>
+                @endforeach
             </div>
-        </div>
+        @endif
+    </div>
+</div>
 
-        {{-- ── FLAG SUMMARY ── --}}
-        <div class="group-card" style="margin-bottom:16px;">
-            <div class="group-card__section">
-                <div class="flag-section__head">
-                    <span class="flag-section__title">Recent Flag Summary</span>
-                    <div class="flag-legend">
-                        <span class="flag-legend__item"><span class="flag-legend__dot" style="background:#eab308"></span>Low Importance</span>
-                        <span class="flag-legend__item"><span class="flag-legend__dot" style="background:#f97316"></span>Moderate Importance</span>
-                        <span class="flag-legend__item"><span class="flag-legend__dot" style="background:#dc2626"></span>High Importance</span>
-                    </div>
-                </div>
-                @if ($branches_with_sales->isEmpty())
-                    <div style="font-size:12px;opacity:.35;text-align:center;padding:8px 0;">No flag data yet.</div>
-                @else
-                    <div class="flag-grid">
-                        @foreach ($branches_with_sales as $b)
-                            @php
-                                $flagMatch = $recent_flags->first(fn($f) => $f->branch?->name === $b['name']);
-                                $branchSev = $flagMatch ? ($sevMap[$flagMatch->branch_id] ?? null) : null;
-                                $pip = $branchSev ? ($sevPipColors[$branchSev] ?? '#eab308') : 'rgba(28,25,23,.15)';
-                            @endphp
-                            <div class="flag-row">
-                                <span class="flag-pip" style="background:{{ $pip }}"></span>
-                                <span>{{ $b['name'] }}</span>
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
+{{-- Two columns from 1024px up. Waiting for xl (1280px) left the right-hand
+     rail stacked below on ordinary laptop widths, wasting most of the page. --}}
+<div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_300px]">
+
+    {{-- ══════════ Left column ══════════ --}}
+    <div class="flex flex-col gap-4">
+
+        {{-- Recent Flag Summary --}}
+        <div class="ncard">
+            <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <span class="text-base font-semibold text-accent">Recent Flag Summary</span>
+                <span class="legend">
+                    <span class="dot-item dot-item--low">Low Importance</span>
+                    <span class="dot-item dot-item--med">Moderate Importance</span>
+                    <span class="dot-item dot-item--high">High Importance</span>
+                </span>
             </div>
-        </div>
 
-        {{-- ── PERFORMANCE SUMMARY ── --}}
-        <div class="perf-header">
-            <span class="perf-header__title">Performance Summary</span>
-            <span class="perf-header__sep">|</span>
-            <span class="perf-header__month">{{ now()->format('F') }}</span>
-        </div>
-
-        {{-- Revenue + Top Earner + Goal --}}
-        <div class="group-card" style="margin-bottom:16px;">
-            <div class="group-card__section" style="padding:0;">
-                <div class="perf-row-inline">
-                    <div class="perf-item">
-                        <div class="perf-item__label">Total Revenue</div>
-                        <div class="perf-item__value">{!! $fmt($annual_revenue) !!}</div>
-                        @if ($lastMonthRevenue > 0)
-                            <div class="perf-item__trend up">
-                                {{ abs($revenuePct) }}%
-                                {{ $revenuePct >= 0 ? '&#8593;' : '&#8595;' }}
-                                <span class="vs">vs last month</span>
-                            </div>
-                        @else
-                            <div class="perf-item__trend" style="opacity:.4">No prior data</div>
-                        @endif
-                    </div>
-                    <div class="perf-item">
-                        <div class="perf-item__label">Top Earner</div>
-                        <ol class="earner-list" style="margin-top:4px;">
-                            @forelse ($top_earners as $i => $branch)
-                                <li class="earner-list__item">
-                                    <span class="earner-list__num">{{ $i + 1 }}.</span>
-                                    {{ $branch->name }}
-                                </li>
-                            @empty
-                                <li style="font-size:11px;opacity:.35;padding:4px 0;">No data yet</li>
-                            @endforelse
-                        </ol>
-                    </div>
-                    <div class="perf-item">
-                        <div class="perf-item__label">Goal</div>
-                        <div class="goal-wrap" style="margin-top:4px;">
-                            <div class="goal-circle" style="--pct: {{ round($revenueGoalPct) }}">
-                                <span class="goal-circle__label">{{ round($revenueGoalPct) }}%</span>
-                            </div>
-                            <div class="goal-target">{!! $fmt($revenueGoal) !!}</div>
-                        </div>
-                    </div>
+            @if ($branches_with_sales->isEmpty())
+                <div class="all-clear">No branches on record.</div>
+            @else
+                <div class="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
+                    @foreach ($branches_with_sales as $branch)
+                        @php $sev = $flagged[$branch['name']] ?? null; @endphp
+                        <a href="{{ route('alerts') }}"
+                           class="flex items-center gap-2 text-sm font-semibold hover:text-accent">
+                            {{ $branch['name'] }}
+                            <span class="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                                  style="background: {{ $sev ? 'var(--color-sev-' . ($sevTone[$sev] ?? 'low') . ')' : 'var(--color-ink-3)' }}"></span>
+                        </a>
+                    @endforeach
                 </div>
-            </div>
+            @endif
         </div>
 
-        {{-- Value Saved + Least Leakage + Goal --}}
-        <div class="group-card">
-            <div class="group-card__section" style="padding:0;">
-                <div class="perf-row-inline">
-                    <div class="perf-item">
-                        <div class="perf-item__label">Overall Value Saved</div>
-                        <div class="perf-item__value">{!! $fmt($value_saved) !!}</div>
-                        <div class="perf-item__trend {{ $leakage_pct > 0 ? 'down' : 'up' }}">
-                            {{ number_format($leakage_pct, 0) }}%
-                            {{ $leakage_pct > 0 ? '&#8595;' : '&#8593;' }}
-                            <span class="vs">leakage vs last month</span>
+        <div class="nsection">
+            Performance Summary <span class="nsection__pipe">|</span> {{ now()->format('F') }}
+        </div>
+
+        {{-- Total Revenue --}}
+        <div class="ncard">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div>
+                    <div class="nstat__label">Total Revenue</div>
+                    <div class="nstat__value" style="font-size: 24px;">{{ $peso($annual_revenue) }}</div>
+                    @if ($delta_revenue)
+                        <span class="trend trend--{{ $delta_revenue['direction'] }}">
+                            {{ $delta_revenue['pct'] }}%{{ $delta_revenue['direction'] === 'up' ? '↑' : '↓' }}
+                        </span>
+                        <span class="trend__note">vs last month</span>
+                    @else
+                        <span class="trend__note ml-0">{{ $peso($revenue_this_month) }} this month</span>
+                    @endif
+                </div>
+
+                <div class="md:border-l md:border-line md:pl-4">
+                    <div class="nstat__label mb-1.5">Top Earner</div>
+                    @if ($earners->isEmpty())
+                        <div class="text-sm text-ink-3">No revenue recorded yet.</div>
+                    @else
+                        <div class="rank-list">
+                            @foreach ($earners as $b)
+                                <div class="rank-list__item">
+                                    <span class="flex-1">{{ $b->name }}</span>
+                                    <span class="font-semibold text-accent">{{ $peso($b->revenue) }}</span>
+                                </div>
+                            @endforeach
                         </div>
-                    </div>
-                    <div class="perf-item">
-                        <div class="perf-item__label">Least Leakage</div>
-                        <ol class="earner-list" style="margin-top:4px;">
-                            @forelse ($least_leakage as $i => $item)
-                                <li class="earner-list__item">
-                                    <span class="earner-list__num">{{ $i + 1 }}.</span>
-                                    {{ $item['name'] }}
-                                </li>
-                            @empty
-                                <li style="font-size:11px;opacity:.35;padding:4px 0;">No data yet</li>
-                            @endforelse
-                        </ol>
-                    </div>
-                    <div class="perf-item">
-                        <div class="perf-item__label">Goal</div>
-                        <div class="goal-wrap" style="margin-top:4px;">
-                            <div class="goal-circle" style="--pct: {{ round($savedGoalPct) }}">
-                                <span class="goal-circle__label">{{ round($savedGoalPct) }}%</span>
+                    @endif
+                </div>
+
+                <div class="flex items-center justify-center md:border-l md:border-line md:pl-4">
+                    <div class="goal">
+                        <div class="nstat__label">Share</div>
+                        @php
+                            $topShare = $annual_revenue > 0 && $earners->isNotEmpty() ? (float) $earners->first()->revenue / $annual_revenue : 0;
+                            $sharePercent = round($topShare * 100);
+                        @endphp
+                        <div style="position:relative; width:160px; height:80px; margin: 0 auto;">
+                            <svg viewBox="0 0 160 80" width="160" height="80">
+                                <path d="M 10 80 A 70 70 0 0 1 150 80"
+                                      fill="none" stroke="#e5e7eb" stroke-width="16" stroke-linecap="round"/>
+                                <path d="M 10 80 A 70 70 0 0 1 150 80"
+                                      fill="none" stroke="#c0392b" stroke-width="16" stroke-linecap="round"
+                                      stroke-dasharray="{{ ($sharePercent / 100) * 220 }} 220"/>
+                            </svg>
+                            <div style="position:absolute; bottom:0; width:100%; text-align:center;">
+                                <span style="font-size:20px; font-weight:700; color:#c0392b;">{{ $sharePercent }}%</span>
+                                <div style="font-size:10px; color:#6b7280;">from {{ $earners->first()->name ?? '—' }}</div>
                             </div>
-                            <div class="goal-target">{!! $fmt($savedGoal) !!} in saved value</div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
+        {{-- Overall Value Saved --}}
+        <div class="ncard">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div>
+                    <div class="nstat__label">Overall Value Saved</div>
+                    <div class="nstat__value" style="font-size: 24px;">{{ $peso($value_saved) }}</div>
+                    @if ($delta_leakage)
+                        {{-- Less leakage month-over-month is the good direction. --}}
+                        <span class="trend trend--{{ $delta_leakage['direction'] === 'up' ? 'down' : 'up' }}">
+                            {{ $delta_leakage['pct'] }}%{{ $delta_leakage['direction'] === 'up' ? '↑' : '↓' }}
+                        </span>
+                        <span class="trend__note">leakage vs last month</span>
+                    @else
+                        <span class="trend__note ml-0">from reviewed alerts</span>
+                    @endif
+                </div>
+
+                <div class="md:border-l md:border-line md:pl-4">
+                    <div class="nstat__label mb-1.5">Least Leakage</div>
+                    @if ($leakRows->isEmpty())
+                        <div class="text-sm text-ink-3">No branches to compare yet.</div>
+                    @else
+                        <div class="rank-list">
+                            @foreach ($leakRows->take(6) as $row)
+                                @php $hasAlert = isset($flagged[$row['name']]); @endphp
+                                <div class="rank-list__item">
+                                    <span class="flex-1">{{ $row['name'] }}</span>
+                                    <span class="font-semibold {{ $hasAlert ? 'text-accent-2' : 'text-green' }}">
+                                        {{ $hasAlert ? $peso($row['leak']) : 'Clean' }}
+                                    </span>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+
+                <div class="flex items-center justify-center md:border-l md:border-line md:pl-4">
+                    @php
+                        $cleanCount = $leakRows->where('leak', '<=', 0)->count();
+                        $cleanShare = $leakRows->count() > 0 ? $cleanCount / $leakRows->count() : 0;
+                        $cleanPercent = round($cleanShare * 100);
+                    @endphp
+                    <div class="goal">
+                        <div class="nstat__label">Clean</div>
+                        <div style="position:relative; width:160px; height:80px; margin: 0 auto;">
+                            <svg viewBox="0 0 160 80" width="160" height="80">
+                                <path d="M 10 80 A 70 70 0 0 1 150 80"
+                                      fill="none" stroke="#e5e7eb" stroke-width="16" stroke-linecap="round"/>
+                                <path d="M 10 80 A 70 70 0 0 1 150 80"
+                                      fill="none" stroke="#10b981" stroke-width="16" stroke-linecap="round"
+                                      stroke-dasharray="{{ ($cleanPercent / 100) * 220 }} 220"/>
+                            </svg>
+                            <div style="position:absolute; bottom:0; width:100%; text-align:center;">
+                                <span style="font-size:20px; font-weight:700; color:#10b981;">{{ $cleanPercent }}%</span>
+                                <div style="font-size:10px; color:#6b7280;">{{ $cleanCount }}/{{ $leakRows->count() }} branches</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    {{-- ═══ RIGHT COLUMN ═══ --}}
-    <div class="right-col">
+    {{-- ══════════ Right column ══════════ --}}
+    <div class="flex flex-col gap-4">
 
-        {{-- Employee Status Chart --}}
-        <div class="group-card" style="margin-bottom:20px;">
-            <div class="group-card__section chart-card">
-                <div class="chart-card__title">Employee Status</div>
-                <div class="chart-card__total">{{ $branches_with_sales->where('has_sales', true)->count() }}</div>
-                <div class="chart-card__trend">
-                    {{ round(($branches_with_sales->where('has_sales', true)->count() / max($total_branches, 1)) * 100) }}%
-                    <span class="vs">active today</span>
-                </div>
-                <div class="bar-chart">
-                    @forelse ($branches_with_sales->take(5) as $i => $b)
-                        @php $h = $maxBranchSale > 0 ? max(8, ($b['today_sales'] / $maxBranchSale) * 100) : 8; @endphp
-                        <div class="bar-col">
-                            <div class="bar" style="height: {{ $h }}%"></div>
-                            <div class="bar-col__label">{{ \Illuminate\Support\Str::limit($b['name'], 8) }}</div>
-                        </div>
-                    @empty
-                        <div style="font-size:11px;opacity:.35;text-align:center;width:100%;padding:20px 0;">No branch data</div>
-                    @endforelse
-                </div>
+        {{-- Employee Status --}}
+        <div class="ncard">
+            <div class="flex items-start justify-between mb-1">
+                <span class="text-base font-semibold">Employee Status</span>
+                <span class="text-xs font-semibold text-green">{{ $activePct }}% active today</span>
             </div>
+
+            @if ($employees_by_branch->isEmpty())
+                <div class="all-clear">No branches on record.</div>
+            @else
+                <div class="mt-4 flex h-[70px] items-end gap-3 px-1">
+                    @foreach ($employees_by_branch as $label => $count)
+                        <div class="flex flex-1 flex-col items-center">
+                            <div class="gbar w-full" style="height: {{ max(4, ($count / $branchPeak) * 65) }}px" title="{{ $label }}: {{ $count }} on shift"></div>
+                        </div>
+                    @endforeach
+                </div>
+                <div class="mt-2 flex gap-3 px-1 text-center text-xs font-semibold text-ink-3">
+                    @foreach ($employees_by_branch as $label => $count)
+                        <span class="flex-1 truncate" title="{{ $label }}">{{ $label }}</span>
+                    @endforeach
+                </div>
+            @endif
         </div>
 
         {{-- KPI Performance --}}
-        <div class="group-card">
-            <div class="group-card__section">
-                <div class="kpi-card__head">
-                    <div>
-                        <span class="kpi-card__title">KPI Performance</span>
-                        <span class="kpi-card__year">{{ now()->year }}</span>
-                    </div>
-                    <select class="kpi-dropdown">
-                        <option>Monthly</option>
-                        <option>Weekly</option>
-                    </select>
-                </div>
-                <div class="kpi-card__trend">
-                    {{ abs($revenuePct) }}%
-                    {{ $revenuePct >= 0 ? '&#8593;' : '&#8595;' }}
-                    <span class="vs">vs last month</span>
-                </div>
-                <div class="kpi-bars">
-                    @php
-                        $monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                        $currentMonth = now()->month;
-                    @endphp
-                    @for ($m = 1; $m <= 12; $m++)
-                        @php
-                            $val = $monthly_sales[$m] ?? 0;
-                            $h = $maxMonthly > 0 ? max(3, ($val / $maxMonthly) * 100) : 3;
-                            $isFuture = $m > $currentMonth;
-                        @endphp
-                        <div class="kpi-bar-col">
-                            <div class="kpi-bar" style="height: {{ $isFuture ? 0 : $h }}%; {{ $isFuture ? 'opacity:.15' : '' }}"></div>
-                            <div class="kpi-bar-col__label">{{ $monthLabels[$m - 1] }}</div>
-                        </div>
-                    @endfor
-                </div>
+        <div class="ncard flex-1">
+            <div class="mb-1 flex items-center justify-between">
+                <span class="text-base font-semibold">
+                    KPI Performance <span class="ml-1 text-xs font-medium text-ink-3">{{ now()->year }}</span>
+                </span>
+                <span class="pill-btn">Monthly</span>
+            </div>
+
+            <div class="mt-4 flex h-[110px] items-end gap-1.5">
+                @foreach ($series as $i => $v)
+                    <div class="gbar {{ $i === $bestIx && $peak > 1 ? '' : 'gbar--soft' }} flex-1"
+                         style="height: {{ max(4, ((float) $v / $peak) * 105) }}px"
+                         title="{{ $months[$i] }} — {{ $peso($v) }}"></div>
+                @endforeach
+            </div>
+            <div class="mt-2 flex text-xs text-ink-3">
+                @foreach ($months as $i => $m)
+                    <span class="flex-1 text-center {{ $i === $bestIx && $peak > 1 ? 'font-bold text-accent' : '' }}">{{ $m }}</span>
+                @endforeach
             </div>
         </div>
-
     </div>
 </div>
 @endsection

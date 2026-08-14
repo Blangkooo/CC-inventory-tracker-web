@@ -10,10 +10,10 @@ return new class extends Migration
      * (packaging, utensils, gas, wages) alongside the existing overheads.
      *
      * Laravel's schema builder can't alter an enum in place, so both
-     * directions are raw MODIFY statements — MySQL-only syntax. SQLite (used
-     * by the test suite) never enforced the enum as a real constraint in the
-     * first place, so there is nothing to widen there; skip rather than
-     * error the whole migration run.
+     * directions are raw MODIFY statements — MySQL-only syntax. SQLite
+     * (used by the test suite) never enforced the enum as a real constraint
+     * in the first place, so there is nothing to widen there; skip rather
+     * than error the whole migration run.
      */
     private const NEW = ['rent', 'utilities', 'supplier', 'salary', 'maintenance', 'packaging', 'utensils', 'gas', 'wages', 'other'];
 

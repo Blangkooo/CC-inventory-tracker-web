@@ -1,125 +1,84 @@
-@extends('layouts.app')
+@php
+    if (!isset($branches) || $branches->isEmpty()) {
+        $branches = collect([
+            (object)['id'=>1,'name'=>'QC Main Branch'],
+            (object)['id'=>2,'name'=>'Makati Outlet'],
+            (object)['id'=>3,'name'=>'BGC Branch'],
+        ]);
+    }
+@endphp
+@extends('layouts.sidebar')
 
-@section('title', 'owner legal')
+@section('title', 'Verification')
 
 @section('content')
-<style>
-    .workspace {
-        padding: 20px 32px;
-        max-width: 1200px;
-        margin: 0 auto;
-    }
+@php
+    $badge = [
+        'verified' => 'bg-green/10 text-green',
+        'pending'  => 'bg-orange/20 text-[#a16207]',
+        'missing'  => 'bg-accent-2/10 text-accent-2',
+    ];
 
-    .legal-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
-    }
+    $panels = [
+        [
+            'Business Permits',
+            '<path d="M9 12l2 2 4-4"/><path d="M12 2a10 10 0 1 0 10 10"/>',
+            $branches->map(fn ($b) => [$b->name, 'Verified', 'verified'])->all(),
+        ],
+        [
+            'Document Compliance',
+            '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+            [
+                ['Terms of Service', 'Accepted', 'verified'],
+                ['Data Privacy Agreement', 'Accepted', 'verified'],
+                ['Employee Contracts', 'Pending Review', 'pending'],
+                ['Tax Registration', 'On File', 'verified'],
+            ],
+        ],
+        [
+            'Staff Verification',
+            '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+            [
+                ['Government IDs Collected', 'In Progress', 'pending'],
+                ['Employment Contracts Signed', 'Complete', 'verified'],
+                ['NDA Agreements', 'Not Started', 'missing'],
+            ],
+        ],
+        [
+            'Insurance &amp; Bonds',
+            '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+            [
+                ['Property Insurance', 'Active', 'verified'],
+                ['Liability Coverage', 'Active', 'verified'],
+                ['Cash Bond (Staff)', 'Pending', 'pending'],
+            ],
+        ],
+    ];
+@endphp
 
-    @media (max-width: 900px) {
-        .legal-grid { grid-template-columns: 1fr; }
-    }
+<div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-[22px] font-extrabold uppercase tracking-[.03em]">Verification</h1>
+    <span class="text-[15px] text-ink-3">/ {{ auth()->user()->isOwner() ? 'Owner' : 'Manager' }}</span>
+</div>
 
-    .legal-card {
-        background: #fff;
-        border: 1.5px solid var(--border);
-        border-radius: 16px;
-        padding: 24px;
-    }
+@include('partials._business-tabs', ['active' => 'verification'])
 
-    .legal-card__header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 20px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid var(--border);
-    }
-
-    .legal-card__icon {
-        font-size: 20px;
-    }
-
-    .legal-card__name {
-        font-size: 16px;
-        font-weight: 700;
-        color: var(--brown);
-    }
-
-    .legal-docs {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px 24px;
-    }
-
-    .legal-doc {
-        font-size: 13px;
-        color: var(--terra);
-        cursor: pointer;
-        transition: opacity .15s ease;
-    }
-
-    .legal-doc:hover {
-        opacity: .7;
-        text-decoration: underline;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 40px;
-        color: var(--brown);
-        opacity: .5;
-        font-size: 14px;
-        grid-column: 1 / -1;
-    }
-</style>
-
-<div class="legal-grid">
-    @if(isset($branches) && $branches->isNotEmpty())
-        @foreach($branches as $branch)
-            <div class="legal-card">
-                <div class="legal-card__header">
-                    <span class="legal-card__icon">B</span>
-                    <span class="legal-card__name">{{ $branch->name }}</span>
+<div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+    @foreach ($panels as [$heading, $icon, $rows])
+        <div class="rounded-card border border-line bg-card p-5 shadow-card">
+            <h3 class="mb-3.5 flex items-center gap-2 border-b border-line pb-2.5 text-[13px] font-bold">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{!! $icon !!}</svg>
+                {!! $heading !!}
+            </h3>
+            @forelse ($rows as [$label, $status, $tone])
+                <div class="flex items-center justify-between border-b border-line py-2.5 text-[13px] last:border-b-0">
+                    <span>{{ $label }}</span>
+                    <span class="rounded-full px-2.5 py-[3px] text-[11px] font-semibold {{ $badge[$tone] }}">{{ $status }}</span>
                 </div>
-                <div class="legal-docs">
-                    <a href="#" class="legal-doc">DTIRegistration.pdf</a>
-                    <a href="#" class="legal-doc">BIRRegistration.pdf</a>
-                    <a href="#" class="legal-doc">SECRegistration.pdf</a>
-                    <a href="#" class="legal-doc">LGURegistration.pdf</a>
-                    <a href="#" class="legal-doc">EmploymentContract.pdf</a>
-                    <a href="#" class="legal-doc">NDAAgreement.pdf</a>
-                </div>
-            </div>
-        @endforeach
-    @else
-        {{-- Fallback placeholder data --}}
-        @php
-            $placeholderBusinesses = [
-                ['name' => 'Coffee Shop', 'icon' => 'C'],
-                ['name' => 'Bakery', 'icon' => 'B'],
-                ['name' => 'Frozen Yogurt', 'icon' => 'F'],
-                ['name' => 'Burger Shop', 'icon' => 'BG'],
-                ['name' => 'Printing Shop', 'icon' => 'P'],
-                ['name' => 'Computer Shop', 'icon' => 'CS'],
-            ];
-        @endphp
-        @foreach($placeholderBusinesses as $biz)
-            <div class="legal-card">
-                <div class="legal-card__header">
-                    <span class="legal-card__icon">{{ $biz['icon'] }}</span>
-                    <span class="legal-card__name">{{ $biz['name'] }}</span>
-                </div>
-                <div class="legal-docs">
-                    <a href="#" class="legal-doc">DTIRegistration.pdf</a>
-                    <a href="#" class="legal-doc">BIRRegistration.pdf</a>
-                    <a href="#" class="legal-doc">SECRegistration.pdf</a>
-                    <a href="#" class="legal-doc">LGURegistration.pdf</a>
-                    <a href="#" class="legal-doc">EmploymentContract.pdf</a>
-                    <a href="#" class="legal-doc">NDAAgreement.pdf</a>
-                </div>
-            </div>
-        @endforeach
-    @endif
+            @empty
+                <div class="empty-state">No branches registered.</div>
+            @endforelse
+        </div>
+    @endforeach
 </div>
 @endsection

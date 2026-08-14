@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'quantity_change',
     'quantity_before',
     'quantity_after',
+    'reference_type',
+    'reference_id',
     'user_id',
     'notes',
 ])]

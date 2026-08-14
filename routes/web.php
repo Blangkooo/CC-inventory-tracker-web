@@ -3,11 +3,13 @@
 use App\Http\Controllers\AlertsController;
 use App\Http\Controllers\AuthOnboardingController;
 use App\Http\Controllers\BranchesController;
-use App\Http\Controllers\BusinessRecipesController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\IngredientController;
+use App\Http\Controllers\HiringController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\LegalPapersController;
+use App\Http\Controllers\NoticesController;
 use App\Http\Controllers\PaymentsController;
+use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +22,10 @@ Route::get('/auth/login', [AuthOnboardingController::class, 'showLogin']);
 Route::get('/auth/register/step-1', [AuthOnboardingController::class, 'showRegisterStep1']);
 Route::get('/auth/register/step-2', [AuthOnboardingController::class, 'showRegisterStep2']);
 Route::get('/auth/register/step-3', [AuthOnboardingController::class, 'showRegisterStep3']);
+
+// ── Staff / Worker PIN Login (Branch + Worker ID) ────────────────────
+Route::get('/staff/login', [\App\Http\Controllers\StaffAuthController::class, 'showLogin'])->name('staff.login');
+Route::post('/staff/login', [\App\Http\Controllers\StaffAuthController::class, 'login'])->middleware('throttle:pin-login')->name('staff.login.post');
 
 // ── Path A: Business Owner Onboarding ────────────────────────────────
 Route::get('/auth/register/owner/step-2', [AuthOnboardingController::class, 'showOwnerStep2']);
@@ -39,20 +45,167 @@ Route::post('/login', function () {
 
     if (Auth::attempt($credentials, request()->boolean('remember'))) {
         request()->session()->regenerate();
+
+        if (Auth::user()->isStaff()) {
+            return redirect()->intended(route('staff.dashboard'));
+        }
+
         return redirect()->intended(route('dashboard'));
     }
 
     return back()
         ->withInput(request()->only('email'))
         ->withErrors(['email' => 'These credentials do not match our records.']);
-})->name('login.post');
+})->middleware('throttle:login')->name('login.post');
 
 // ── Authenticated Pages ──────────────────────────────────────────────
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // ── Analytics Page ──────────────────────────────────────────────────
+    // ── Static Pages ──────────────────────────────────────────────────
+    Route::get('/help-center', fn () => view('pages.help-center'))->name('help-center');
+    Route::get('/about', fn () => view('pages.about'))->name('about');
+
+    // ── Mail/Messages ─────────────────────────────────────────────────
+    Route::get('/mail', [NoticesController::class, 'index'])->name('notices.index');
+    Route::post('/mail', [NoticesController::class, 'store'])->name('notices.store');
+    Route::delete('/mail/{notice}', [NoticesController::class, 'destroy'])->name('notices.destroy');
+
+    // ── Calendar (main design — kept as-is, see PR notes) ──────────
+    Route::get('/calendar', function () {
+        $user = auth()->user();
+        $isManager = $user->isManager();
+
+        // Get branches for the meeting form
+        $branches = \App\Models\Branch::when($isManager, fn ($q) => $q->where('id', $user->branch_id))
+            ->orderBy('name')
+            ->get();
+
+        // Get meetings for the current month
+        $meetings = \App\Models\Meeting::with(['branch', 'creator'])
+            ->when($isManager && $user->branch_id, fn ($q) => $q->where('branch_id', $user->branch_id))
+            ->whereMonth('date', now()->month)
+            ->whereYear('date', now()->year)
+            ->orderBy('date')
+            ->orderBy('start_time')
+            ->get();
+
+        // Get meetings for the current week
+        $weekMeetings = \App\Models\Meeting::with(['branch', 'creator'])
+            ->when($isManager && $user->branch_id, fn ($q) => $q->where('branch_id', $user->branch_id))
+            ->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])
+            ->orderBy('date')
+            ->orderBy('start_time')
+            ->get();
+
+        // Get upcoming meetings
+        $upcomingMeetings = \App\Models\Meeting::with(['branch', 'creator'])
+            ->when($isManager && $user->branch_id, fn ($q) => $q->where('branch_id', $user->branch_id))
+            ->where('date', '>=', now()->toDateString())
+            ->orderBy('date')
+            ->orderBy('start_time')
+            ->take(5)
+            ->get();
+
+        // Get days with events for calendar highlighting
+        $eventDays = $meetings->pluck('date')->map(fn($d) => $d->day)->unique()->toArray();
+
+        return view('calendar.index', [
+            'branches' => $branches,
+            'meetings' => $meetings,
+            'weekMeetings' => $weekMeetings,
+            'upcomingMeetings' => $upcomingMeetings,
+            'eventDays' => $eventDays,
+        ]);
+    })->name('calendar');
+
+    // ── Meeting AJAX Endpoints ────────────────────────────────────────
+    Route::post('/calendar/meetings', function (\Illuminate\Http\Request $request) {
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'date' => ['required', 'date'],
+            'start_time' => ['required', 'string', 'max:10'],
+            'end_time' => ['required', 'string', 'max:10'],
+            'meeting_type' => ['nullable', 'in:meeting,task,event'],
+            'location' => ['nullable', 'string', 'max:255'],
+            'branch_id' => ['nullable', 'exists:branches,id'],
+        ]);
+
+        $validated['created_by'] = auth()->id();
+        $validated['status'] = 'scheduled';
+
+        $meeting = \App\Models\Meeting::create($validated);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Meeting created successfully.',
+            'data' => $meeting->load(['branch', 'creator']),
+        ], 201);
+    })->name('calendar.meetings.store');
+
+    Route::delete('/calendar/meetings/{meeting}', function (\App\Models\Meeting $meeting) {
+        $meeting->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Meeting deleted successfully.',
+        ]);
+    })->name('calendar.meetings.delete');
+
+    /*
+     * Everything below is closed to staff. These screens read across the whole
+     * branch (pay rates, expense ledgers, revenue) and the controllers treat
+     * "not a manager" as "may see every branch" — so without this gate a staff
+     * account would see more than a manager, not less.
+     */
+    Route::middleware('role:super_admin,manager')->group(function () {
+        // ── Receipt OCR Scanning + Reconciliation ────────────────────────
+        Route::get('/receipts', [\App\Http\Controllers\ReceiptsController::class, 'index'])->name('receipts.index');
+        Route::post('/receipts', [\App\Http\Controllers\ReceiptsController::class, 'store'])->name('receipts.store');
+
+        // ── Salary ────────────────────────────────────────────────────
+        Route::get('/salary', [SalaryController::class, 'index'])->name('salary.index');
+        Route::post('/salary/payslips', [SalaryController::class, 'generate'])->name('salary.generate');
+        Route::get('/salary/payslips/{payslip}', [SalaryController::class, 'show'])->name('salary.show');
+        Route::post('/salary/payslips/{payslip}/mark-paid', [SalaryController::class, 'markPaid'])->name('salary.mark-paid');
+
+        // ── Payments ──────────────────────────────────────────────────
+        Route::get('/payments', [PaymentsController::class, 'index'])->name('payments.index');
+        Route::post('/payments', [PaymentsController::class, 'store'])->name('payments.store');
+        Route::put('/payments/{payment}', [PaymentsController::class, 'update'])->name('payments.update');
+        Route::post('/payments/{payment}/mark-paid', [PaymentsController::class, 'markPaid'])->name('payments.mark-paid');
+        Route::delete('/payments/{payment}', [PaymentsController::class, 'destroy'])->name('payments.destroy');
+
+        // ── Hiring ────────────────────────────────────────────────────
+        Route::get('/hiring', [HiringController::class, 'index'])->name('hiring.index');
+        Route::post('/hiring/openings', [HiringController::class, 'storeOpening'])->name('hiring.openings.store');
+        Route::put('/hiring/openings/{opening}', [HiringController::class, 'updateOpening'])->name('hiring.openings.update');
+        Route::delete('/hiring/openings/{opening}', [HiringController::class, 'destroyOpening'])->name('hiring.openings.destroy');
+        Route::post('/hiring/openings/{opening}/applicants', [HiringController::class, 'storeApplicant'])->name('hiring.applicants.store');
+        Route::put('/hiring/applicants/{applicant}/status', [HiringController::class, 'updateApplicantStatus'])->name('hiring.applicants.status');
+        Route::delete('/hiring/applicants/{applicant}', [HiringController::class, 'destroyApplicant'])->name('hiring.applicants.destroy');
+
+        // ── Legal Papers ──────────────────────────────────────────────
+        Route::get('/legal-papers', [LegalPapersController::class, 'index'])->name('legal-papers.index');
+        Route::get('/legal-papers/{document}/download', [LegalPapersController::class, 'download'])->name('legal-papers.download');
+    });
+
+    /*
+     * Owner-only: setting what a worker is paid, and adding or removing the
+     * company's legal records, are ownership decisions rather than day-to-day
+     * branch management.
+     */
+    Route::middleware('role:super_admin')->group(function () {
+        Route::put('/salary/workers/{user}/rate', [SalaryController::class, 'updateRate'])->name('salary.rate.update');
+
+        Route::post('/legal-papers', [LegalPapersController::class, 'store'])->name('legal-papers.store');
+        Route::put('/legal-papers/{document}', [LegalPapersController::class, 'update'])->name('legal-papers.update');
+        Route::delete('/legal-papers/{document}', [LegalPapersController::class, 'destroy'])->name('legal-papers.destroy');
+    });
+
+    // ── Analytics + Reports (main design — kept as-is, see PR notes) ─────
     Route::get('/analytics', function () {
         $user = auth()->user();
         $isManager = $user->isManager();
@@ -194,29 +347,6 @@ Route::middleware('auth')->group(function () {
             'inventoryItems' => $inventoryItems,
         ]);
     })->name('analytics');
-    Route::get('/recipes', BusinessRecipesController::class)->name('recipes');
-    Route::get('/business/recipes', BusinessRecipesController::class)->name('business.recipes');
-
-    // ── Recipes CRUD (AJAX endpoints) ─────────────────────────────────
-    Route::get('/business/recipes/product/{product}/data', [BusinessRecipesController::class, 'getProductData'])
-        ->name('business.recipes.product.data');
-    Route::put('/business/recipes/product/{product}', [BusinessRecipesController::class, 'updateProduct'])
-        ->name('business.recipes.product.update');
-    Route::post('/business/recipes/product/{product}/ingredient', [BusinessRecipesController::class, 'addIngredient'])
-        ->name('business.recipes.product.ingredient');
-    Route::put('/business/recipes/ingredient/{recipe}', [BusinessRecipesController::class, 'updateIngredient'])
-        ->name('business.recipes.ingredient.update');
-    Route::post('/business/recipes/ingredient/{recipe}/delete', [BusinessRecipesController::class, 'removeIngredient'])
-        ->name('business.recipes.ingredient.delete');
-    Route::post('/business/recipes/product/{product}/delete', [BusinessRecipesController::class, 'destroyProduct'])
-        ->name('business.recipes.product.delete');
-    Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory');
-    Route::get('/branches', [BranchesController::class, 'index'])->name('branches');
-    Route::post('/branches', [BranchesController::class, 'store'])->name('branches.store');
-    Route::get('/branches/{branch}', [BranchesController::class, 'show'])->whereNumber('branch')->name('branches.show');
-    Route::get('/alerts', [AlertsController::class, 'index'])->name('alerts');
-
-    // ── Reports Page ────────────────────────────────────────────────────
     Route::get('/reports', function () {
         $user = auth()->user();
         $isManager = $user->isManager();
@@ -262,7 +392,33 @@ Route::middleware('auth')->group(function () {
         ]);
     })->name('reports');
 
+    // ── Staff Dashboard (self-service: clock in/out, verify stock) ─────
+    Route::get('/staff/dashboard', [\App\Http\Controllers\StaffDashboardController::class, 'index'])
+        ->name('staff.dashboard');
+    Route::post('/staff/clock-in', [\App\Http\Controllers\StaffDashboardController::class, 'clockIn'])
+        ->name('staff.clock-in');
+    Route::post('/staff/clock-out', [\App\Http\Controllers\StaffDashboardController::class, 'clockOut'])
+        ->name('staff.clock-out');
+    Route::post('/staff/verify-stock', [\App\Http\Controllers\StaffDashboardController::class, 'verifyStock'])
+        ->name('staff.verify-stock');
+    Route::post('/staff/close-shift', [\App\Http\Controllers\StaffDashboardController::class, 'closeShift'])
+        ->name('staff.close-shift');
+    Route::get('/recipes', \App\Http\Controllers\BusinessRecipesController::class)->name('recipes');
+    Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory');
+    Route::get('/branches', [BranchesController::class, 'index'])->name('branches');
+    Route::get('/branches/{branch}', [BranchesController::class, 'show'])->whereNumber('branch')->name('branches.show');
+    Route::get('/alerts', [AlertsController::class, 'index'])->name('alerts');
 
+    // ── Notification inbox (bell dropdown) ───────────────────────────
+    Route::get('/notifications', [\App\Http\Controllers\NotificationsController::class, 'index'])->name('notifications.index');
+    Route::put('/notifications/{notification}/read', [\App\Http\Controllers\NotificationsController::class, 'markRead'])->name('notifications.read');
+
+    // ── Business Pages (static structural placeholders) ───────────────
+    Route::get('/business/recipes', \App\Http\Controllers\BusinessRecipesController::class)
+        ->name('business.recipes');
+
+    Route::get('/business/summary', \App\Http\Controllers\BusinessSummaryController::class)
+        ->name('business.summary');
 
     // ── Workers Page (Staff & Manager listing) ──────────────────────────
     Route::get('/business/workers', function () {
@@ -274,20 +430,13 @@ Route::middleware('auth')->group(function () {
         }
 
         $isManager = $user->isManager();
-        $selectedBranchId = request()->query('branch_id') ? (int) request()->query('branch_id') : null;
 
         $workers = \App\Models\User::whereIn('role', $isManager
                 ? [\App\Models\User::ROLE_STAFF]           // managers see only staff
                 : [\App\Models\User::ROLE_STAFF, \App\Models\User::ROLE_MANAGER]  // super_admins see all
             )
             ->with('branch', 'profile')
-            ->when(true, function ($q) use ($isManager, $user, $selectedBranchId) {
-                if ($selectedBranchId) {
-                    $q->where('branch_id', $selectedBranchId);
-                } elseif ($isManager) {
-                    $q->where('branch_id', $user->branch_id);
-                }
-            })
+            ->when($isManager, fn ($q) => $q->where('branch_id', $user->branch_id))
             ->orderBy('name')
             ->get();
 
@@ -302,9 +451,24 @@ Route::middleware('auth')->group(function () {
             'branches'          => \App\Models\Branch::when($isManager, fn ($q) => $q->where('id', $user->branch_id))->orderBy('name')->get(),
             'workers'           => $workers,
             'openShiftUserIds'  => $openShiftUserIds,
-            'selectedBranchId'  => $selectedBranchId,
         ]);
     })->name('business.workers');
+
+    // ── Recipe CRUD (AJAX endpoints — session auth) ────────────────────
+    Route::get('/business/recipes/product/{product}/data', [\App\Http\Controllers\BusinessRecipesController::class, 'getProductData'])
+        ->name('business.recipes.product.data');
+    Route::get('/business/recipes/product/{product}/profile', [\App\Http\Controllers\BusinessRecipesController::class, 'ingredientProfile'])
+        ->name('business.recipes.product.profile');
+    Route::put('/business/recipes/product/{product}', [\App\Http\Controllers\BusinessRecipesController::class, 'updateProduct'])
+        ->name('business.recipes.product.update');
+    Route::post('/business/recipes/product/{product}/ingredient', [\App\Http\Controllers\BusinessRecipesController::class, 'addIngredient'])
+        ->name('business.recipes.ingredient.add');
+    Route::put('/business/recipes/ingredient/{recipe}', [\App\Http\Controllers\BusinessRecipesController::class, 'updateIngredient'])
+        ->name('business.recipes.ingredient.update');
+    Route::post('/business/recipes/ingredient/{recipe}/delete', [\App\Http\Controllers\BusinessRecipesController::class, 'removeIngredient'])
+        ->name('business.recipes.ingredient.remove');
+    Route::post('/business/recipes/product/{product}/delete', [\App\Http\Controllers\BusinessRecipesController::class, 'destroyProduct'])
+        ->name('business.recipes.product.delete');
 
     // ── Workers CRUD (AJAX endpoints) ───────────────────────────────────
     Route::post('/business/workers', [\App\Http\Controllers\WorkersController::class, 'store'])
@@ -338,19 +502,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/logistics', function () {
         $user = auth()->user();
         $isManager = $user->isManager();
-        $selectedBranchId = request()->query('branch_id') ? (int) request()->query('branch_id') : null;
-
-        $branchScope = function ($query) use ($isManager, $user, $selectedBranchId) {
-            if ($selectedBranchId) {
-                $query->where('branch_id', $selectedBranchId);
-            } elseif ($isManager && $user->branch_id) {
-                $query->where('branch_id', $user->branch_id);
-            }
-        };
 
         // Stock summary with movements for estimated-amount calculation
         $stocks = \App\Models\BranchStock::with('ingredient', 'branch', 'movements')
-            ->when(true, $branchScope)
+            ->when($isManager, fn ($q) => $q->where('branch_id', $user->branch_id))
             ->get();
 
         // Build per-item inventory rows
@@ -382,15 +537,7 @@ Route::middleware('auth')->group(function () {
 
         // Recent stock movements (last 20)
         $recentMovements = \App\Models\StockMovement::with('branchStock.ingredient', 'branchStock.branch', 'user')
-            ->when(true, function ($q) use ($isManager, $user, $selectedBranchId) {
-                $q->whereHas('branchStock', function ($sq) use ($isManager, $user, $selectedBranchId) {
-                    if ($selectedBranchId) {
-                        $sq->where('branch_id', $selectedBranchId);
-                    } elseif ($isManager && $user->branch_id) {
-                        $sq->where('branch_id', $user->branch_id);
-                    }
-                });
-            })
+            ->when($isManager, fn ($q) => $q->whereHas('branchStock', fn ($q) => $q->where('branch_id', $user->branch_id)))
             ->latest()
             ->take(20)
             ->get();
@@ -398,13 +545,13 @@ Route::middleware('auth')->group(function () {
         // Active discrepancy alerts
         $activeAlerts = \App\Models\DiscrepancyAlert::with('branch', 'ingredient')
             ->where('status', 'open')
-            ->when(true, $branchScope)
+            ->when($isManager, fn ($q) => $q->where('branch_id', $user->branch_id))
             ->latest()
             ->get();
 
         // Recent transactions (last 10)
         $recentTransactions = \App\Models\Transaction::with('product', 'branch')
-            ->when(true, $branchScope)
+            ->when($isManager, fn ($q) => $q->where('branch_id', $user->branch_id))
             ->latest()
             ->take(10)
             ->get();
@@ -421,7 +568,6 @@ Route::middleware('auth')->group(function () {
         return view('logistics.index', [
             'tab'                => $tab,
             'branches'           => $branches,
-            'selectedBranchId'   => $selectedBranchId,
             'stockItems'         => $stockItems,
             'stocks'             => $stocks,
             'totalStockItems'    => $totalStockItems,
@@ -431,18 +577,9 @@ Route::middleware('auth')->group(function () {
         ]);
     })->name('logistics');
 
-    // ── Legal page (Document verification) ────────────────────────────
+    // ── Verification page (sub-tab in business/* views) ──────────────
     Route::get('/business/verification', function () {
-        $user = auth()->user();
-        $isManager = $user->isManager();
-
-        $branches = \App\Models\Branch::when($isManager, fn ($q) => $q->where('id', $user->branch_id))
-            ->orderBy('name')
-            ->get();
-
-        return view('business.verification', [
-            'branches' => $branches,
-        ]);
+        return view('business.verification');
     })->name('business.verification');
 
     // ── API Documentation (protected — requires auth) ─────────────────
@@ -454,121 +591,38 @@ Route::middleware('auth')->group(function () {
         return response()->file($path);
     })->name('api.docs');
 
-    // ── Calendar Page ──────────────────────────────────────────────────
-    Route::get('/calendar', function () {
-        $user = auth()->user();
-        $isManager = $user->isManager();
-
-        // Get branches for the meeting form
-        $branches = \App\Models\Branch::when($isManager, fn ($q) => $q->where('id', $user->branch_id))
-            ->orderBy('name')
-            ->get();
-
-        // Get meetings for the current month
-        $meetings = \App\Models\Meeting::with(['branch', 'creator'])
-            ->when($isManager && $user->branch_id, fn ($q) => $q->where('branch_id', $user->branch_id))
-            ->whereMonth('date', now()->month)
-            ->whereYear('date', now()->year)
-            ->orderBy('date')
-            ->orderBy('start_time')
-            ->get();
-
-        // Get meetings for the current week
-        $weekMeetings = \App\Models\Meeting::with(['branch', 'creator'])
-            ->when($isManager && $user->branch_id, fn ($q) => $q->where('branch_id', $user->branch_id))
-            ->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])
-            ->orderBy('date')
-            ->orderBy('start_time')
-            ->get();
-
-        // Get upcoming meetings
-        $upcomingMeetings = \App\Models\Meeting::with(['branch', 'creator'])
-            ->when($isManager && $user->branch_id, fn ($q) => $q->where('branch_id', $user->branch_id))
-            ->where('date', '>=', now()->toDateString())
-            ->orderBy('date')
-            ->orderBy('start_time')
-            ->take(5)
-            ->get();
-
-        // Get days with events for calendar highlighting
-        $eventDays = $meetings->pluck('date')->map(fn($d) => $d->day)->unique()->toArray();
-
-        return view('calendar.index', [
-            'branches' => $branches,
-            'meetings' => $meetings,
-            'weekMeetings' => $weekMeetings,
-            'upcomingMeetings' => $upcomingMeetings,
-            'eventDays' => $eventDays,
-        ]);
-    })->name('calendar');
-
-    // ── Meeting AJAX Endpoints ────────────────────────────────────────
-    Route::post('/calendar/meetings', function (\Illuminate\Http\Request $request) {
-        $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'date' => ['required', 'date'],
-            'start_time' => ['required', 'string', 'max:10'],
-            'end_time' => ['required', 'string', 'max:10'],
-            'meeting_type' => ['nullable', 'in:meeting,task,event'],
-            'location' => ['nullable', 'string', 'max:255'],
-            'branch_id' => ['nullable', 'exists:branches,id'],
-        ]);
-
-        $validated['created_by'] = auth()->id();
-        $validated['status'] = 'scheduled';
-
-        $meeting = \App\Models\Meeting::create($validated);
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Meeting created successfully.',
-            'data' => $meeting->load(['branch', 'creator']),
-        ], 201);
-    })->name('calendar.meetings.store');
-
-    Route::delete('/calendar/meetings/{meeting}', function (\App\Models\Meeting $meeting) {
-        $meeting->delete();
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Meeting deleted successfully.',
-        ]);
-    })->name('calendar.meetings.delete');
-
-    Route::get('/payments', [PaymentsController::class, 'index'])->name('payments');
-    Route::post('/payments', [PaymentsController::class, 'store'])->name('payments.store');
-    Route::put('/payments/{payment}', [PaymentsController::class, 'update'])->name('payments.update');
-    Route::post('/payments/{payment}/mark-paid', [PaymentsController::class, 'markPaid'])->name('payments.mark-paid');
-    Route::delete('/payments/{payment}', [PaymentsController::class, 'destroy'])->name('payments.destroy');
-
-    Route::get('/help', function () {
-        return view('help.index');
-    })->name('help');
-
-    Route::get('/about', function () {
-        return view('about.index');
-    })->name('about');
-
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
+    Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::put('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
     Route::put('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');
     Route::post('/settings/payment-categories', [SettingsController::class, 'addPaymentCategory'])->name('settings.payment-categories.store');
     Route::delete('/settings/payment-categories/{category}', [SettingsController::class, 'removePaymentCategory'])->name('settings.payment-categories.destroy');
 
-    // ── AJAX Branch Data Endpoints ────────────────────────────────────
-    Route::get('/ajax/analytics', [\App\Http\Controllers\BranchDataController::class, 'analytics'])->name('ajax.analytics');
-    Route::get('/ajax/reports', [\App\Http\Controllers\BranchDataController::class, 'reports'])->name('ajax.reports');
-    Route::get('/ajax/workers', [\App\Http\Controllers\BranchDataController::class, 'workers'])->name('ajax.workers');
-    Route::get('/ajax/summary', [\App\Http\Controllers\BranchDataController::class, 'summary'])->name('ajax.summary');
-    Route::get('/ajax/logistics', [\App\Http\Controllers\BranchDataController::class, 'logistics'])->name('ajax.logistics');
-    Route::get('/ajax/branches', [\App\Http\Controllers\BranchDataController::class, 'branches'])->name('ajax.branches');
+    // ── Pricing Simulator ─────────────────────────────────────────────
+    Route::get('/pricing', [\App\Http\Controllers\PricingController::class, 'index'])
+        ->name('pricing.index');
+    Route::get('/pricing/simulate', [\App\Http\Controllers\PricingController::class, 'simulate'])
+        ->name('pricing.simulate');
 
-    // ── Ingredient Management ───────────────────────────────────────────
-    Route::get('/ingredients', [IngredientController::class, 'index'])->name('ingredients');
-    Route::post('/ingredients', [IngredientController::class, 'store'])->name('ingredients.store');
-    Route::put('/ingredients/{ingredient}', [IngredientController::class, 'update'])->name('ingredients.update');
-    Route::delete('/ingredients/{ingredient}', [IngredientController::class, 'destroy'])->name('ingredients.destroy');
+    // ── Supplier Directory (owner/manager only — pricing data) ─────────
+    Route::middleware('role:super_admin,manager')->group(function () {
+        Route::get('/suppliers', [\App\Http\Controllers\SupplierController::class, 'index'])
+            ->name('suppliers.index');
+        Route::post('/suppliers', [\App\Http\Controllers\SupplierController::class, 'store'])
+            ->name('suppliers.store');
+        Route::get('/suppliers/{supplier}', [\App\Http\Controllers\SupplierController::class, 'show'])
+            ->name('suppliers.show');
+        Route::put('/suppliers/{supplier}', [\App\Http\Controllers\SupplierController::class, 'update'])
+            ->name('suppliers.update');
+        Route::delete('/suppliers/{supplier}', [\App\Http\Controllers\SupplierController::class, 'destroy'])
+            ->name('suppliers.destroy');
+        Route::post('/suppliers/{supplier}/ingredients', [\App\Http\Controllers\SupplierController::class, 'linkIngredient'])
+            ->name('suppliers.link-ingredient');
+        Route::delete('/suppliers/{supplier}/ingredients/{ingredient}', [\App\Http\Controllers\SupplierController::class, 'unlinkIngredient'])
+            ->name('suppliers.unlink-ingredient');
+        Route::post('/suppliers/{supplier}/purchases', [\App\Http\Controllers\SupplierController::class, 'addPurchase'])
+            ->name('suppliers.add-purchase');
+    });
 });
 
 // ── Logout ───────────────────────────────────────────────────────────

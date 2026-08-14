@@ -96,6 +96,8 @@
         .content-subtitle { font-size: 13px; color: var(--text-2); margin-top: 2px; }
         .content-date { font-size: 13px; color: var(--text-2); font-weight: 500; }
 
+        /* Top navigation pills removed per user request */
+
         /* Shared components (.card, .badge, .btn-primary, .data-table, …)
            now live in resources/css/app.css. */
         .card__link { font-size: 12px; font-weight: 600; color: var(--accent); text-decoration: none; }
@@ -122,6 +124,7 @@
     $initials = collect(explode(' ', $user->name))->map(fn($w) => strtoupper($w[0] ?? ''))->take(2)->join('');
     $roleName = $user->isSuperAdmin() ? 'Owner' : ($user->isManager() ? 'Manager' : 'Staff');
     $pendingAlertCount = \App\Models\DiscrepancyAlert::where('status', 'pending')->count();
+    $pendingApplicantCount = \App\Models\JobApplicant::where('status', 'applied')->count();
     $currentRoute = request()->route()?->getName() ?? '';
 
     // Mirrors the route middleware. The gate is enforced server-side; hiding
@@ -130,16 +133,9 @@
     $canSeeFinancials = $user->hasRole(\App\Models\User::ROLE_SUPER_ADMIN, \App\Models\User::ROLE_MANAGER);
 @endphp
 
-{{--
-    Adapted for the main branch's actual route set (payments-integration
-    worktree only). tailwind-migration's sidebar links to Salary/Hiring/
-    Legal Papers/Mail routes that don't exist here — those links are
-    dropped rather than left dangling on a route() call that would 500.
---}}
 <aside class="sidebar">
     <div class="sidebar__brand">
-        <div class="sidebar__brand-icon">📦</div>
-        <span class="sidebar__brand-text">InvenTrack</span>
+        <img src="{{ asset('images/logo.svg') }}" alt="InvenTrack" style="height: 32px; width: auto;">
     </div>
 
     <nav class="sidebar__nav">
@@ -153,7 +149,7 @@
             Calendar
         </a>
         @endif
-        <a href="{{ route('recipes') }}" class="sidebar__link {{ $currentRoute === 'recipes' ? 'is-active' : '' }}">
+        <a href="{{ route('business.recipes') }}" class="sidebar__link {{ str_starts_with($currentRoute, 'business') && $currentRoute !== 'business.workers' ? 'is-active' : '' }}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
             Business
         </a>
@@ -164,11 +160,19 @@
         </a>
 
         <div class="sidebar__divider"></div>
-        <a href="{{ route('payments') }}" class="sidebar__link {{ str_starts_with($currentRoute, 'payments') ? 'is-active' : '' }}">
+        <a href="{{ route('payments.index') }}" class="sidebar__link {{ str_starts_with($currentRoute, 'payments') ? 'is-active' : '' }}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
             Payments
         </a>
-        <a href="{{ route('analytics') }}" class="sidebar__link {{ $currentRoute === 'analytics' ? 'is-active' : '' }}">
+        <a href="{{ route('receipts.index') }}" class="sidebar__link {{ str_starts_with($currentRoute, 'receipts') ? 'is-active' : '' }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>
+            Receipts
+        </a>
+        <a href="{{ route('salary.index') }}" class="sidebar__link {{ str_starts_with($currentRoute, 'salary') ? 'is-active' : '' }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+            Salary
+        </a>
+        <a href="{{ route('analytics') }}" class="sidebar__link {{ str_starts_with($currentRoute, 'analytics') ? 'is-active' : '' }}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
             Analytics
         </a>
@@ -178,20 +182,27 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
             Employees
         </a>
-        <a href="{{ route('business.verification') }}" class="sidebar__link {{ $currentRoute === 'business.verification' ? 'is-active' : '' }}">
+        <a href="{{ route('hiring.index') }}" class="sidebar__link {{ str_starts_with($currentRoute, 'hiring') ? 'is-active' : '' }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            Hiring
+            @if ($pendingApplicantCount > 0)
+                <span class="badge-count">{{ $pendingApplicantCount }}</span>
+            @endif
+        </a>
+        <a href="{{ route('legal-papers.index') }}" class="sidebar__link {{ str_starts_with($currentRoute, 'legal-papers') ? 'is-active' : '' }}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M12 22V12"/><path d="M3 7l9 5 9-5"/></svg>
-            Legal
+            Legal Papers
         </a>
         @endif
 
         <div class="sidebar__divider"></div>
-        <a href="{{ route('branches') }}" class="sidebar__link {{ $currentRoute === 'branches' ? 'is-active' : '' }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
-            Businesses
-        </a>
         <a href="{{ route('settings') }}" class="sidebar__link {{ $currentRoute === 'settings' ? 'is-active' : '' }}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             Settings
+        </a>
+        <a href="{{ route('notices.index') }}" class="sidebar__link {{ str_starts_with($currentRoute, 'notices') ? 'is-active' : '' }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Mail/Messages
         </a>
     </nav>
 
@@ -218,14 +229,22 @@
     <header class="topbar">
         <div class="topbar__title">@yield('title', 'Dashboard')</div>
 
+
+
         <div class="topbar__actions">
             <a href="{{ route('alerts') }}" class="topbar__icon" title="Help">
                 <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </a>
-            <a href="{{ route('alerts') }}" class="topbar__icon" title="{{ $pendingAlertCount }} pending alerts">
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                @if ($pendingAlertCount > 0)<span class="dot"></span>@endif
-            </a>
+            <div class="relative">
+                <button type="button" class="topbar__icon" id="notifBellBtn" title="Notifications" onclick="toggleNotifDropdown()">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    <span id="notifDot" class="dot" style="display:none"></span>
+                </button>
+                <div id="notifDropdown" class="card p-0" style="display:none;position:absolute;right:0;top:calc(100% + 8px);width:340px;max-height:400px;overflow-y:auto;z-index:200;">
+                    <div id="notifList" class="p-3 text-[12px] text-ink-3">Loading…</div>
+                    <a href="{{ route('alerts') }}" class="flex items-center justify-center py-2.5 text-[12px] font-semibold text-accent no-underline hover:underline border-t border-line">View all alerts</a>
+                </div>
+            </div>
 
             <span class="topbar__divider"></span>
 
@@ -254,6 +273,68 @@
         @yield('content')
     </div>
 </div>
+
+<script>
+    (function () {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        const dropdown = document.getElementById('notifDropdown');
+        const list = document.getElementById('notifList');
+        const dot = document.getElementById('notifDot');
+
+        function escapeHtml(s) {
+            const div = document.createElement('div');
+            div.textContent = s ?? '';
+            return div.innerHTML;
+        }
+
+        function renderNotifications(data) {
+            dot.style.display = data.unread_count > 0 ? '' : 'none';
+
+            if (data.notifications.length === 0) {
+                list.innerHTML = '<div class="p-3 text-[12px] text-ink-3">No notifications yet.</div>';
+                return;
+            }
+
+            list.innerHTML = data.notifications.map(n => `
+                <div class="px-3 py-2.5 border-b border-line ${n.read_at ? 'opacity-55' : ''} cursor-pointer hover:bg-accent-light"
+                     onclick="markNotifRead(${n.id}, this)">
+                    <div class="text-[12.5px] font-bold">${escapeHtml(n.title)}</div>
+                    <div class="text-[11.5px] text-ink-2 mt-0.5">${escapeHtml(n.message)}</div>
+                </div>
+            `).join('');
+        }
+
+        // One fetch on page load covers both the dot state and the dropdown's
+        // contents — no need for a second round-trip when the bell is clicked.
+        fetch('{{ route('notifications.index') }}', { headers: { 'Accept': 'application/json' } })
+            .then(res => res.json())
+            .then(renderNotifications)
+            .catch(() => { list.innerHTML = '<div class="p-3 text-[12px] text-red-600">Failed to load notifications.</div>'; });
+
+        window.toggleNotifDropdown = function () {
+            dropdown.style.display = dropdown.style.display !== 'none' ? 'none' : '';
+        };
+
+        window.markNotifRead = function (id, el) {
+            fetch(`{{ url('/notifications') }}/${id}/read`, {
+                method: 'PUT',
+                headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+            }).then(res => {
+                if (res.ok) {
+                    el.classList.add('opacity-55');
+                    const remaining = list.querySelectorAll('div:not(.opacity-55)').length;
+                    dot.style.display = remaining > 0 ? '' : 'none';
+                }
+            });
+        };
+
+        document.addEventListener('click', function (e) {
+            if (!dropdown.contains(e.target) && e.target.id !== 'notifBellBtn' && !document.getElementById('notifBellBtn').contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+    })();
+</script>
 
 </body>
 </html>

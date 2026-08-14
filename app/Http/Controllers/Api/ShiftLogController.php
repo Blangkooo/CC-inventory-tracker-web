@@ -49,6 +49,16 @@ class ShiftLogController extends Controller
             return response()->json(['message' => 'Shift already closed.'], 409);
         }
 
+        // This shift was opened via /shifts/open with real per-ingredient counts
+        // pending reconciliation — ending it here would mark it closed without
+        // ever recording closing counts or running variance detection, silently
+        // losing that reconciliation forever. Route it through /shifts/close.
+        if ($shiftLog->stockCounts()->exists()) {
+            return response()->json([
+                'message' => 'This shift has stock counts pending reconciliation — close it via /shifts/close instead.',
+            ], 422);
+        }
+
         $shiftLog->update([
             'shift_end' => $validated['time_out'] ?? now(),
             'status' => 'closed',
