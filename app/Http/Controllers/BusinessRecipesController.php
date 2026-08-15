@@ -26,11 +26,15 @@ class BusinessRecipesController extends Controller
 
         $categories = Product::distinct()->pluck('category')->filter()->values();
 
-        $products = Product::with('recipes.ingredient')
+        $products = Product::with('recipes.ingredient.suppliers')
             ->orderBy('name')
             ->get();
 
         $this->markAvailability($products, $branches->pluck('id'));
+
+        foreach ($products as $product) {
+            $product->cost_breakdown = $this->costBreakdown($product)['sizes'];
+        }
 
         $allIngredients = Ingredient::orderBy('name')->get();
 
@@ -167,17 +171,40 @@ class BusinessRecipesController extends Controller
     {
         $product->load('recipes.ingredient.suppliers');
 
+        $breakdown = $this->costBreakdown($product);
+
+        return response()->json([
+            'product' => [
+                'id' => $product->id,
+                'name' => $product->name,
+                'category' => $product->category,
+                'price' => (float) $product->price,
+            ],
+            'ingredients' => $breakdown['ingredients'],
+            'sizes' => $breakdown['sizes'],
+        ]);
+    }
+
+    /**
+     * Ingredient cost + margin, per recipe size, shared by the ingredient-profile
+     * drill-down and the recipe table's inline cost column — one source of truth.
+     * Requires 'recipes.ingredient.suppliers' to already be eager-loaded.
+     *
+     * @return array{ingredients: \Illuminate\Support\Collection, sizes: \Illuminate\Support\Collection}
+     */
+    private function costBreakdown(Product $product): array
+    {
         $ingredients = $product->recipes->map(function ($recipe) {
             $ingredient = $recipe->ingredient;
-            $primarySupplier = $ingredient->suppliers->firstWhere('pivot.is_primary', true);
+            $primarySupplier = $ingredient?->suppliers->firstWhere('pivot.is_primary', true);
 
             $unitCost = $primarySupplier?->pivot?->unit_cost ?? 0;
             $lineCost = $unitCost * (float) $recipe->quantity_required;
 
             return [
-                'ingredient_id' => $ingredient->id,
-                'name' => $ingredient->name,
-                'unit' => $ingredient->unit,
+                'ingredient_id' => $ingredient?->id,
+                'name' => $ingredient?->name,
+                'unit' => $ingredient?->unit,
                 'size' => $recipe->size,
                 'quantity_required' => (float) $recipe->quantity_required,
                 'unit_cost' => (float) $unitCost,
@@ -190,30 +217,23 @@ class BusinessRecipesController extends Controller
             ];
         });
 
-        $price = (float) $product->price;
-
-        // A serving is one size or the other — never both, so cost is summed per size.
-        $sizes = $ingredients->groupBy('size')->map(function ($lines, $size) use ($price) {
+        // A serving is one size or the other — never both, so cost is summed per size,
+        // against that size's own selling price (Large sizes use price_large, not price).
+        $sizes = $ingredients->groupBy('size')->map(function ($lines, $size) use ($product) {
             $totalCost = round($lines->sum('line_cost'), 2);
+            $price = $product->priceForSize($size);
 
             return [
                 'size' => $size,
                 'total_cost' => $totalCost,
+                'price' => $price,
+                'profit' => round($price - $totalCost, 2),
                 'margin_pct' => $price > 0 ? round((($price - $totalCost) / $price) * 100, 1) : 0,
                 'suggested_price_65' => $totalCost > 0 ? round($totalCost / 0.35, 2) : 0,
             ];
         })->values();
 
-        return response()->json([
-            'product' => [
-                'id' => $product->id,
-                'name' => $product->name,
-                'category' => $product->category,
-                'price' => $price,
-            ],
-            'ingredients' => $ingredients,
-            'sizes' => $sizes,
-        ]);
+        return ['ingredients' => $ingredients, 'sizes' => $sizes];
     }
 
     /**

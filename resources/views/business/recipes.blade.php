@@ -223,6 +223,20 @@
                 </table>
             @endif
 
+            @if (!empty($product->cost_breakdown) && $product->cost_breakdown->isNotEmpty())
+                <div class="flex flex-wrap gap-x-6 gap-y-1.5 px-6 py-3 border-t border-line bg-[rgba(92,45,27,.015)] text-[11.5px]">
+                    @foreach ($product->cost_breakdown as $sizeRow)
+                        @php $marginColor = $sizeRow['margin_pct'] >= 40 ? 'text-green-600' : ($sizeRow['margin_pct'] >= 0 ? 'text-amber-600' : 'text-red-600'); @endphp
+                        <div class="flex items-center gap-2.5">
+                            <span class="font-bold uppercase tracking-[.04em] opacity-45">{{ ucfirst($sizeRow['size']) }}</span>
+                            <span class="opacity-70">Cost <strong class="font-semibold">&#8369;{{ number_format($sizeRow['total_cost'], 2) }}</strong></span>
+                            <span class="opacity-70">Profit <strong class="font-semibold {{ $marginColor }}">&#8369;{{ number_format($sizeRow['profit'], 2) }}</strong></span>
+                            <span class="opacity-70">Margin <strong class="font-semibold {{ $marginColor }}">{{ $sizeRow['margin_pct'] }}%</strong></span>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
             <div class="flex items-center gap-3 justify-end px-6 py-3.5 border-t border-line bg-[rgba(92,45,27,.02)]">
                 <span class="text-xs font-semibold opacity-60 mr-auto">{{ $product->recipes->count() }} ingredient{{ $product->recipes->count() !== 1 ? 's' : '' }}</span>
                 <button class="px-5 py-[7px] bg-accent text-white border-[1.5px] border-accent rounded-lg text-xs font-semibold cursor-pointer font-sans transition-all duration-150 hover:brightness-[.92]" onclick="openProfile({{ $product->id }})">Profile</button>
@@ -750,7 +764,7 @@ function renderProfile(data) {
         html += '<div class="section-label mb-2">' + escapeHtml(s.size) + '</div>'
              +  '<div class="grid grid-cols-3 gap-3 p-[18px] mb-5 bg-accent-light border border-line border-t-[3px] rounded-xl" style="border-top-color:' + valueColor + '">'
              +    '<div class="text-center">'
-             +      '<div class="text-xl font-extrabold" style="color:' + valueColor + '">' + peso(p.price) + '</div>'
+             +      '<div class="text-xl font-extrabold" style="color:' + valueColor + '">' + peso(s.price) + '</div>'
              +      '<div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-55 mt-[3px]">Selling Price</div>'
              +    '</div>'
              +    '<div class="text-center">'
