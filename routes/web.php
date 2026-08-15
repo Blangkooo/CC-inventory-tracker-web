@@ -419,6 +419,7 @@ Route::middleware('auth')->group(function () {
     // ── Notification inbox (bell dropdown) ───────────────────────────
     Route::get('/notifications', [\App\Http\Controllers\NotificationsController::class, 'index'])->name('notifications.index');
     Route::put('/notifications/{notification}/read', [\App\Http\Controllers\NotificationsController::class, 'markRead'])->name('notifications.read');
+    Route::put('/notifications/read-all', [\App\Http\Controllers\NotificationsController::class, 'markAllRead'])->name('notifications.read-all');
 
     // ── Business Pages (static structural placeholders) ───────────────
     Route::get('/business/recipes', \App\Http\Controllers\BusinessRecipesController::class)

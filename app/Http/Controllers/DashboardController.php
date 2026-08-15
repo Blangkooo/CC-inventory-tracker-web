@@ -5,16 +5,20 @@ namespace App\Http\Controllers;
 use App\Models\Branch;
 use App\Models\BranchStock;
 use App\Models\DiscrepancyAlert;
-use App\Models\Product;
 use App\Models\ShiftLog;
 use App\Models\ShiftStockCount;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\DiscrepancyValueCalculator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
+    public function __construct(private DiscrepancyValueCalculator $valueCalculator)
+    {
+    }
+
     public function index(): View
     {
         $user = auth()->user();
@@ -92,7 +96,34 @@ class DashboardController extends Controller
             ->get()
             ->mapWithKeys(fn ($b) => [$b->name => (int) ($onShiftByBranch[$b->id] ?? 0)]);
 
+        // ── Branch Health Summary ──────────────────────────────────────
+        // A branch shows a warning if it has any pending discrepancy alert
+        // — the simplest defensible rule, not an invented percentage.
+        $alertsByBranch = DiscrepancyAlert::where('status', 'pending')
+            ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
+            ->selectRaw('branch_id, COUNT(*) as c')
+            ->groupBy('branch_id')
+            ->pluck('c', 'branch_id');
+
+        $lowStockByBranch = BranchStock::where('current_quantity', '<=', DB::raw('min_threshold'))
+            ->where('min_threshold', '>', 0)
+            ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
+            ->selectRaw('branch_id, COUNT(*) as c')
+            ->groupBy('branch_id')
+            ->pluck('c', 'branch_id');
+
+        $branchHealth = Branch::when($isManager, fn ($q) => $q->where('id', $branchId))
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($b) => [
+                'name' => $b->name,
+                'pending_alerts' => (int) ($alertsByBranch[$b->id] ?? 0),
+                'low_stock_count' => (int) ($lowStockByBranch[$b->id] ?? 0),
+                'is_warning' => (int) ($alertsByBranch[$b->id] ?? 0) > 0,
+            ]);
+
         return view('dashboard', [
+            'branch_health' => $branchHealth,
             // Workforce headline. Resignations and employment type (full/part
             // time) are not in the schema, so the third tile uses role — the
             // workforce split we can actually report.
@@ -153,7 +184,7 @@ class DashboardController extends Controller
                     ->when($isManager, fn ($q) => $q->whereHas('shiftLog', fn ($q2) => $q2->where('branch_id', $branchId)))
                     ->sum(DB::raw('ABS(variance)')) / $expectedTotal * 100
                 : 0,
-            'value_saved' => $this->estimatedValueSaved($isManager, $branchId),
+            'value_saved' => $this->valueCalculator->estimatedValueSaved($isManager, $branchId),
 
             'flag_counts' => DiscrepancyAlert::where('status', 'pending')
                 ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
@@ -211,37 +242,5 @@ class DashboardController extends Controller
             'pct' => round(abs($pct), 1),
             'direction' => $pct >= 0 ? 'up' : 'down',
         ];
-    }
-
-    /**
-     * Estimated peso value of leakage that was caught and acted on
-     * (alerts marked reviewed/dismissed). No ingredient cost data exists,
-     * so each ingredient's unit value is pro-rated from product prices:
-     * price / total recipe quantity, averaged across products using it.
-     */
-    private function estimatedValueSaved(bool $isManager, ?int $branchId): float
-    {
-        $unitValues = [];
-
-        Product::with('recipes')->get()->each(function ($product) use (&$unitValues) {
-            $totalQty = $product->recipes->sum('quantity_required');
-
-            if ($totalQty <= 0) {
-                return;
-            }
-
-            foreach ($product->recipes as $recipe) {
-                $unitValues[$recipe->ingredient_id][] = (float) $product->price / $totalQty;
-            }
-        });
-
-        $avgUnitValue = array_map(fn ($values) => array_sum($values) / count($values), $unitValues);
-
-        return DiscrepancyAlert::whereIn('status', ['reviewed', 'dismissed'])
-            ->whereNotNull('ingredient_id')
-            ->whereNotNull('variance')
-            ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
-            ->get()
-            ->sum(fn ($alert) => abs((float) $alert->variance) * ($avgUnitValue[$alert->ingredient_id] ?? 0));
     }
 }

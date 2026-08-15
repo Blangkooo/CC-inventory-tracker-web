@@ -36,4 +36,14 @@ class NotificationsController extends Controller
 
         return response()->json(['success' => true, 'notification' => $notification]);
     }
+
+    public function markAllRead(Request $request): JsonResponse
+    {
+        $request->user()
+            ->alertNotifications()
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+
+        return response()->json(['success' => true]);
+    }
 }
