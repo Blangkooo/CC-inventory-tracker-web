@@ -519,12 +519,9 @@
                         </tr>
                     </thead>
                     <tbody id="activityTableBody">
-                        <tr><td colspan="5" class="text-center py-6 px-5">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="block mx-auto mb-2 opacity-25 text-[#5C2D1B]">
-                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                </svg>
-                <span class="font-semibold opacity-45 text-[13px]">Loading activity data…</span>
-            </td></tr>
+                        @for ($i = 0; $i < 3; $i++)
+                        <tr><td colspan="5" class="py-2.5 px-5"><div class="skeleton skeleton--text" style="margin-bottom:0"></div></td></tr>
+                        @endfor
                     </tbody>
                 </table>
             </div>
@@ -555,14 +552,9 @@
                     </tr>
                 </thead>
                 <tbody id="attendanceBody">
-                    <tr>
-                        <td colspan="5" class="text-center py-6 px-5">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="block mx-auto mb-2 opacity-25 text-[#5C2D1B]">
-                                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                            </svg>
-                            <span class="font-semibold opacity-45 text-[13px]">Loading attendance data…</span>
-                        </td>
-                    </tr>
+                    @for ($i = 0; $i < 3; $i++)
+                    <tr><td colspan="5" class="py-2.5 px-5"><div class="skeleton skeleton--text" style="margin-bottom:0"></div></td></tr>
+                    @endfor
                 </tbody>
             </table>
         </div>
@@ -1107,15 +1099,7 @@
         const tbody = document.getElementById('attendanceBody');
         const nameSpan = document.getElementById('attendanceName');
 
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="5" style="text-align:center;opacity:.4;padding:20px;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 8px;opacity:.3">
-                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                    Loading attendance…
-                </td>
-            </tr>`;
+        tbody.innerHTML = Array.from({length: 3}).map(() => '<tr><td colspan="5" class="py-2.5 px-5"><div class="skeleton skeleton--text" style="margin-bottom:0"></div></td></tr>').join('');
 
         try {
             const response = await fetch('{{ url('/business/workers') }}/' + workerId + '/attendance', {
@@ -1658,7 +1642,7 @@
 
     async function loadActivity(workerId, type) {
         const tbody = document.getElementById('activityTableBody');
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;opacity:.4;padding:20px;">Loading…</td></tr>';
+        tbody.innerHTML = Array.from({length: 3}).map(() => '<tr><td colspan="5" class="py-2.5 px-5"><div class="skeleton skeleton--text" style="margin-bottom:0"></div></td></tr>').join('');
         try {
             const res = await fetch('{{ url("/business/workers") }}/' + workerId + '/activity?type=' + type, {
                 headers: { 'Accept': 'application/json' }

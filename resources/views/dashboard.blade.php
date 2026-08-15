@@ -157,7 +157,10 @@
                 <div class="md:border-l md:border-line md:pl-4">
                     <div class="nstat__label mb-1.5">Top Earner</div>
                     @if ($earners->isEmpty())
-                        <div class="text-sm text-ink-3">No revenue recorded yet.</div>
+                        <div class="flex items-center gap-2 text-sm text-ink-3">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 opacity-60"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            No revenue recorded yet.
+                        </div>
                     @else
                         <div class="rank-list">
                             @foreach ($earners as $b)
@@ -215,7 +218,10 @@
                 <div class="md:border-l md:border-line md:pl-4">
                     <div class="nstat__label mb-1.5">Least Leakage</div>
                     @if ($leakRows->isEmpty())
-                        <div class="text-sm text-ink-3">No branches to compare yet.</div>
+                        <div class="flex items-center gap-2 text-sm text-ink-3">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 opacity-60"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                            No branches to compare yet.
+                        </div>
                     @else
                         <div class="rank-list">
                             @foreach ($leakRows->take(6) as $row)

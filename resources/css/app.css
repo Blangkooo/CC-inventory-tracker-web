@@ -162,6 +162,24 @@
     .avatar-md { width: 34px; height: 34px; font-size: 12px; }
     .avatar-lg { width: 56px; height: 56px; font-size: 20px; }
 
+    /* Loading skeleton — was defined in an orphaned, never-included partial
+       (partials/_shared-styles.blade.php); moved here so it actually loads. */
+    .skeleton {
+        background: linear-gradient(90deg, var(--color-line) 25%, var(--color-surface-2) 50%, var(--color-line) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-shimmer 1.5s ease-in-out infinite;
+        border-radius: 6px;
+    }
+    .skeleton--text { height: 14px; margin-bottom: 8px; }
+    .skeleton--title { height: 22px; width: 60%; margin-bottom: 12px; }
+    .skeleton--avatar { width: 40px; height: 40px; border-radius: 50%; }
+    .skeleton--card { height: 120px; border-radius: var(--radius-card); }
+    .skeleton--btn { height: 36px; width: 100px; border-radius: 8px; }
+    @keyframes skeleton-shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
     .filter-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
     .tab {
         padding: 7px 16px;
