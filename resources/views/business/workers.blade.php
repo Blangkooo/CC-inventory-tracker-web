@@ -581,6 +581,17 @@
                                             <div class="text-[10px] font-semibold text-green-600 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-green-600"></span>On Shift</div>
                                         @endif
                                     </div>
+                                    <button type="button" class="quick-view-trigger" title="Quick view"
+                                        onclick="event.preventDefault(); event.stopPropagation(); showQuickView(this, {
+                                            name: '{{ addslashes($worker->name) }}',
+                                            initials: '{{ addslashes($initials($worker->name)) }}',
+                                            role: 'Manager',
+                                            branch: '{{ addslashes($group['branch']->name) }}',
+                                            onShift: {{ in_array($worker->id, $openShiftUserIds) ? 'true' : 'false' }},
+                                            profileUrl: '{{ url('/business/workers') }}?worker={{ $worker->id }}{{ $reqBranchId ? '&branch_id='.$reqBranchId : '' }}'
+                                        });">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                    </button>
                                 </a>
                             @empty
                                 <div class="text-[12px] opacity-40 px-2.5 py-1.5">No managers at this branch.</div>
@@ -599,6 +610,17 @@
                                             <div class="text-[10px] font-semibold text-green-600 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-green-600"></span>On Shift</div>
                                         @endif
                                     </div>
+                                    <button type="button" class="quick-view-trigger" title="Quick view"
+                                        onclick="event.preventDefault(); event.stopPropagation(); showQuickView(this, {
+                                            name: '{{ addslashes($worker->name) }}',
+                                            initials: '{{ addslashes($initials($worker->name)) }}',
+                                            role: 'Staff',
+                                            branch: '{{ addslashes($group['branch']->name) }}',
+                                            onShift: {{ in_array($worker->id, $openShiftUserIds) ? 'true' : 'false' }},
+                                            profileUrl: '{{ url('/business/workers') }}?worker={{ $worker->id }}{{ $reqBranchId ? '&branch_id='.$reqBranchId : '' }}'
+                                        });">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                    </button>
                                 </a>
                             @empty
                                 <div class="text-[12px] opacity-40 px-2.5 py-1.5">No staff at this branch.</div>
@@ -975,6 +997,50 @@
     </div>
 </div>
 
+{{-- QUICK VIEW POPOVER (Directory view) --}}
+<div id="quickViewPopover" class="quick-view-popover" style="display:none;">
+    <div class="flex items-center gap-2.5 mb-2.5">
+        <div class="avatar avatar-md" id="qvAvatar"></div>
+        <div class="flex-1 min-w-0">
+            <div class="text-[13px] font-bold truncate" id="qvName"></div>
+            <div class="text-[11px] opacity-60" id="qvRole"></div>
+        </div>
+    </div>
+    <div class="text-[12px] opacity-80 mb-1" id="qvBranch"></div>
+    <div class="text-[11px] font-semibold flex items-center gap-1 mb-3" id="qvShift"></div>
+    <a href="#" id="qvProfileLink" class="btn-sm" style="display:block;text-align:center;text-decoration:none;">View Full Profile</a>
+</div>
+
+<style>
+    .quick-view-trigger {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        border: none;
+        background: transparent;
+        color: var(--color-ink-2, #8a8580);
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .quick-view-trigger:hover {
+        background: rgba(92, 45, 27, .08);
+        color: var(--color-accent, #5C2D1B);
+    }
+    .quick-view-popover {
+        position: fixed;
+        z-index: 60;
+        width: 220px;
+        background: var(--color-surface, #fff);
+        border: 1.5px solid var(--color-line, #e5e0da);
+        border-radius: 10px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
+        padding: 14px;
+    }
+</style>
+
 <script>
     // ── CSRF Token Setup ──
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -1018,6 +1084,38 @@
                 this.classList.remove('is-open');
             }
         });
+    });
+
+    // ── Quick View Popover (Directory view) ──
+    function showQuickView(triggerEl, worker) {
+        const popover = document.getElementById('quickViewPopover');
+
+        document.getElementById('qvAvatar').textContent = worker.initials;
+        document.getElementById('qvName').textContent = worker.name;
+        document.getElementById('qvRole').textContent = worker.role;
+        document.getElementById('qvBranch').textContent = worker.branch;
+        document.getElementById('qvShift').innerHTML = worker.onShift
+            ? '<span class="w-1.5 h-1.5 rounded-full bg-green-600" style="display:inline-block;"></span><span class="text-green-600">On Shift</span>'
+            : '<span class="w-1.5 h-1.5 rounded-full bg-gray-400" style="display:inline-block;"></span><span class="opacity-50">Off Duty</span>';
+        document.getElementById('qvProfileLink').href = worker.profileUrl;
+
+        popover.style.display = 'block';
+        const rect = triggerEl.getBoundingClientRect();
+        const popRect = popover.getBoundingClientRect();
+        let top = rect.bottom + 6;
+        let left = rect.right - popRect.width;
+        if (left < 8) left = 8;
+        if (top + popRect.height > window.innerHeight - 8) top = rect.top - popRect.height - 6;
+        popover.style.top = top + 'px';
+        popover.style.left = left + 'px';
+    }
+
+    document.addEventListener('click', function (e) {
+        const popover = document.getElementById('quickViewPopover');
+        if (popover.style.display === 'none') return;
+        if (!popover.contains(e.target) && !e.target.closest('.quick-view-trigger')) {
+            popover.style.display = 'none';
+        }
     });
 
     // ── Live Search (Directory view) ──
