@@ -107,8 +107,11 @@
         'rating'          => $profile?->rating ?? 0,
         'profile_id'      => $profile?->id,
         'peer_reviews'    => $selectedUser?->peerReviews->sortByDesc('created_at')->values() ?? collect(),
-        'goals'           => $selectedUser?->goals->sortBy('status')->values() ?? collect(),
+        'goals'           => $selectedUser?->goals->sortBy(fn ($g) => $g->status === 'completed' ? 1 : 0)->values() ?? collect(),
     ];
+
+    $goalsCompletedCount = $selectedWorker->goals->where('status', 'completed')->count();
+    $goalsTotalCount = $selectedWorker->goals->count();
 
     $initials = fn($name) => collect(explode(' ', $name))->map(fn($w) => strtoupper($w[0]))->take(2)->implode('');
 
@@ -410,51 +413,92 @@
                     @endforelse
                 </div>
             </div>
-            <div class="card border-[1.5px] border-line p-5 flex flex-col">
+            <div class="card border-[1.5px] border-line border-t-[3px] border-t-accent p-5 flex flex-col">
                 <div class="flex items-center justify-between mb-3.5 pb-3 border-b border-line">
                     <span class="text-xs font-bold uppercase tracking-[.04em] text-accent">Peer Review</span>
-                    <button type="button" class="border-[1.5px] border-line bg-white cursor-pointer px-3 py-1 rounded-md text-[11px] font-semibold transition-all duration-[120ms] hover:border-accent hover:text-accent" onclick="openReviewModal({{ $selectedWorker->id }})">Add</button>
+                    <button type="button" class="border-[1.5px] border-line bg-white cursor-pointer px-3 py-1 rounded-md text-[11px] font-semibold transition-all duration-[120ms] hover:border-accent hover:text-accent" onclick="openReviewModal({{ $selectedWorker->id }})">
+                        <span class="flex items-center gap-1">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Add
+                        </span>
+                    </button>
                 </div>
-                <div class="flex flex-col gap-2 overflow-y-auto max-h-[220px]" id="peerReviewList">
+                <div class="flex flex-col gap-2.5 overflow-y-auto max-h-[260px] pr-0.5" id="peerReviewList">
                     @forelse ($selectedWorker->peer_reviews as $review)
-                        <div class="p-2.5 px-3 bg-[rgba(92,45,27,.03)] border border-[rgba(92,45,27,.08)] rounded-lg" data-review-id="{{ $review->id }}">
-                            <div class="flex items-center justify-between gap-2">
-                                <span class="text-[11px] font-bold">{{ $review->reviewer->name ?? 'Unknown' }}</span>
-                                <div class="flex items-center gap-1.5 shrink-0">
-                                    @if ($review->rating !== null)
-                                        <span class="text-[10px] font-bold text-accent">{{ number_format($review->rating, 1) }}&#9733;</span>
-                                    @endif
-                                    <span class="text-[10px] opacity-40">{{ $review->created_at->format('M j, Y') }}</span>
-                                    <button type="button" class="opacity-30 hover:opacity-80 hover:text-red-600 cursor-pointer bg-transparent border-none p-0 leading-none text-sm" onclick="deletePeerReview({{ $review->id }})" title="Delete">&times;</button>
+                        @php
+                            $reviewerName = $review->reviewer->name ?? 'Unknown';
+                            $reviewerInitials = collect(explode(' ', $reviewerName))->map(fn($w) => strtoupper($w[0] ?? ''))->take(2)->implode('');
+                        @endphp
+                        <div class="relative p-3 pl-4 bg-[rgba(92,45,27,.03)] border border-[rgba(92,45,27,.08)] rounded-lg border-l-[3px] border-l-accent/40" data-review-id="{{ $review->id }}">
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-6 h-6 rounded-full bg-accent text-white flex items-center justify-center text-[9px] font-bold shrink-0 mt-0.5">{{ $reviewerInitials }}</div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="text-[11.5px] font-bold truncate">{{ $reviewerName }}</span>
+                                        <button type="button" class="opacity-30 hover:opacity-80 hover:text-red-600 cursor-pointer bg-transparent border-none p-0 leading-none text-sm shrink-0" onclick="deletePeerReview({{ $review->id }})" title="Delete">&times;</button>
+                                    </div>
+                                    <div class="flex items-center gap-2 mt-0.5">
+                                        @if ($review->rating !== null)
+                                            <span class="inline-flex gap-px text-accent text-[10px]">
+                                                @php $rFull = floor($review->rating); $rHalf = $review->rating - $rFull >= 0.5; @endphp
+                                                @for ($i = 0; $i < $rFull; $i++)&#9733;@endfor
+                                                @if ($rHalf)&#9734;@endif
+                                                @for ($i = 0; $i < (5 - $rFull - ($rHalf ? 1 : 0)); $i++)&#9734;@endfor
+                                            </span>
+                                        @endif
+                                        <span class="text-[10px] opacity-40">{{ $review->created_at->format('M j, Y') }}</span>
+                                    </div>
+                                    <div class="text-[12.5px] mt-1.5 leading-snug italic opacity-90">&ldquo;{{ $review->comment }}&rdquo;</div>
                                 </div>
                             </div>
-                            <div class="text-[12.5px] mt-1 leading-snug">{{ $review->comment }}</div>
                         </div>
                     @empty
-                        <div class="text-[13px] opacity-40 p-2.5">No reviews yet.</div>
+                        <div class="text-[13px] opacity-40 p-2.5 text-center">No reviews yet.</div>
                     @endforelse
                 </div>
             </div>
         </div>
 
         {{-- GOALS --}}
-        <div class="card border-[1.5px] border-line p-5">
-            <div class="flex items-center justify-between mb-3.5 pb-3 border-b border-line">
+        <div class="card border-[1.5px] border-line border-t-[3px] border-t-accent p-5">
+            <div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
                 <span class="text-xs font-bold uppercase tracking-[.04em] text-accent">Goals</span>
-                <button type="button" class="border-[1.5px] border-line bg-white cursor-pointer px-3 py-1 rounded-md text-[11px] font-semibold transition-all duration-[120ms] hover:border-accent hover:text-accent" onclick="openGoalModal({{ $selectedWorker->id }})">Add Goal</button>
+                <div class="flex items-center gap-3">
+                    @if ($goalsTotalCount > 0)
+                        <span class="text-[11px] font-semibold opacity-50">{{ $goalsCompletedCount }} of {{ $goalsTotalCount }} completed</span>
+                    @endif
+                    <button type="button" class="border-[1.5px] border-line bg-white cursor-pointer px-3 py-1 rounded-md text-[11px] font-semibold transition-all duration-[120ms] hover:border-accent hover:text-accent" onclick="openGoalModal({{ $selectedWorker->id }})">
+                        <span class="flex items-center gap-1">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Add Goal
+                        </span>
+                    </button>
+                </div>
             </div>
+            @if ($goalsTotalCount > 0)
+                <div class="h-1.5 rounded-full bg-[rgba(92,45,27,.08)] overflow-hidden mb-4">
+                    <div class="h-full bg-green-600 rounded-full transition-all duration-300" style="width: {{ $goalsTotalCount ? round($goalsCompletedCount / $goalsTotalCount * 100) : 0 }}%"></div>
+                </div>
+            @else
+                <div class="mb-1"></div>
+            @endif
             <div class="flex flex-col gap-1.5" id="goalsList">
                 @forelse ($selectedWorker->goals as $goal)
-                    <div class="flex items-center gap-2.5 p-2.5 px-3.5 rounded-lg border {{ $goal->status === 'completed' ? 'bg-green-600/[.04] border-green-600/[.12]' : 'bg-[rgba(92,45,27,.03)] border-[rgba(92,45,27,.08)]' }}" data-goal-id="{{ $goal->id }}">
-                        <input type="checkbox" class="w-4 h-4 accent-accent cursor-pointer" {{ $goal->status === 'completed' ? 'checked' : '' }} onchange="toggleGoal({{ $goal->id }}, this.checked)">
-                        <span class="flex-1 text-[13px] font-medium {{ $goal->status === 'completed' ? 'line-through opacity-50' : '' }}">{{ $goal->title }}</span>
+                    @php $isDone = $goal->status === 'completed'; @endphp
+                    <div class="flex items-center gap-3 p-2.5 px-3.5 rounded-lg border {{ $isDone ? 'bg-green-600/[.04] border-green-600/[.12]' : 'bg-[rgba(92,45,27,.03)] border-[rgba(92,45,27,.08)]' }}" data-goal-id="{{ $goal->id }}">
+                        <label class="relative shrink-0 cursor-pointer block w-5 h-5">
+                            <input type="checkbox" class="peer absolute inset-0 opacity-0 w-5 h-5 cursor-pointer m-0 z-10" {{ $isDone ? 'checked' : '' }} onchange="toggleGoal({{ $goal->id }}, this.checked)">
+                            <span class="absolute inset-0 rounded-full border-[1.5px] border-line transition-colors peer-checked:bg-green-600 peer-checked:border-green-600"></span>
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="absolute inset-0 m-auto opacity-0 peer-checked:opacity-100 transition-opacity"><polyline points="20 6 9 17 4 12"/></svg>
+                        </label>
+                        <span class="flex-1 text-[13px] font-medium {{ $isDone ? 'line-through opacity-50' : '' }}">{{ $goal->title }}</span>
                         @if ($goal->target_date)
-                            <span class="text-[11px] opacity-50 shrink-0">Due {{ $goal->target_date->format('M j') }}</span>
+                            <span class="text-[11px] font-semibold {{ $isDone ? 'opacity-30' : 'text-accent' }} shrink-0">Due {{ $goal->target_date->format('M j') }}</span>
                         @endif
                         <button type="button" class="opacity-30 hover:opacity-80 hover:text-red-600 cursor-pointer bg-transparent border-none p-0 leading-none text-base shrink-0" onclick="deleteGoal({{ $goal->id }})" title="Delete">&times;</button>
                     </div>
                 @empty
-                    <div class="text-[13px] opacity-40 p-2.5">No goals set yet.</div>
+                    <div class="text-[13px] opacity-40 p-2.5 text-center">No goals set yet.</div>
                 @endforelse
             </div>
         </div>
@@ -533,20 +577,32 @@
         </div>
 
         {{-- OPEN POSITIONS --}}
-        <div class="card border-[1.5px] border-line p-5">
+        <div class="card border-[1.5px] border-line border-t-[3px] border-t-accent p-5">
             <div class="flex items-center justify-between mb-3.5 pb-3 border-b border-line">
-                <span class="text-xs font-bold uppercase tracking-[.04em] text-accent">Open Positions</span>
-                <a href="{{ route('hiring.index') }}" class="text-[11px] font-semibold text-accent no-underline hover:underline">Manage in Hiring &rarr;</a>
+                <span class="text-xs font-bold uppercase tracking-[.04em] text-accent flex items-center gap-1.5">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                    Open Positions
+                </span>
+                <a href="{{ route('hiring.index') }}" class="text-[11px] font-semibold text-accent no-underline hover:underline flex items-center gap-1">
+                    Manage in Hiring
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </a>
             </div>
-            <div class="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3">
+            <div class="grid grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-3">
                 @forelse ($openPositions as $opening)
-                    <div class="p-3.5 bg-[rgba(92,45,27,.03)] border border-[rgba(92,45,27,.08)] rounded-lg">
-                        <div class="text-[13px] font-bold">{{ $opening->title }}</div>
-                        <div class="text-[11px] opacity-50 mt-0.5">{{ $opening->branch->name ?? 'All branches' }}</div>
-                        <div class="text-[11px] font-semibold text-accent mt-1.5">{{ $opening->applicants_count }} {{ Str::plural('applicant', $opening->applicants_count) }}</div>
+                    <div class="p-3.5 bg-[rgba(92,45,27,.03)] border border-[rgba(92,45,27,.08)] rounded-lg transition-colors hover:border-accent/40 hover:bg-accent/[.03]">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="text-[13px] font-bold leading-tight">{{ $opening->title }}</div>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-accent/10 text-accent text-[10px] font-bold shrink-0">{{ $opening->applicants_count }}</span>
+                        </div>
+                        <div class="flex items-center gap-1 text-[11px] opacity-50 mt-1.5">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            {{ $opening->branch->name ?? 'All branches' }}
+                        </div>
+                        <div class="text-[11px] font-semibold text-accent mt-1">{{ $opening->applicants_count }} {{ Str::plural('applicant', $opening->applicants_count) }}</div>
                     </div>
                 @empty
-                    <div class="text-[13px] opacity-40 p-2.5">No open positions right now.</div>
+                    <div class="text-[13px] opacity-40 p-2.5 text-center">No open positions right now.</div>
                 @endforelse
             </div>
         </div>
