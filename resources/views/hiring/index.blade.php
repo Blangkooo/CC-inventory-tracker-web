@@ -23,9 +23,29 @@
     </button>
 </div>
 
+<div class="grid grid-cols-4 max-[880px]:grid-cols-2 card border-[1.5px] border-line overflow-hidden divide-x divide-line max-[880px]:divide-x-0 mb-5">
+    <div class="p-4 text-center max-[880px]:border-b max-[880px]:border-line">
+        <div class="text-[26px] font-extrabold text-accent leading-none">{{ $kpi_open_positions }}</div>
+        <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">Open Positions</div>
+    </div>
+    <div class="p-4 text-center max-[880px]:border-b max-[880px]:border-line">
+        <div class="text-[26px] font-extrabold text-accent leading-none">{{ $kpi_applicants }}</div>
+        <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">Applicants</div>
+    </div>
+    <div class="p-4 text-center">
+        <div class="text-[26px] font-extrabold text-accent leading-none">{{ $kpi_in_interview }}</div>
+        <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">In Interview</div>
+    </div>
+    <div class="p-4 text-center">
+        <div class="text-[26px] font-extrabold text-green-600 leading-none">{{ $kpi_accepted }}</div>
+        <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">Accepted</div>
+    </div>
+</div>
+
 <div class="utabs mb-4">
     <button type="button" class="utab is-active" id="tabOpenings" onclick="switchTab('openings')">Openings</button>
     <button type="button" class="utab" id="tabApplicants" onclick="switchTab('applicants')">Applicants</button>
+    <button type="button" class="utab" id="tabPipeline" onclick="switchTab('pipeline')">Pipeline</button>
 </div>
 
 {{-- OPENINGS --}}
@@ -97,6 +117,50 @@
     @endif
 </div>
 
+{{-- PIPELINE (KANBAN) --}}
+<div id="panelPipeline" class="hidden">
+    @if ($applicants->isEmpty())
+        <div class="empty-state-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
+            <span class="empty-state-text">No applicants yet.</span>
+        </div>
+    @else
+        <div class="grid grid-cols-5 max-[1100px]:grid-cols-1 gap-3">
+            @foreach ($pipeline_stages as $stageKey => $stageLabel)
+                @php $stageApplicants = $applicants->where('status', $stageKey); @endphp
+                <div class="card border-[1.5px] border-line overflow-hidden">
+                    <div class="px-3 py-2.5 border-b border-line flex items-center justify-between">
+                        <span class="text-[11px] font-bold uppercase tracking-[.04em]">{{ $stageLabel }}</span>
+                        <span class="text-[11px] font-bold text-accent">{{ $stageApplicants->count() }}</span>
+                    </div>
+                    <div class="p-2 flex flex-col gap-2 min-h-[60px]">
+                        @forelse ($stageApplicants as $applicant)
+                            <div class="p-2.5 bg-[rgba(92,45,27,.03)] border border-[rgba(92,45,27,.08)] rounded-lg">
+                                <div class="text-[12.5px] font-bold truncate">{{ $applicant->name }}</div>
+                                <div class="text-[10.5px] opacity-50 truncate">{{ $applicant->opening?->title ?? '—' }}</div>
+                                @if (! in_array($stageKey, ['hired', 'rejected']))
+                                    @php
+                                        $stageOrder = ['applied', 'shortlisted', 'interviewed', 'hired'];
+                                        $currentIdx = array_search($stageKey, $stageOrder);
+                                        $nextStage = $stageOrder[$currentIdx + 1] ?? null;
+                                    @endphp
+                                    @if ($nextStage)
+                                        <button type="button" class="btn-sm mt-1.5 w-full" onclick="updateApplicantStatus({{ $applicant->id }}, '{{ $nextStage }}', true)">
+                                            Advance to {{ $pipeline_stages[$nextStage] }} →
+                                        </button>
+                                    @endif
+                                @endif
+                            </div>
+                        @empty
+                            <div class="text-[11px] opacity-30 text-center py-3">—</div>
+                        @endforelse
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    @endif
+</div>
+
 {{-- NEW/EDIT OPENING MODAL --}}
 <div class="modal-overlay" id="openingModal">
     <div class="modal-box">
@@ -154,8 +218,10 @@ const csrf = document.querySelector('meta[name="csrf-token"]').content;
 function switchTab(tab) {
     document.getElementById('tabOpenings').classList.toggle('is-active', tab === 'openings');
     document.getElementById('tabApplicants').classList.toggle('is-active', tab === 'applicants');
+    document.getElementById('tabPipeline').classList.toggle('is-active', tab === 'pipeline');
     document.getElementById('panelOpenings').classList.toggle('hidden', tab !== 'openings');
     document.getElementById('panelApplicants').classList.toggle('hidden', tab !== 'applicants');
+    document.getElementById('panelPipeline').classList.toggle('hidden', tab !== 'pipeline');
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('is-open'); }
@@ -227,9 +293,10 @@ async function saveApplicant(e) {
     else { alert('Error adding applicant.'); btn.disabled = false; btn.textContent = 'Add Applicant'; }
 }
 
-async function updateApplicantStatus(id, status) {
+async function updateApplicantStatus(id, status, reload) {
     const res = await fetch(`{{ url('/hiring/applicants') }}/${id}/status`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }, body: JSON.stringify({ status }) });
-    if (!res.ok) alert('Error updating status.');
+    if (!res.ok) { alert('Error updating status.'); return; }
+    if (reload) location.reload();
 }
 
 async function deleteApplicant(id, name) {

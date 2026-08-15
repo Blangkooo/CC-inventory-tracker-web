@@ -29,7 +29,22 @@ class HiringController extends Controller
 
         $branches = Branch::when($isManager, fn ($q) => $q->where('id', $branchId))->orderBy('name')->get();
 
-        return view('hiring.index', compact('openings', 'applicants', 'branches'));
+        return view('hiring.index', [
+            'openings' => $openings,
+            'applicants' => $applicants,
+            'branches' => $branches,
+            'kpi_open_positions' => $openings->where('status', 'open')->count(),
+            'kpi_applicants' => $applicants->count(),
+            'kpi_in_interview' => $applicants->where('status', 'interviewed')->count(),
+            'kpi_accepted' => $applicants->where('status', 'hired')->count(),
+            'pipeline_stages' => [
+                'applied' => 'Applied',
+                'shortlisted' => 'Shortlisted',
+                'interviewed' => 'In Interview',
+                'hired' => 'Hired',
+                'rejected' => 'Rejected',
+            ],
+        ]);
     }
 
     public function storeOpening(Request $request): JsonResponse
