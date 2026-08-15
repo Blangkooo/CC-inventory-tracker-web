@@ -267,7 +267,12 @@ Route::middleware('auth')->group(function () {
             ->take(5);
 
         // Get monthly sales for the current year
-        $monthlySales = \App\Models\Transaction::selectRaw("strftime('%m', created_at) as month, SUM(total_amount) as total")
+        // MONTH() is MySQL-only; SQLite (the test suite) needs strftime instead.
+        $monthExpr = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'sqlite'
+            ? "CAST(strftime('%m', created_at) AS INTEGER)"
+            : 'MONTH(created_at)';
+
+        $monthlySales = \App\Models\Transaction::selectRaw("{$monthExpr} as month, SUM(total_amount) as total")
             ->whereYear('created_at', now()->year)
             ->when(true, $branchScope)
             ->groupBy('month')
