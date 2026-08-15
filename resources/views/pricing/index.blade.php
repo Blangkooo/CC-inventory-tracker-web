@@ -17,9 +17,12 @@
 </div>
 
 @if ($products->isEmpty() || $products->every(fn ($p) => collect($p['sizes'])->sum('total_cost') == 0))
-    <div class="card p-8 text-center text-[13px] text-ink-3">
-        No ingredient cost data yet. Link suppliers to ingredients in the
-        <a href="{{ route('suppliers.index') }}" class="text-accent font-bold no-underline hover:underline">Supplier Directory</a> first.
+    <div class="card empty-state-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span class="empty-state-text">
+            No ingredient cost data yet. Link suppliers to ingredients in the
+            <a href="{{ route('suppliers.index') }}" class="text-accent font-bold no-underline hover:underline">Supplier Directory</a> first.
+        </span>
     </div>
 @else
     <div class="grid grid-cols-[repeat(auto-fill,minmax(360px,1fr))] gap-4">
@@ -93,8 +96,9 @@
     <div class="text-[13px] text-ink-2 mb-5">Drag the slider to change an ingredient's cost — every affected margin recalculates live.</div>
 
     @if ($simulatable->isEmpty())
-        <div class="card p-8 text-center text-[13px] text-ink-3">
-            No ingredient has a supplier unit cost yet, so there is nothing to simulate.
+        <div class="card empty-state-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+            <span class="empty-state-text">No ingredient has a supplier unit cost yet, so there is nothing to simulate.</span>
         </div>
     @else
         <div class="card p-5 mb-5">

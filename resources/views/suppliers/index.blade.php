@@ -31,7 +31,10 @@
 
 <div class="summary-table-wrap">
     @if ($suppliers->isEmpty())
-        <div class="p-8 text-center text-[13px] text-ink-3">No suppliers added yet. Click "Add Supplier" to get started.</div>
+        <div class="empty-state-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            <span class="empty-state-text">No suppliers added yet. Click "Add Supplier" to get started.</span>
+        </div>
     @else
         <table class="summary-table">
             <thead><tr><th>Supplier</th><th>Contact</th><th>Address / Landmark</th><th>Ingredients</th><th>Status</th><th></th></tr></thead>

@@ -81,7 +81,10 @@
                 <div class="card p-5 mb-4">
                     <h3 class="text-[13px] font-bold mb-3.5 pb-2.5 border-b border-line">Recent Transactions — {{ $activeBranch?->name ?? 'All' }}</h3>
                     @if ($recentTransactions->isEmpty())
-                        <p class="text-[13px] opacity-40 py-2">No transactions recorded yet.</p>
+                        <div class="empty-state-icon !py-5">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="11" x2="15" y2="11"/></svg>
+                            <span class="empty-state-text">No transactions recorded yet.</span>
+                        </div>
                     @else
                         <ul class="list-none">
                             @foreach ($recentTransactions as $i => $tx)
@@ -104,7 +107,10 @@
                 <div class="card p-5 mb-4">
                     <h3 class="text-[13px] font-bold mb-3.5 pb-2.5 border-b border-line">Leakage Log (Negative Variance)</h3>
                     @if ($leakageRows->isEmpty())
-                        <p class="text-[13px] opacity-40 py-2">No leakage records found.</p>
+                        <div class="empty-state-icon !py-5">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c4.97 0 9-3.582 9-8 0-4.418-4.03-11-9-13-4.97 2-9 8.582-9 13 0 4.418 4.03 8 9 8z"/></svg>
+                            <span class="empty-state-text">No leakage records found.</span>
+                        </div>
                     @else
                         @foreach ($leakageRows as $row)
                             <div class="flex justify-between py-[9px] text-[13px] border-b border-[rgba(92,45,27,.06)] last:border-b-0">

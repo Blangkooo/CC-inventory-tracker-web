@@ -31,7 +31,10 @@
 {{-- OPENINGS --}}
 <div id="panelOpenings" class="summary-table-wrap">
     @if ($openings->isEmpty())
-        <div class="p-8 text-center text-[13px] text-ink-3">No job openings yet. Click "New Opening" to post one.</div>
+        <div class="empty-state-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            <span class="empty-state-text">No job openings yet. Click "New Opening" to post one.</span>
+        </div>
     @else
         <table class="summary-table">
             <thead><tr><th>Title</th><th>Branch</th><th>Status</th><th>Applicants</th><th></th></tr></thead>
@@ -59,7 +62,10 @@
 {{-- APPLICANTS --}}
 <div id="panelApplicants" class="summary-table-wrap hidden">
     @if ($applicants->isEmpty())
-        <div class="p-8 text-center text-[13px] text-ink-3">No applicants yet.</div>
+        <div class="empty-state-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
+            <span class="empty-state-text">No applicants yet.</span>
+        </div>
     @else
         <table class="summary-table">
             <thead><tr><th>Name</th><th>Opening</th><th>Contact</th><th>Status</th><th>Resume</th><th></th></tr></thead>

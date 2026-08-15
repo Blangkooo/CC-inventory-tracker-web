@@ -34,7 +34,12 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="empty-state">No stock records for this branch yet.</td>
+                        <td colspan="6">
+                            <div class="empty-state-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2"/><path d="M3 8h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 12h6"/></svg>
+                                <span class="empty-state-text">No stock records for this branch yet.</span>
+                            </div>
+                        </td>
                     </tr>
                 @endforelse
             </tbody>
@@ -70,7 +75,12 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="empty-state">No stock movements recorded yet.</td>
+                        <td colspan="6">
+                            <div class="empty-state-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                                <span class="empty-state-text">No stock movements recorded yet.</span>
+                            </div>
+                        </td>
                     </tr>
                 @endforelse
             </tbody>
