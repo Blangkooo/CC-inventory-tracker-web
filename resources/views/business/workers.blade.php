@@ -115,9 +115,6 @@
 
     $initials = fn($name) => collect(explode(' ', $name))->map(fn($w) => strtoupper($w[0]))->take(2)->implode('');
 
-    // ── Active branch for sidebar ─────────────────────────────────────
-    $activeBranch = $branches->firstWhere('id', $selectedUser?->branch_id) ?? $branches->first();
-
     $openShiftUserIds = $openShiftUserIds ?? [];
 
     // ── Headline stats — all real counts, no fabricated trend figures ──
@@ -125,6 +122,20 @@
     $managerCount   = $workers->where('role', User::ROLE_MANAGER)->count();
     $staffCount     = $workers->where('role', User::ROLE_STAFF)->count();
     $onShiftCount   = count($openShiftUserIds);
+    $newThisMonthCount = $workers->where('created_at', '>=', now()->startOfMonth())->count();
+
+    // ── Directory view: workers grouped by branch, filtered by ?branch_id ──
+    $reqBranchId = request()->integer('branch_id', 0);
+    $directoryWorkers = $reqBranchId ? $workers->where('branch_id', $reqBranchId) : $workers;
+    $workersByBranch = $branches
+        ->when($reqBranchId, fn ($bs) => $bs->where('id', $reqBranchId))
+        ->map(fn ($branch) => [
+            'branch'   => $branch,
+            'managers' => $directoryWorkers->where('branch_id', $branch->id)->where('role', User::ROLE_MANAGER)->values(),
+            'staff'    => $directoryWorkers->where('branch_id', $branch->id)->where('role', User::ROLE_STAFF)->values(),
+        ])
+        ->filter(fn ($g) => $g['managers']->isNotEmpty() || $g['staff']->isNotEmpty())
+        ->values();
 
     // ── Workers data for JS (pre-computed to avoid @json parsing issues) ──
     $workersJsData = $workers->map(fn($w) => [
@@ -149,104 +160,74 @@
 @keyframes toast-in{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
 </style>
 
-<div class="max-w-[1400px] mx-auto px-8 py-6 flex gap-5 max-[880px]:flex-col max-[880px]:p-4">
+<div class="max-w-[1400px] mx-auto px-8 py-6 flex flex-col gap-4 max-[880px]:p-4">
 
-    {{-- LEFT SIDEBAR --}}
-    <div class="w-[220px] shrink-0 flex flex-col gap-4 max-[1100px]:w-[180px] max-[880px]:w-full max-[880px]:flex-row max-[880px]:gap-3 max-[640px]:flex-col">
-        {{-- Branch Selector --}}
-        <div class="relative rounded-[var(--radius-card)] shadow-[0_2px_8px_rgba(92,45,27,.1),0_8px_24px_rgba(92,45,27,.07)] overflow-hidden min-h-[100px] max-[880px]:flex-1 max-[880px]:min-h-[80px]" style="background:linear-gradient(135deg,#2d1810 0%,#4a2a1e 100%)">
-            <div class="absolute inset-0 opacity-15" style="background-image:radial-gradient(circle at 20% 30%,rgba(255,255,255,.3) 1px,transparent 1px),radial-gradient(circle at 70% 60%,rgba(255,255,255,.2) 1px,transparent 1px),radial-gradient(circle at 40% 80%,rgba(255,255,255,.15) 2px,transparent 2px);background-size:40px 40px,30px 30px,50px 50px"></div>
-            <div class="relative z-[1] p-4">
-                <span class="inline-block px-3 py-1 rounded-full bg-white/[.18] backdrop-blur-sm text-[10px] font-bold text-white uppercase tracking-[.04em] mb-2.5">Coffee Shop</span>
-                <div class="text-[15px] font-extrabold text-white leading-tight">{{ $activeBranch->name }}</div>
-                <div class="text-[10px] font-semibold text-white/60 uppercase tracking-[.03em] mt-1">{{ $activeBranch->location ?? 'N/A' }}</div>
-            </div>
+    {{-- Page Header --}}
+    <div class="flex items-center justify-between flex-wrap gap-3">
+        <div class="flex items-baseline gap-2.5">
+            <h1 class="text-[22px] font-extrabold tracking-[.02em]">Businesses</h1>
+            <span class="text-[15px] font-normal opacity-50">/ Owner</span>
         </div>
+        @include('partials._business-tabs', ['active' => 'workers'])
+    </div>
 
-        {{-- Employees List --}}
-        <div class="card overflow-hidden flex flex-col max-[880px]:flex-[2]">
-            <div class="px-4 py-3.5 pb-2.5 border-b border-line">
-                <div class="text-[11px] font-bold uppercase tracking-[.06em] opacity-50">Employees</div>
-            </div>
-            {{-- Search + Filters --}}
-            <div class="p-2 px-2.5 border-b border-line flex flex-col gap-1.5">
-                <input type="text" id="searchInput" class="form-input" placeholder="Search by name…" style="padding:7px 10px;font-size:12px;border-radius:6px;">
-                <div class="flex gap-1">
-                    <select id="filterBranch" class="form-input" style="flex:1;padding:5px 8px;font-size:11px;border-radius:6px;">
-                        <option value="">All branches</option>
-                        @foreach ($branches as $branch)
-                            <option value="{{ $branch->id }}">{{ $branch->name }}</option>
-                        @endforeach
-                    </select>
-                    <select id="filterRole" class="form-input" style="flex:1;padding:5px 8px;font-size:11px;border-radius:6px;">
-                        <option value="">All roles</option>
-                        <option value="staff">Staff</option>
-                        <option value="manager">Manager</option>
-                    </select>
-                </div>
-            </div>
-            <div class="flex flex-col p-1 px-1.5" id="employeesList">
-                @forelse ($workers as $worker)
-                    <a href="{{ url('/business/workers') }}?worker={{ $worker->id }}" class="employee-row flex items-center gap-2.5 px-2.5 py-[9px] rounded-lg cursor-pointer transition-all duration-[120ms] no-underline text-[var(--color-ink)] hover:bg-[rgba(92,45,27,.04)] {{ $selectedWorker->id === $worker->id ? 'bg-[rgba(188,97,75,.1)]' : '' }}" data-worker-name="{{ strtolower($worker->name) }}" data-worker-branch="{{ $worker->branch_id }}" data-worker-role="{{ $worker->role }}">
-                        <div class="w-[34px] h-[34px] rounded-full bg-accent text-white flex items-center justify-center text-xs font-bold shrink-0 tracking-[.02em]">{{ $initials($worker->name) }}</div>
-                        <div class="flex-1 min-w-0">
-                            <div class="text-[13px] font-semibold truncate">{{ $worker->name }}</div>
-                            <div class="text-[10px] font-semibold opacity-50 uppercase tracking-[.04em]">
-                                @php
-                                    $roleLabel = $worker->role === \App\Models\User::ROLE_MANAGER ? 'Manager' : ($worker->role === \App\Models\User::ROLE_STAFF ? 'Staff' : ucfirst($worker->role));
-                                @endphp
-                                {{ $roleLabel }}
-                            </div>
-                        </div>
-                    </a>
-                @empty
-                    <div class="px-4 py-5 text-center text-xs opacity-50 font-semibold">
-                        No workers yet. Click "Add new employee" to get started.
-                    </div>
-                @endforelse
-            </div>
-            <button type="button" id="addEmployeeBtn" class="block mx-3 mb-3 mt-1.5 py-[9px] text-center bg-white text-[var(--color-ink)] border-[1.5px] border-line rounded-full text-xs font-semibold cursor-pointer transition-all duration-150 hover:bg-accent hover:text-white hover:border-accent">
-                <span class="flex items-center justify-center gap-1.5">
+    {{-- Branch Filter + Actions --}}
+    <div class="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-line">
+        <div class="flex flex-wrap items-center gap-1.5">
+            <a href="{{ url('/business/workers') }}" class="px-4 py-[7px] rounded-full text-xs font-semibold no-underline transition-colors {{ !$reqBranchId ? 'bg-accent text-white' : 'border-[1.5px] border-line bg-white text-[var(--color-ink)] hover:border-accent hover:text-accent' }}">All</a>
+            @foreach ($branches as $branch)
+                <a href="{{ url('/business/workers') }}?branch_id={{ $branch->id }}" class="px-4 py-[7px] rounded-full text-xs font-semibold no-underline transition-colors {{ $reqBranchId === $branch->id ? 'bg-accent text-white' : 'border-[1.5px] border-line bg-white text-[var(--color-ink)] hover:border-accent hover:text-accent' }}">{{ $branch->name }}</a>
+            @endforeach
+        </div>
+        <div class="flex items-center gap-2">
+            <input type="text" id="searchInput" class="form-input" placeholder="Search employees…" style="padding:7px 12px;font-size:12px;border-radius:20px;min-width:180px;">
+            <a href="{{ route('hiring.index') }}" class="px-4 py-[9px] rounded-full text-xs font-semibold no-underline bg-accent text-white transition-opacity hover:opacity-90 whitespace-nowrap">
+                <span class="flex items-center gap-1.5">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                    Open Positions
+                </span>
+            </a>
+            <button type="button" id="addEmployeeBtn" class="px-4 py-[9px] rounded-full text-xs font-semibold cursor-pointer border-[1.5px] border-line bg-white text-[var(--color-ink)] transition-all duration-150 hover:bg-accent hover:text-white hover:border-accent whitespace-nowrap">
+                <span class="flex items-center gap-1.5">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                     </svg>
-                    Add new employee
+                    Add Employee
                 </span>
             </button>
         </div>
     </div>
 
-    {{-- MAIN CONTENT --}}
-    <div class="flex-1 min-w-0 flex flex-col gap-4">
-
-        {{-- Page Header --}}
-        <div class="flex items-center justify-between flex-wrap gap-3">
-            <div class="flex items-baseline gap-2.5">
-                <h1 class="text-[22px] font-extrabold tracking-[.02em]">Businesses</h1>
-                <span class="text-[15px] font-normal opacity-50">/ Owner</span>
-            </div>
-            @include('partials._business-tabs', ['active' => 'workers'])
+    {{-- Headline Stats --}}
+    <div class="grid grid-cols-5 max-[880px]:grid-cols-2 card border-[1.5px] border-line overflow-hidden divide-x divide-line max-[880px]:divide-x-0">
+        <div class="p-4 text-center max-[880px]:border-b max-[880px]:border-line">
+            <div class="text-[28px] font-extrabold text-accent leading-none">{{ $totalEmployees }}</div>
+            <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">Total Employees</div>
         </div>
-
-        {{-- Headline Stats --}}
-        <div class="grid grid-cols-4 max-[880px]:grid-cols-2 card border-[1.5px] border-line overflow-hidden divide-x divide-line max-[880px]:divide-x-0">
-            <div class="p-4 text-center max-[880px]:border-b max-[880px]:border-line">
-                <div class="text-[28px] font-extrabold text-accent leading-none">{{ $totalEmployees }}</div>
-                <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">Total Employees</div>
-            </div>
-            <div class="p-4 text-center max-[880px]:border-b max-[880px]:border-line">
-                <div class="text-[28px] font-extrabold text-accent leading-none">{{ $managerCount }}</div>
-                <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">Managers</div>
-            </div>
-            <div class="p-4 text-center">
-                <div class="text-[28px] font-extrabold text-accent leading-none">{{ $staffCount }}</div>
-                <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">Staff</div>
-            </div>
-            <div class="p-4 text-center">
-                <div class="text-[28px] font-extrabold {{ $onShiftCount > 0 ? 'text-green-600' : 'text-accent' }} leading-none">{{ $onShiftCount }}</div>
-                <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">On Shift Now</div>
-            </div>
+        <div class="p-4 text-center max-[880px]:border-b max-[880px]:border-line">
+            <div class="text-[28px] font-extrabold text-accent leading-none">{{ $newThisMonthCount }}</div>
+            <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">New This Month</div>
         </div>
+        <div class="p-4 text-center max-[880px]:border-b max-[880px]:border-line">
+            <div class="text-[28px] font-extrabold text-accent leading-none">{{ $managerCount }}</div>
+            <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">Managers</div>
+        </div>
+        <div class="p-4 text-center">
+            <div class="text-[28px] font-extrabold text-accent leading-none">{{ $staffCount }}</div>
+            <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">Staff</div>
+        </div>
+        <div class="p-4 text-center">
+            <div class="text-[28px] font-extrabold {{ $onShiftCount > 0 ? 'text-green-600' : 'text-accent' }} leading-none">{{ $onShiftCount }}</div>
+            <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">On Shift Now</div>
+        </div>
+    </div>
+
+    @if ($reqWorkerId)
+    {{-- ═══════════════════ PROFILE VIEW ═══════════════════ --}}
+    <a href="{{ url('/business/workers') }}{{ $reqBranchId ? '?branch_id='.$reqBranchId : '' }}" class="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-accent no-underline hover:underline w-fit">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to Directory
+    </a>
 
         {{-- Worker Profile Card --}}
         <div class="card border-[1.5px] border-line overflow-hidden">
@@ -576,38 +557,93 @@
             </table>
         </div>
 
-        {{-- OPEN POSITIONS --}}
-        <div class="card border-[1.5px] border-line border-t-[3px] border-t-accent p-5">
-            <div class="flex items-center justify-between mb-3.5 pb-3 border-b border-line">
-                <span class="text-xs font-bold uppercase tracking-[.04em] text-accent flex items-center gap-1.5">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-                    Open Positions
-                </span>
-                <a href="{{ route('hiring.index') }}" class="text-[11px] font-semibold text-accent no-underline hover:underline flex items-center gap-1">
-                    Manage in Hiring
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                </a>
-            </div>
-            <div class="grid grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-3">
-                @forelse ($openPositions as $opening)
-                    <div class="p-3.5 bg-[rgba(92,45,27,.03)] border border-[rgba(92,45,27,.08)] rounded-lg transition-colors hover:border-accent/40 hover:bg-accent/[.03]">
-                        <div class="flex items-start justify-between gap-2">
-                            <div class="text-[13px] font-bold leading-tight">{{ $opening->title }}</div>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-accent/10 text-accent text-[10px] font-bold shrink-0">{{ $opening->applicants_count }}</span>
+    @else
+    {{-- ═══════════════════ DIRECTORY VIEW ═══════════════════ --}}
+    <div class="flex flex-col gap-5" id="directoryView">
+        @forelse ($workersByBranch as $group)
+            <div class="card border-[1.5px] border-line overflow-hidden">
+                <div class="px-5 py-3 border-b border-line bg-[rgba(92,45,27,.02)]">
+                    <span class="text-[12.5px] font-bold">{{ $group['branch']->name }}</span>
+                    <span class="text-[11px] opacity-50 ml-1.5">{{ $group['managers']->count() + $group['staff']->count() }} {{ Str::plural('employee', $group['managers']->count() + $group['staff']->count()) }}</span>
+                </div>
+                <div class="grid grid-cols-2 max-[700px]:grid-cols-1 divide-x max-[700px]:divide-x-0 max-[700px]:divide-y divide-line">
+                    <div class="p-4">
+                        <div class="text-[10px] font-bold uppercase tracking-[.06em] text-accent mb-2.5">Managers</div>
+                        <div class="flex flex-col gap-1">
+                            @forelse ($group['managers'] as $worker)
+                                <a href="{{ url('/business/workers') }}?worker={{ $worker->id }}{{ $reqBranchId ? '&branch_id='.$reqBranchId : '' }}" class="employee-row flex items-center gap-2.5 px-2.5 py-2 rounded-lg no-underline text-[var(--color-ink)] transition-colors hover:bg-[rgba(92,45,27,.04)]" data-worker-name="{{ strtolower($worker->name) }}">
+                                    <div class="w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center text-[11px] font-bold shrink-0">{{ $initials($worker->name) }}</div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-[13px] font-semibold truncate">{{ $worker->name }}</div>
+                                        @if (in_array($worker->id, $openShiftUserIds))
+                                            <div class="text-[10px] font-semibold text-green-600 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-green-600"></span>On Shift</div>
+                                        @endif
+                                    </div>
+                                </a>
+                            @empty
+                                <div class="text-[12px] opacity-40 px-2.5 py-1.5">No managers at this branch.</div>
+                            @endforelse
                         </div>
-                        <div class="flex items-center gap-1 text-[11px] opacity-50 mt-1.5">
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                            {{ $opening->branch->name ?? 'All branches' }}
-                        </div>
-                        <div class="text-[11px] font-semibold text-accent mt-1">{{ $opening->applicants_count }} {{ Str::plural('applicant', $opening->applicants_count) }}</div>
                     </div>
-                @empty
-                    <div class="text-[13px] opacity-40 p-2.5 text-center">No open positions right now.</div>
-                @endforelse
+                    <div class="p-4">
+                        <div class="text-[10px] font-bold uppercase tracking-[.06em] text-accent mb-2.5">Staff</div>
+                        <div class="flex flex-col gap-1">
+                            @forelse ($group['staff'] as $worker)
+                                <a href="{{ url('/business/workers') }}?worker={{ $worker->id }}{{ $reqBranchId ? '&branch_id='.$reqBranchId : '' }}" class="employee-row flex items-center gap-2.5 px-2.5 py-2 rounded-lg no-underline text-[var(--color-ink)] transition-colors hover:bg-[rgba(92,45,27,.04)]" data-worker-name="{{ strtolower($worker->name) }}">
+                                    <div class="w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center text-[11px] font-bold shrink-0">{{ $initials($worker->name) }}</div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-[13px] font-semibold truncate">{{ $worker->name }}</div>
+                                        @if (in_array($worker->id, $openShiftUserIds))
+                                            <div class="text-[10px] font-semibold text-green-600 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-green-600"></span>On Shift</div>
+                                        @endif
+                                    </div>
+                                </a>
+                            @empty
+                                <div class="text-[12px] opacity-40 px-2.5 py-1.5">No staff at this branch.</div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-
+        @empty
+            <div class="card border-[1.5px] border-line p-8 text-center text-sm opacity-50">
+                No workers yet. Click "Add Employee" to get started.
+            </div>
+        @endforelse
     </div>
+
+    {{-- OPEN POSITIONS --}}
+    <div class="card border-[1.5px] border-line border-t-[3px] border-t-accent p-5">
+        <div class="flex items-center justify-between mb-3.5 pb-3 border-b border-line">
+            <span class="text-xs font-bold uppercase tracking-[.04em] text-accent flex items-center gap-1.5">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                Open Positions
+            </span>
+            <a href="{{ route('hiring.index') }}" class="text-[11px] font-semibold text-accent no-underline hover:underline flex items-center gap-1">
+                Manage in Hiring
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
+        </div>
+        <div class="grid grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-3">
+            @forelse ($openPositions as $opening)
+                <div class="p-3.5 bg-[rgba(92,45,27,.03)] border border-[rgba(92,45,27,.08)] rounded-lg transition-colors hover:border-accent/40 hover:bg-accent/[.03]">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="text-[13px] font-bold leading-tight">{{ $opening->title }}</div>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-accent/10 text-accent text-[10px] font-bold shrink-0">{{ $opening->applicants_count }}</span>
+                    </div>
+                    <div class="flex items-center gap-1 text-[11px] opacity-50 mt-1.5">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        {{ $opening->branch->name ?? 'All branches' }}
+                    </div>
+                    <div class="text-[11px] font-semibold text-accent mt-1">{{ $opening->applicants_count }} {{ Str::plural('applicant', $opening->applicants_count) }}</div>
+                </div>
+            @empty
+                <div class="text-[13px] opacity-40 p-2.5 text-center">No open positions right now.</div>
+            @endforelse
+        </div>
+    </div>
+    @endif
+
 </div>
 
 {{-- Toast container --}}
@@ -979,28 +1015,17 @@
         });
     });
 
-    // ── Live Search & Filter ──
+    // ── Live Search (Directory view) ──
     function filterEmployees() {
         const query = document.getElementById('searchInput').value.toLowerCase().trim();
-        const branchVal = document.getElementById('filterBranch').value;
-        const roleVal = document.getElementById('filterRole').value;
 
-        document.querySelectorAll('#employeesList .employee-row').forEach(row => {
+        document.querySelectorAll('#directoryView .employee-row').forEach(row => {
             const name = row.getAttribute('data-worker-name') || '';
-            const branch = row.getAttribute('data-worker-branch') || '';
-            const role = row.getAttribute('data-worker-role') || '';
-
-            const matchName = !query || name.includes(query);
-            const matchBranch = !branchVal || branch === branchVal;
-            const matchRole = !roleVal || role === roleVal;
-
-            row.style.display = (matchName && matchBranch && matchRole) ? '' : 'none';
+            row.style.display = (!query || name.includes(query)) ? '' : 'none';
         });
     }
 
     document.getElementById('searchInput')?.addEventListener('input', filterEmployees);
-    document.getElementById('filterBranch')?.addEventListener('change', filterEmployees);
-    document.getElementById('filterRole')?.addEventListener('change', filterEmployees);
 
     // ── Clock In / Clock Out ──
     async function toggleClock(btn) {
