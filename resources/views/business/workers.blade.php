@@ -115,6 +115,12 @@
 
     $openShiftUserIds = $openShiftUserIds ?? [];
 
+    // ── Headline stats — all real counts, no fabricated trend figures ──
+    $totalEmployees = $workers->count();
+    $managerCount   = $workers->where('role', User::ROLE_MANAGER)->count();
+    $staffCount     = $workers->where('role', User::ROLE_STAFF)->count();
+    $onShiftCount   = count($openShiftUserIds);
+
     // ── Workers data for JS (pre-computed to avoid @json parsing issues) ──
     $workersJsData = $workers->map(fn($w) => [
         'id'         => $w->id,
@@ -217,6 +223,26 @@
             @include('partials._business-tabs', ['active' => 'workers'])
         </div>
 
+        {{-- Headline Stats --}}
+        <div class="grid grid-cols-4 max-[880px]:grid-cols-2 card border-[1.5px] border-line overflow-hidden divide-x divide-line max-[880px]:divide-x-0">
+            <div class="p-4 text-center max-[880px]:border-b max-[880px]:border-line">
+                <div class="text-[28px] font-extrabold text-accent leading-none">{{ $totalEmployees }}</div>
+                <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">Total Employees</div>
+            </div>
+            <div class="p-4 text-center max-[880px]:border-b max-[880px]:border-line">
+                <div class="text-[28px] font-extrabold text-accent leading-none">{{ $managerCount }}</div>
+                <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">Managers</div>
+            </div>
+            <div class="p-4 text-center">
+                <div class="text-[28px] font-extrabold text-accent leading-none">{{ $staffCount }}</div>
+                <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">Staff</div>
+            </div>
+            <div class="p-4 text-center">
+                <div class="text-[28px] font-extrabold {{ $onShiftCount > 0 ? 'text-green-600' : 'text-accent' }} leading-none">{{ $onShiftCount }}</div>
+                <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">On Shift Now</div>
+            </div>
+        </div>
+
         {{-- Worker Profile Card --}}
         <div class="card border-[1.5px] border-line overflow-hidden">
             <div class="flex flex-wrap items-center gap-4 px-6 py-5 border-b border-line">
@@ -270,7 +296,7 @@
             <div class="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] max-[1100px]:grid-cols-1">
                 {{-- Col 1: Contact Info --}}
                 <div class="px-6 py-5 border-r border-line max-[1100px]:border-r-0 max-[1100px]:border-b">
-                    <div class="text-[10px] font-bold uppercase tracking-[.06em] opacity-50 mb-3.5">Contact Info</div>
+                    <div class="text-xs font-bold uppercase tracking-[.04em] text-accent mb-3.5">Contact Info</div>
                     <div class="flex flex-col gap-0.5 mb-3.5">
                         <span class="text-[10px] font-semibold uppercase tracking-[.04em] opacity-40">Number</span>
                         <span class="text-[13px] font-semibold [overflow-wrap:break-word]">{{ $selectedWorker->number }}</span>
@@ -292,7 +318,7 @@
                 </div>
                 {{-- Col 2: Education & Emergency --}}
                 <div class="px-6 py-5">
-                    <div class="text-[10px] font-bold uppercase tracking-[.06em] opacity-50 mb-3.5">Education &amp; Emergency</div>
+                    <div class="text-xs font-bold uppercase tracking-[.04em] text-accent mb-3.5">Education</div>
                     <div class="flex flex-col gap-0.5 mb-3.5">
                         <span class="text-[10px] font-semibold uppercase tracking-[.04em] opacity-40">Senior High</span>
                         <span class="text-[13px] font-semibold [overflow-wrap:break-word]">{{ $selectedWorker->senior_high }}</span>
@@ -301,6 +327,7 @@
                         <span class="text-[10px] font-semibold uppercase tracking-[.04em] opacity-40">College</span>
                         <span class="text-[13px] font-semibold [overflow-wrap:break-word]">{{ $selectedWorker->college }}</span>
                     </div>
+                    <div class="text-xs font-bold uppercase tracking-[.04em] text-accent mb-3.5 mt-4">Emergency Contact</div>
                     <div class="flex flex-col gap-0.5 mb-3.5">
                         <span class="text-[10px] font-semibold uppercase tracking-[.04em] opacity-40">Partner's Contact</span>
                         <span class="text-[13px] font-semibold [overflow-wrap:break-word]">{{ $selectedWorker->partner_contact }}</span>
@@ -315,7 +342,7 @@
             {{-- Skills & Notes Footer --}}
             <div class="grid grid-cols-2 border-t border-line px-6 py-4 max-[1100px]:grid-cols-1 max-[1100px]:gap-4">
                 <div class="flex flex-col gap-2">
-                    <span class="text-[10px] font-bold uppercase tracking-[.06em] opacity-50">Skills</span>
+                    <span class="text-xs font-bold uppercase tracking-[.04em] text-accent">Skills</span>
                     <div class="flex gap-1.5 flex-wrap">
                         @foreach ($selectedWorker->skills as $skill)
                             <span class="px-3 py-1 rounded-full bg-accent/[.08] text-accent text-[11px] font-semibold">{{ $skill }}</span>
@@ -323,7 +350,7 @@
                     </div>
                 </div>
                 <div class="flex flex-col gap-1.5">
-                    <span class="text-[10px] font-bold uppercase tracking-[.06em] opacity-50">Note</span>
+                    <span class="text-xs font-bold uppercase tracking-[.04em] text-accent">Note</span>
                     <div class="text-xs font-medium bg-[rgba(250,249,247,.6)] px-4 py-3 rounded-lg border border-[rgba(92,45,27,.08)] leading-relaxed w-full">{{ $selectedWorker->note }}</div>
                 </div>
             </div>
@@ -332,7 +359,7 @@
         {{-- Bottom Two-Up: Work Shift + Performance --}}
         <div class="grid grid-cols-2 gap-4 max-[880px]:grid-cols-1">
             <div class="card border-[1.5px] border-line border-t-[3px] border-t-accent p-5">
-                <div class="text-[11px] font-bold uppercase tracking-[.08em] opacity-60 mb-4">Work Shift</div>
+                <div class="text-xs font-bold uppercase tracking-[.04em] text-accent mb-4">Work Shift</div>
                 <div class="grid grid-cols-[48px_1fr] gap-x-3 gap-y-0.5" id="scheduleDisplay">
                     @foreach ($selectedWorker->schedule as $day => $hours)
                         <div class="contents">
@@ -348,7 +375,7 @@
             </div>
             <div class="card border-[1.5px] border-line p-5">
                 <div class="flex items-center justify-between mb-3.5 pb-3 border-b border-line">
-                    <span class="text-[11px] font-bold uppercase tracking-[.06em] opacity-60">Performance</span>
+                    <span class="text-xs font-bold uppercase tracking-[.04em] text-accent">Performance</span>
                     <div class="flex items-center gap-3">
                         <div class="flex items-center gap-1.5">
                             <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-600/10 text-green-600 text-sm font-extrabold">
