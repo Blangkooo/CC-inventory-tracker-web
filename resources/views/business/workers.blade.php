@@ -232,7 +232,7 @@
         {{-- Worker Profile Card --}}
         <div class="card border-[1.5px] border-line overflow-hidden">
             <div class="flex flex-wrap items-center gap-4 px-6 py-5 border-b border-line">
-                <div class="w-14 h-14 rounded-full bg-accent text-white flex items-center justify-center text-xl font-bold shrink-0 border-[3px] border-accent/20">{{ $initials($selectedWorker->name) }}</div>
+                <div class="avatar avatar-lg border-[3px] border-accent/20">{{ $initials($selectedWorker->name) }}</div>
                 <div class="flex-1 min-w-[140px]" style="word-break:keep-all">
                     <div class="text-lg font-extrabold">{{ $selectedWorker->name }}</div>
                     <span class="inline-block mt-1 px-3 py-[3px] rounded-full bg-accent/10 text-accent text-[11px] font-semibold">{{ $selectedWorker->role }}</span>
@@ -282,7 +282,7 @@
             <div class="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] max-[1100px]:grid-cols-1">
                 {{-- Col 1: Contact Info --}}
                 <div class="px-6 py-5 border-r border-line max-[1100px]:border-r-0 max-[1100px]:border-b">
-                    <div class="text-xs font-bold uppercase tracking-[.04em] text-accent mb-3.5">Contact Info</div>
+                    <div class="section-label mb-3.5">Contact Info</div>
                     <div class="flex flex-col gap-0.5 mb-3.5">
                         <span class="text-[10px] font-semibold uppercase tracking-[.04em] opacity-40">Number</span>
                         <span class="text-[13px] font-semibold [overflow-wrap:break-word]">{{ $selectedWorker->number }}</span>
@@ -304,7 +304,7 @@
                 </div>
                 {{-- Col 2: Education & Emergency --}}
                 <div class="px-6 py-5">
-                    <div class="text-xs font-bold uppercase tracking-[.04em] text-accent mb-3.5">Education</div>
+                    <div class="section-label mb-3.5">Education</div>
                     <div class="flex flex-col gap-0.5 mb-3.5">
                         <span class="text-[10px] font-semibold uppercase tracking-[.04em] opacity-40">Senior High</span>
                         <span class="text-[13px] font-semibold [overflow-wrap:break-word]">{{ $selectedWorker->senior_high }}</span>
@@ -313,7 +313,7 @@
                         <span class="text-[10px] font-semibold uppercase tracking-[.04em] opacity-40">College</span>
                         <span class="text-[13px] font-semibold [overflow-wrap:break-word]">{{ $selectedWorker->college }}</span>
                     </div>
-                    <div class="text-xs font-bold uppercase tracking-[.04em] text-accent mb-3.5 mt-4">Emergency Contact</div>
+                    <div class="section-label mb-3.5 mt-4">Emergency Contact</div>
                     <div class="flex flex-col gap-0.5 mb-3.5">
                         <span class="text-[10px] font-semibold uppercase tracking-[.04em] opacity-40">Partner's Contact</span>
                         <span class="text-[13px] font-semibold [overflow-wrap:break-word]">{{ $selectedWorker->partner_contact }}</span>
@@ -328,7 +328,7 @@
             {{-- Skills & Notes Footer --}}
             <div class="grid grid-cols-2 border-t border-line px-6 py-4 max-[1100px]:grid-cols-1 max-[1100px]:gap-4">
                 <div class="flex flex-col gap-2">
-                    <span class="text-xs font-bold uppercase tracking-[.04em] text-accent">Skills</span>
+                    <span class="section-label">Skills</span>
                     <div class="flex gap-1.5 flex-wrap">
                         @foreach ($selectedWorker->skills as $skill)
                             <span class="px-3 py-1 rounded-full bg-accent/[.08] text-accent text-[11px] font-semibold">{{ $skill }}</span>
@@ -336,7 +336,7 @@
                     </div>
                 </div>
                 <div class="flex flex-col gap-1.5">
-                    <span class="text-xs font-bold uppercase tracking-[.04em] text-accent">Note</span>
+                    <span class="section-label">Note</span>
                     <div class="text-xs font-medium bg-[rgba(250,249,247,.6)] px-4 py-3 rounded-lg border border-[rgba(92,45,27,.08)] leading-relaxed w-full">{{ $selectedWorker->note }}</div>
                 </div>
             </div>
@@ -344,8 +344,8 @@
 
         {{-- Bottom Three-Up: Work Shift + Performance + Peer Review --}}
         <div class="grid grid-cols-3 gap-4 max-[1100px]:grid-cols-1">
-            <div class="card border-[1.5px] border-line border-t-[3px] border-t-accent p-5">
-                <div class="text-xs font-bold uppercase tracking-[.04em] text-accent mb-4">Work Shift</div>
+            <div class="card card-accent-top p-5">
+                <div class="section-label mb-4">Work Shift</div>
                 <div class="grid grid-cols-[48px_1fr] gap-x-3 gap-y-0.5" id="scheduleDisplay">
                     @foreach ($selectedWorker->schedule as $day => $hours)
                         <div class="contents">
@@ -361,7 +361,7 @@
             </div>
             <div class="card border-[1.5px] border-line p-5">
                 <div class="flex items-center justify-between mb-3.5 pb-3 border-b border-line">
-                    <span class="text-xs font-bold uppercase tracking-[.04em] text-accent">Performance</span>
+                    <span class="section-label">Performance</span>
                     <div class="flex items-center gap-3">
                         <div class="flex items-center gap-1.5">
                             <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-600/10 text-green-600 text-sm font-extrabold">
@@ -394,9 +394,9 @@
                     @endforelse
                 </div>
             </div>
-            <div class="card border-[1.5px] border-line border-t-[3px] border-t-accent p-5 flex flex-col">
+            <div class="card card-accent-top p-5 flex flex-col">
                 <div class="flex items-center justify-between mb-3.5 pb-3 border-b border-line">
-                    <span class="text-xs font-bold uppercase tracking-[.04em] text-accent">Peer Review</span>
+                    <span class="section-label">Peer Review</span>
                     <button type="button" class="border-[1.5px] border-line bg-white cursor-pointer px-3 py-1 rounded-md text-[11px] font-semibold transition-all duration-[120ms] hover:border-accent hover:text-accent" onclick="openReviewModal({{ $selectedWorker->id }})">
                         <span class="flex items-center gap-1">
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -412,7 +412,7 @@
                         @endphp
                         <div class="relative p-3 pl-4 bg-[rgba(92,45,27,.03)] border border-[rgba(92,45,27,.08)] rounded-lg border-l-[3px] border-l-accent/40" data-review-id="{{ $review->id }}">
                             <div class="flex items-start gap-2.5">
-                                <div class="w-6 h-6 rounded-full bg-accent text-white flex items-center justify-center text-[9px] font-bold shrink-0 mt-0.5">{{ $reviewerInitials }}</div>
+                                <div class="avatar avatar-sm mt-0.5">{{ $reviewerInitials }}</div>
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center justify-between gap-2">
                                         <span class="text-[11.5px] font-bold truncate">{{ $reviewerName }}</span>
@@ -434,16 +434,19 @@
                             </div>
                         </div>
                     @empty
-                        <div class="text-[13px] opacity-40 p-2.5 text-center">No reviews yet.</div>
+                        <div class="empty-state-icon !py-5">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            <span class="empty-state-text">No reviews yet.</span>
+                        </div>
                     @endforelse
                 </div>
             </div>
         </div>
 
         {{-- GOALS --}}
-        <div class="card border-[1.5px] border-line border-t-[3px] border-t-accent p-5">
+        <div class="card card-accent-top p-5">
             <div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
-                <span class="text-xs font-bold uppercase tracking-[.04em] text-accent">Goals</span>
+                <span class="section-label">Goals</span>
                 <div class="flex items-center gap-3">
                     @if ($goalsTotalCount > 0)
                         <span class="text-[11px] font-semibold opacity-50">{{ $goalsCompletedCount }} of {{ $goalsTotalCount }} completed</span>
@@ -479,7 +482,10 @@
                         <button type="button" class="opacity-30 hover:opacity-80 hover:text-red-600 cursor-pointer bg-transparent border-none p-0 leading-none text-base shrink-0" onclick="deleteGoal({{ $goal->id }})" title="Delete">&times;</button>
                     </div>
                 @empty
-                    <div class="text-[13px] opacity-40 p-2.5 text-center">No goals set yet.</div>
+                    <div class="empty-state-icon !py-5">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                        <span class="empty-state-text">No goals set yet.</span>
+                    </div>
                 @endforelse
             </div>
         </div>
@@ -572,7 +578,7 @@
                         <div class="flex flex-col gap-1">
                             @forelse ($group['managers'] as $worker)
                                 <a href="{{ url('/business/workers') }}?worker={{ $worker->id }}{{ $reqBranchId ? '&branch_id='.$reqBranchId : '' }}" class="employee-row flex items-center gap-2.5 px-2.5 py-2 rounded-lg no-underline text-[var(--color-ink)] transition-colors hover:bg-[rgba(92,45,27,.04)]" data-worker-name="{{ strtolower($worker->name) }}">
-                                    <div class="w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center text-[11px] font-bold shrink-0">{{ $initials($worker->name) }}</div>
+                                    <div class="avatar avatar-md">{{ $initials($worker->name) }}</div>
                                     <div class="flex-1 min-w-0">
                                         <div class="text-[13px] font-semibold truncate">{{ $worker->name }}</div>
                                         @if (in_array($worker->id, $openShiftUserIds))
@@ -590,7 +596,7 @@
                         <div class="flex flex-col gap-1">
                             @forelse ($group['staff'] as $worker)
                                 <a href="{{ url('/business/workers') }}?worker={{ $worker->id }}{{ $reqBranchId ? '&branch_id='.$reqBranchId : '' }}" class="employee-row flex items-center gap-2.5 px-2.5 py-2 rounded-lg no-underline text-[var(--color-ink)] transition-colors hover:bg-[rgba(92,45,27,.04)]" data-worker-name="{{ strtolower($worker->name) }}">
-                                    <div class="w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center text-[11px] font-bold shrink-0">{{ $initials($worker->name) }}</div>
+                                    <div class="avatar avatar-md">{{ $initials($worker->name) }}</div>
                                     <div class="flex-1 min-w-0">
                                         <div class="text-[13px] font-semibold truncate">{{ $worker->name }}</div>
                                         @if (in_array($worker->id, $openShiftUserIds))
@@ -613,9 +619,9 @@
     </div>
 
     {{-- OPEN POSITIONS --}}
-    <div class="card border-[1.5px] border-line border-t-[3px] border-t-accent p-5">
+    <div class="card card-accent-top p-5">
         <div class="flex items-center justify-between mb-3.5 pb-3 border-b border-line">
-            <span class="text-xs font-bold uppercase tracking-[.04em] text-accent flex items-center gap-1.5">
+            <span class="section-label flex items-center gap-1.5">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
                 Open Positions
             </span>
@@ -638,7 +644,10 @@
                     <div class="text-[11px] font-semibold text-accent mt-1">{{ $opening->applicants_count }} {{ Str::plural('applicant', $opening->applicants_count) }}</div>
                 </div>
             @empty
-                <div class="text-[13px] opacity-40 p-2.5 text-center">No open positions right now.</div>
+                <div class="empty-state-icon !py-5">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                    <span class="empty-state-text">No open positions right now.</span>
+                </div>
             @endforelse
         </div>
     </div>

@@ -747,7 +747,7 @@ function renderProfile(data) {
                         : s.margin_pct >= 40 ? '#e17055'
                         : '#d63031';
 
-        html += '<div class="text-xs font-bold uppercase tracking-[.04em] text-accent mb-2">' + escapeHtml(s.size) + '</div>'
+        html += '<div class="section-label mb-2">' + escapeHtml(s.size) + '</div>'
              +  '<div class="grid grid-cols-3 gap-3 p-[18px] mb-5 bg-accent-light border border-line border-t-[3px] rounded-xl" style="border-top-color:' + valueColor + '">'
              +    '<div class="text-center">'
              +      '<div class="text-xl font-extrabold" style="color:' + valueColor + '">' + peso(p.price) + '</div>'

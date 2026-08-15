@@ -114,6 +114,13 @@
     .badge.blue,  .badge-blue  { background: rgba(108, 92, 231, 0.08); color: var(--color-blue); }
 
     .empty-state { text-align: center; padding: 32px; font-size: 13px; color: var(--color-ink-3); }
+    .empty-state-icon {
+        text-align: center;
+        padding: 32px 16px;
+        color: var(--color-ink-3);
+    }
+    .empty-state-icon svg { display: block; margin: 0 auto 10px; opacity: 0.35; }
+    .empty-state-icon .empty-state-text { font-size: 13px; font-weight: 600; }
     .all-clear {
         color: var(--color-green);
         font-size: 13px;
@@ -121,6 +128,39 @@
         text-align: center;
         padding: 36px 8px;
     }
+
+    /* Bold accent-colored uppercase caption — section headers inside a card. */
+    .section-label {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--color-accent);
+    }
+
+    /* Card with a colored top stripe, used to mark a card's category or state
+       at a glance (e.g. margin health, on-shift status) without extra copy. */
+    .card-accent-top {
+        border: 1.5px solid var(--color-line);
+        border-top: 3px solid var(--color-accent);
+        border-radius: var(--radius-card);
+    }
+
+    /* Initials avatar — person or product, sized by context. */
+    .avatar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        background: var(--color-accent);
+        color: #fff;
+        font-weight: 700;
+        flex-shrink: 0;
+        letter-spacing: 0.02em;
+    }
+    .avatar-sm { width: 24px; height: 24px; font-size: 9px; }
+    .avatar-md { width: 34px; height: 34px; font-size: 12px; }
+    .avatar-lg { width: 56px; height: 56px; font-size: 20px; }
 
     .filter-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
     .tab {
