@@ -164,9 +164,9 @@
 
     {{-- Page Header --}}
     <div class="flex items-center justify-between flex-wrap gap-3">
-        <div class="flex items-baseline gap-2.5">
-            <h1 class="text-[22px] font-extrabold tracking-[.02em]">Businesses</h1>
-            <span class="text-[15px] font-normal opacity-50">/ Owner</span>
+        <div>
+            <div class="text-[22px] font-extrabold tracking-tight">Employees</div>
+            <div class="text-[13px] text-ink-2 mt-0.5">Manage your roster, track shifts, and review performance.</div>
         </div>
         @include('partials._business-tabs', ['active' => 'workers'])
     </div>

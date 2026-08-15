@@ -322,6 +322,13 @@
     }
 </style>
 
+<div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+    <div>
+        <div class="text-[22px] font-extrabold tracking-tight">Analytics</div>
+        <div class="text-[13px] text-ink-2 mt-0.5">Trends, comparisons, and leakage across branches.</div>
+    </div>
+</div>
+
 {{-- ═══ BUSINESS TABS (with toggle as first tab) ═══ --}}
 <div class="analytics-tabs">
     <button class="analytics-tab active" id="viewToggleTab" onclick="toggleView()">

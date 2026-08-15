@@ -33,6 +33,13 @@
     $activePct  = $employees_total > 0 ? round(($employees_on_shift / $employees_total) * 100) : 0;
 @endphp
 
+<div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+    <div>
+        <div class="text-[22px] font-extrabold tracking-tight">Dashboard</div>
+        <div class="text-[13px] text-ink-2 mt-0.5">Monitor business health across all branches.</div>
+    </div>
+</div>
+
 {{-- ══ Headline figures ══ --}}
 <div class="grid grid-cols-1 gap-5 mb-5 sm:grid-cols-2 lg:grid-cols-4">
     <div class="ncard relative">

@@ -124,9 +124,9 @@
     <div class="flex-1 min-w-0 flex flex-col gap-5">
 
         <div class="flex items-center justify-between flex-wrap gap-3">
-            <div class="flex items-baseline gap-2.5">
-                <h1 class="text-[22px] font-extrabold">Businesses</h1>
-                <span class="text-[15px] font-normal opacity-50">/ {{ auth()->user()->isOwner() ? 'Owner' : 'Manager' }}</span>
+            <div>
+                <div class="text-[22px] font-extrabold tracking-tight">Recipes</div>
+                <div class="text-[13px] text-ink-2 mt-0.5">Manage recipes, pricing, and ingredient costs per product.</div>
             </div>
             @include('partials._business-tabs', ['active' => 'recipes'])
         </div>
