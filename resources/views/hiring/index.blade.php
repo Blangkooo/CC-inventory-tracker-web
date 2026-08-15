@@ -80,7 +80,17 @@
 </div>
 
 {{-- APPLICANTS --}}
-<div id="panelApplicants" class="summary-table-wrap hidden">
+<div id="panelApplicants" class="hidden">
+    @if ($applicants->isNotEmpty())
+        @include('partials._filter-toolbar', [
+            'ft_id' => 'applicantsFilter',
+            'ft_target' => '#applicantsTbody tr',
+            'ft_searchPlaceholder' => 'Search applicant name…',
+            'ft_branches' => $branches,
+            'ft_statusOptions' => ['applied' => 'Applied', 'shortlisted' => 'Shortlisted', 'interviewed' => 'Interviewed', 'hired' => 'Hired', 'rejected' => 'Rejected'],
+        ])
+    @endif
+    <div class="summary-table-wrap">
     @if ($applicants->isEmpty())
         <div class="empty-state-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
@@ -89,9 +99,9 @@
     @else
         <table class="summary-table">
             <thead><tr><th>Name</th><th>Opening</th><th>Contact</th><th>Status</th><th>Resume</th><th></th></tr></thead>
-            <tbody>
+            <tbody id="applicantsTbody">
                 @foreach ($applicants as $applicant)
-                <tr>
+                <tr data-search="{{ strtolower($applicant->name) }}" data-branch-id="{{ $applicant->opening?->branch_id }}" data-status="{{ $applicant->status }}" data-created="{{ $applicant->created_at->timestamp }}">
                     <td class="font-bold">{{ $applicant->name }}</td>
                     <td>{{ $applicant->opening?->title ?? '—' }}</td>
                     <td>{{ $applicant->email ?? '—' }}{{ $applicant->phone ? ' · '.$applicant->phone : '' }}</td>
@@ -115,6 +125,7 @@
             </tbody>
         </table>
     @endif
+    </div>
 </div>
 
 {{-- PIPELINE (KANBAN) --}}

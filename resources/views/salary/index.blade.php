@@ -29,6 +29,14 @@
 
 <div class="mb-4">
     <h3 class="text-[15px] font-extrabold mb-2.5">Worker Rates</h3>
+    @if ($workers->isNotEmpty())
+        @include('partials._filter-toolbar', [
+            'ft_id' => 'workerRatesFilter',
+            'ft_target' => '#workerRatesTbody tr',
+            'ft_searchPlaceholder' => 'Search worker name…',
+            'ft_branches' => $branches,
+        ])
+    @endif
     <div class="summary-table-wrap">
         @if ($workers->isEmpty())
             <div class="empty-state-icon">
@@ -38,9 +46,9 @@
         @else
             <table class="summary-table">
                 <thead><tr><th>Worker</th><th>Branch</th><th>Hourly Rate</th><th></th></tr></thead>
-                <tbody>
+                <tbody id="workerRatesTbody">
                     @foreach ($workers as $worker)
-                    <tr>
+                    <tr data-search="{{ strtolower($worker->name) }}" data-branch-id="{{ $worker->branch_id }}">
                         <td class="font-bold">{{ $worker->name }}</td>
                         <td>{{ $worker->branch?->name ?? '—' }}</td>
                         <td>
@@ -66,6 +74,16 @@
 
 <div>
     <h3 class="text-[15px] font-extrabold mb-2.5">Payslip History</h3>
+    @if ($payslips->isNotEmpty())
+        @include('partials._filter-toolbar', [
+            'ft_id' => 'payslipsFilter',
+            'ft_target' => '#payslipsTbody tr',
+            'ft_searchPlaceholder' => 'Search worker name…',
+            'ft_branches' => $branches,
+            'ft_date' => true,
+            'ft_statusOptions' => ['draft' => 'Draft', 'paid' => 'Paid'],
+        ])
+    @endif
     <div class="summary-table-wrap">
         @if ($payslips->isEmpty())
             <div class="empty-state-icon">
@@ -75,9 +93,9 @@
         @else
             <table class="summary-table">
                 <thead><tr><th>Worker</th><th>Branch</th><th>Period</th><th>Hours</th><th>Net Pay</th><th>Status</th><th></th></tr></thead>
-                <tbody>
+                <tbody id="payslipsTbody">
                     @foreach ($payslips as $payslip)
-                    <tr>
+                    <tr data-search="{{ strtolower($payslip->user?->name ?? '') }}" data-branch-id="{{ $payslip->branch_id }}" data-status="{{ $payslip->status }}" data-created="{{ $payslip->created_at->timestamp }}">
                         <td class="font-bold">{{ $payslip->user?->name ?? '—' }}</td>
                         <td>{{ $payslip->branch?->name ?? '—' }}</td>
                         <td>{{ $payslip->period_start->format('M d') }} &ndash; {{ $payslip->period_end->format('M d, Y') }}</td>

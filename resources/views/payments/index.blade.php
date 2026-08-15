@@ -32,6 +32,17 @@
     </div>
 </div>
 
+@if ($payments->isNotEmpty())
+    @include('partials._filter-toolbar', [
+        'ft_id' => 'paymentsFilter',
+        'ft_target' => '#paymentsTbody tr',
+        'ft_searchPlaceholder' => 'Search payee…',
+        'ft_branches' => $branches,
+        'ft_date' => true,
+        'ft_statusOptions' => ['pending' => 'Pending', 'paid' => 'Paid', 'overdue' => 'Overdue'],
+    ])
+@endif
+
 <div class="summary-table-wrap">
     @if ($payments->isEmpty())
         <div class="empty-state-icon">
@@ -41,9 +52,9 @@
     @else
         <table class="summary-table">
             <thead><tr><th>Payee</th><th>Category</th><th>Branch</th><th>Method</th><th>Amount</th><th>Due</th><th>Status</th><th></th></tr></thead>
-            <tbody>
+            <tbody id="paymentsTbody">
                 @foreach ($payments as $payment)
-                <tr>
+                <tr data-search="{{ strtolower($payment->payee) }}" data-branch-id="{{ $payment->branch_id }}" data-status="{{ $payment->status }}" data-created="{{ $payment->created_at->timestamp }}">
                     <td>
                         <div class="font-bold">{{ $payment->payee }}</div>
                         @if ($payment->receipt_photo)

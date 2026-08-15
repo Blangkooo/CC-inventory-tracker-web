@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Branch;
 use App\Models\Payslip;
 use App\Models\ShiftLog;
 use App\Models\User;
@@ -17,11 +18,13 @@ class SalaryController extends Controller
         $isManager = $user->isManager();
         $branchId = $isManager ? $user->branch_id : null;
 
-        $workers = User::with('profile')
+        $workers = User::with('profile', 'branch')
             ->whereIn('role', [User::ROLE_STAFF, User::ROLE_MANAGER])
             ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
             ->orderBy('name')
             ->get();
+
+        $branches = Branch::when($isManager, fn ($q) => $q->where('id', $branchId))->orderBy('name')->get();
 
         $payslips = Payslip::with('user', 'branch')
             ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
@@ -37,6 +40,7 @@ class SalaryController extends Controller
 
         return view('salary.index', [
             'workers' => $workers,
+            'branches' => $branches,
             'payslips' => $payslips,
             'kpi_monthly_payroll' => $monthlyPayslips->sum('gross_pay'),
             'kpi_pending_payslips' => $monthlyPayslips->where('status', 'draft')->count(),
