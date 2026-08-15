@@ -351,10 +351,16 @@
      INGREDIENT PROFILE DRILL-DOWN MODAL
      ═══════════════════════════════════════════════════════════════════ --}}
 <div class="modal-overlay" id="profile-modal">
-    <div class="bg-card rounded-[16px] shadow-[0_8px_40px_rgba(92,45,27,.2)] w-full max-w-[720px] max-h-[90vh] flex flex-col" style="animation:modalIn .2s ease">
-        <div class="flex items-center justify-between px-6 py-5 border-b border-line">
-            <h2 class="text-[17px] font-extrabold" id="profile-title">Ingredient Profile</h2>
-            <button class="w-8 h-8 rounded-lg border-none bg-transparent text-[#5c2d1b] cursor-pointer flex items-center justify-center transition-[background] duration-150 hover:bg-[rgba(92,45,27,.08)]" onclick="closeProfile()">
+    <div class="bg-card rounded-[16px] shadow-[0_8px_40px_rgba(92,45,27,.2)] w-full max-w-[720px] max-h-[90vh] flex flex-col border-t-[3px] border-t-accent overflow-hidden" style="animation:modalIn .2s ease">
+        <div class="flex items-center gap-3 px-6 py-5 border-b border-line">
+            <div class="w-9 h-9 rounded-full bg-accent/10 text-accent flex items-center justify-center shrink-0">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="text-[10px] font-bold uppercase tracking-[.05em] text-accent">Ingredient Profile</div>
+                <h2 class="text-[17px] font-extrabold truncate" id="profile-title">&nbsp;</h2>
+            </div>
+            <button class="w-8 h-8 rounded-lg border-none bg-transparent text-[#5c2d1b] cursor-pointer flex items-center justify-center transition-[background] duration-150 hover:bg-[rgba(92,45,27,.08)] shrink-0" onclick="closeProfile()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
@@ -741,8 +747,8 @@ function renderProfile(data) {
                         : s.margin_pct >= 40 ? '#e17055'
                         : '#d63031';
 
-        html += '<div class="text-[10px] font-bold uppercase tracking-[.06em] opacity-50 mb-1.5">' + escapeHtml(s.size) + '</div>'
-             +  '<div class="grid grid-cols-3 gap-3 p-[18px] mb-5 bg-accent-light border border-line rounded-xl">'
+        html += '<div class="text-xs font-bold uppercase tracking-[.04em] text-accent mb-2">' + escapeHtml(s.size) + '</div>'
+             +  '<div class="grid grid-cols-3 gap-3 p-[18px] mb-5 bg-accent-light border border-line border-t-[3px] rounded-xl" style="border-top-color:' + valueColor + '">'
              +    '<div class="text-center">'
              +      '<div class="text-xl font-extrabold" style="color:' + valueColor + '">' + peso(p.price) + '</div>'
              +      '<div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-55 mt-[3px]">Selling Price</div>'
@@ -770,11 +776,14 @@ function renderProfile(data) {
 
         data.ingredients.forEach(function (ing) {
             var supplier = ing.supplier
-                ? '<div class="text-xs">'
-                +   '<div class="font-semibold">' + escapeHtml(ing.supplier.name) + '</div>'
-                +   (ing.supplier.contact_number
-                        ? '<div class="opacity-50 text-[11px]">' + escapeHtml(ing.supplier.contact_number) + '</div>'
-                        : '')
+                ? '<div class="flex items-center gap-1.5">'
+                +   '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-accent shrink-0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'
+                +   '<div class="text-xs">'
+                +     '<div class="font-semibold">' + escapeHtml(ing.supplier.name) + '</div>'
+                +     (ing.supplier.contact_number
+                          ? '<div class="opacity-50 text-[11px]">' + escapeHtml(ing.supplier.contact_number) + '</div>'
+                          : '')
+                +   '</div>'
                 + '</div>'
                 : '<span class="text-xs opacity-40 italic">Not linked</span>';
 
@@ -793,11 +802,13 @@ function renderProfile(data) {
 
     var hints = data.sizes.filter(function (s) { return s.suggested_price_65 > 0; });
     if (hints.length) {
-        html += '<div class="mt-4 p-2.5 px-3.5 rounded-lg bg-[rgba(0,184,148,.07)] border border-[rgba(0,184,148,.2)] text-xs font-semibold text-[#00b894]">Suggested price at 65% margin &mdash; '
+        html += '<div class="mt-4 flex items-center gap-2 p-3 px-3.5 rounded-lg bg-[rgba(0,184,148,.07)] border border-[rgba(0,184,148,.2)]">'
+             +  '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00b894" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>'
+             +  '<span class="text-xs font-semibold text-[#00b894]">Suggested price at 65% margin — '
              +  hints.map(function (s) {
                     return escapeHtml(s.size) + ': ' + peso(s.suggested_price_65);
-                }).join(' &middot; ')
-             +  '</div>';
+                }).join(' · ')
+             +  '</span></div>';
     }
 
     document.getElementById('profile-body').innerHTML = html;
