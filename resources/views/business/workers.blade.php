@@ -1,24 +1,8 @@
 @php
     use App\Models\User;
 
-    // ── Placeholder fallbacks ─────────────────────────────────────────
-    if (!isset($branches) || $branches->isEmpty()) {
-        $branches = collect([
-            (object)['id'=>1,'name'=>'QC Main Branch', 'location'=>'Quezon City'],
-            (object)['id'=>2,'name'=>'Makati Outlet',  'location'=>'Makati City'],
-            (object)['id'=>3,'name'=>'BGC Branch',     'location'=>'Taguig City'],
-            (object)['id'=>4,'name'=>'Cebu City Branch','location'=>'Cebu City'],
-        ]);
-    }
-    if (!isset($workers) || $workers->isEmpty()) {
-        $workers = collect([
-            (object)['id'=>1, 'name'=>'Maria Santos',    'role'=>User::ROLE_STAFF, 'branch_id'=>1],
-            (object)['id'=>2, 'name'=>'Juan dela Cruz',  'role'=>User::ROLE_STAFF, 'branch_id'=>1],
-            (object)['id'=>3, 'name'=>'Ana Reyes',       'role'=>User::ROLE_STAFF, 'branch_id'=>2],
-            (object)['id'=>4, 'name'=>'Pedro Gonzales',  'role'=>User::ROLE_STAFF, 'branch_id'=>2],
-            (object)['id'=>5, 'name'=>'Luisa Tan',       'role'=>User::ROLE_STAFF, 'branch_id'=>3],
-        ]);
-    }
+    $branches = $branches ?? collect();
+    $workers = $workers ?? collect();
 
     // ── Resolve selected worker ──────────────────────────────────────
     $reqWorkerId = request()->integer('worker', 0);
@@ -30,80 +14,26 @@
         $selectedUser = $workers->first();
     }
 
-    // ── Build detailed profile from DB + fallback extras ──────────
-    $profileFallbacks = [
-        'Maria Santos' => [
-            'number' => '+63 912 345 6789', 'address' => '123 Katipunan Ave, Quezon City', 'birthday' => 'March 15, 1998',
-            'senior_high' => 'Quezon City Science HS', 'college' => 'UP Diliman — BS Nutrition',
-            'partner_contact' => '+63 917 654 3210', 'mother_contact' => '+63 908 777 8888',
-            'skills' => ['Barista', 'Chef', 'Marketing'], 'note' => 'Allergies: Pollen — Severe',
-            'schedule' => ['Mon'=>'10:00 AM — 8:00 PM','Tue'=>'10:00 AM — 8:00 PM','Wed'=>'10:00 AM — 8:00 PM','Thu'=>'10:00 AM — 8:00 PM','Fri'=>'10:00 AM — 8:00 PM'],
-            'performance' => ['Always on time','Good customer service','Fast worker','Team player','High accuracy on orders'],
-        ],
-        'Juan dela Cruz' => [
-            'number' => '+63 923 456 7890', 'address' => '456 Shaw Blvd, Mandaluyong City', 'birthday' => 'June 10, 1997',
-            'senior_high' => 'Mandaluyong Science HS', 'college' => 'UST — BS Hotel & Restaurant Mgmt',
-            'partner_contact' => '+63 927 111 2222', 'mother_contact' => '+63 902 333 4444',
-            'skills' => ['Chef', 'Baking', 'Inventory'], 'note' => 'Food handling cert. expires Dec 2026',
-            'schedule' => ['Mon'=>'10:00 AM — 8:00 PM','Tue'=>'10:00 AM — 8:00 PM','Wed'=>'10:00 AM — 8:00 PM','Thu'=>'10:00 AM — 8:00 PM','Fri'=>'10:00 AM — 8:00 PM'],
-            'performance' => ['Excellent cook','Good inventory management','Team player'],
-        ],
-        'Ana Reyes' => [
-            'number' => '+63 934 567 8901', 'address' => '789 Paseo de Roxas, Makati City', 'birthday' => 'September 22, 1999',
-            'senior_high' => 'Makati Science HS', 'college' => 'DLSU — BS Accountancy',
-            'partner_contact' => '+63 917 555 6666', 'mother_contact' => '+63 905 777 8888',
-            'skills' => ['Cashiering', 'Customer Service', 'Basic Barista'], 'note' => 'Cash bond on file: ₱5,000',
-            'schedule' => ['Mon'=>'10:00 AM — 8:00 PM','Tue'=>'10:00 AM — 8:00 PM','Wed'=>'10:00 AM — 8:00 PM','Thu'=>'10:00 AM — 8:00 PM','Fri'=>'10:00 AM — 8:00 PM'],
-            'performance' => ['Very reliable','Good with customers','Fast cashier'],
-        ],
-        'Pedro Gonzales' => [
-            'number' => '+63 945 678 9012', 'address' => '321 Ayala Ave, Makati City', 'birthday' => 'January 5, 1996',
-            'senior_high' => 'Ateneo de Manila SHS', 'college' => 'ADMU — BS Marketing',
-            'partner_contact' => '+63 927 888 9999', 'mother_contact' => '+63 908 111 2222',
-            'skills' => ['Marketing', 'Social Media', 'Photography'], 'note' => 'Handles all branch social media accounts',
-            'schedule' => ['Mon'=>'9:00 AM — 6:00 PM','Tue'=>'9:00 AM — 6:00 PM','Wed'=>'9:00 AM — 6:00 PM','Thu'=>'9:00 AM — 6:00 PM','Fri'=>'9:00 AM — 6:00 PM'],
-            'performance' => ['Creative campaigns','Good social media presence','Team player'],
-        ],
-        'Luisa Tan' => [
-            'number' => '+63 956 789 0123', 'address' => '654 Bonifacio High St, BGC', 'birthday' => 'November 12, 2000',
-            'senior_high' => 'BGC International SHS', 'college' => 'UP BGC — BS Business Admin',
-            'partner_contact' => '+63 917 444 5555', 'mother_contact' => '+63 905 666 7777',
-            'skills' => ['Barista', 'Latte Art', 'Pastry'], 'note' => 'Brewing competition finalist 2025',
-            'schedule' => ['Mon'=>'10:00 AM — 8:00 PM','Tue'=>'10:00 AM — 8:00 PM','Wed'=>'10:00 AM — 8:00 PM','Thu'=>'10:00 AM — 8:00 PM','Fri'=>'10:00 AM — 8:00 PM'],
-            'performance' => ['Award-winning barista','Fast worker','Great sales upsell'],
-        ],
-    ];
-
-    $name = $selectedUser->name ?? 'Worker';
-    $profile = $selectedUser->profile ?? null;
-
-    // Read from DB profile first, fall back to hardcoded demo data
-    $fallback = $profileFallbacks[$name] ?? [
-        'number' => '—', 'address' => '—', 'birthday' => '—',
-        'senior_high' => '—', 'college' => '—',
-        'partner_contact' => '—', 'mother_contact' => '—',
-        'skills' => [], 'note' => 'No notes on file.',
-        'schedule' => ['Mon'=>'10:00 AM — 8:00 PM','Tue'=>'10:00 AM — 8:00 PM','Wed'=>'10:00 AM — 8:00 PM','Thu'=>'10:00 AM — 8:00 PM','Fri'=>'10:00 AM — 8:00 PM'],
-        'performance' => ['No performance data yet.'],
-    ];
+    $name = $selectedUser?->name ?? 'Worker';
+    $profile = $selectedUser?->profile ?? null;
 
     $selectedWorker = (object) [
-        'id'              => $selectedUser->id ?? 0,
+        'id'              => $selectedUser?->id ?? 0,
         'name'            => $name,
-        'role'            => $selectedUser->role ?? 'staff',
-        'role_label'      => $selectedUser->role === User::ROLE_STAFF ? 'Staff' : 'Manager',
-        'number'          => $profile?->phone          ?? $fallback['number'],
-        'email'           => $selectedUser->email       ?? '—',
-        'address'         => $profile?->address         ?? $fallback['address'],
-        'birthday'        => $profile?->birthday        ?? $fallback['birthday'],
-        'senior_high'     => $profile?->senior_high     ?? $fallback['senior_high'],
-        'college'         => $profile?->college         ?? $fallback['college'],
-        'partner_contact' => $profile?->partner_contact ?? $fallback['partner_contact'],
-        'mother_contact'  => $profile?->mother_contact  ?? $fallback['mother_contact'],
-        'skills'          => $profile?->skills          ?? $fallback['skills'],
-        'note'            => $profile?->notes           ?? $fallback['note'],
-        'schedule'        => $profile?->work_schedule   ?? $fallback['schedule'],
-        'performance'     => $profile?->performance_metrics ?? $fallback['performance'],
+        'role'            => $selectedUser?->role ?? 'staff',
+        'role_label'      => $selectedUser?->role === User::ROLE_STAFF ? 'Staff' : 'Manager',
+        'number'          => $profile?->phone ?? '—',
+        'email'           => $selectedUser?->email ?? '—',
+        'address'         => $profile?->address ?? '—',
+        'birthday'        => $profile?->birthday ?? '—',
+        'senior_high'     => $profile?->senior_high ?? '—',
+        'college'         => $profile?->college ?? '—',
+        'partner_contact' => $profile?->partner_contact ?? '—',
+        'mother_contact'  => $profile?->mother_contact ?? '—',
+        'skills'          => $profile?->skills ?? [],
+        'note'            => $profile?->notes ?? 'No notes on file.',
+        'schedule'        => $profile?->work_schedule ?? [],
+        'performance'     => $profile?->performance_metrics ?? [],
         'rating'          => $profile?->rating ?? 0,
         'profile_id'      => $profile?->id,
         'peer_reviews'    => $selectedUser?->peerReviews->sortByDesc('created_at')->values() ?? collect(),
@@ -224,10 +154,10 @@
 
     @if ($reqWorkerId)
     {{-- ═══════════════════ PROFILE VIEW ═══════════════════ --}}
-    <a href="{{ url('/business/workers') }}{{ $reqBranchId ? '?branch_id='.$reqBranchId : '' }}" class="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-accent no-underline hover:underline w-fit">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-        Back to Directory
-    </a>
+    @include('partials._breadcrumbs', ['bc_items' => [
+        ['label' => 'Employees', 'url' => url('/business/workers') . ($reqBranchId ? '?branch_id='.$reqBranchId : '')],
+        ['label' => $selectedWorker->name, 'url' => null],
+    ]])
 
         {{-- Worker Profile Card --}}
         <div class="card border-[1.5px] border-line overflow-hidden">
@@ -347,12 +277,14 @@
             <div class="card card-accent-top p-5">
                 <div class="section-label mb-4">Work Shift</div>
                 <div class="grid grid-cols-[48px_1fr] gap-x-3 gap-y-0.5" id="scheduleDisplay">
-                    @foreach ($selectedWorker->schedule as $day => $hours)
+                    @forelse ($selectedWorker->schedule as $day => $hours)
                         <div class="contents">
                             <span class="text-xs font-bold tracking-[.03em] py-[7px] border-b border-[rgba(92,45,27,.08)]">{{ $day }}</span>
                             <span class="text-xs font-medium py-[7px] border-b border-[rgba(92,45,27,.08)] opacity-75">{{ $hours }}</span>
                         </div>
-                    @endforeach
+                    @empty
+                        <div class="contents"><span class="text-xs opacity-40 col-span-2 py-[7px]">No schedule set yet.</span></div>
+                    @endforelse
                 </div>
                 <div class="flex items-center justify-between mt-3.5 pt-3 border-t border-line">
                     <span class="inline-block px-3 py-1 rounded-full bg-accent/[.08] text-accent text-[10px] font-bold uppercase tracking-[.04em]">Weekends — Off</span>
@@ -852,8 +784,8 @@
                 <div class="form-group">
                     <label class="form-label">Rating <span class="font-normal opacity-50 text-[10px]">(out of 5)</span></label>
                     <div class="flex items-center gap-3">
-                        <input type="range" id="perfRating" min="0" max="5" step="0.1" value="{{ $selectedWorker->rating ?: 4.5 }}" oninput="document.getElementById('perfRatingDisplay').textContent = this.value" class="flex-1">
-                        <span id="perfRatingDisplay" class="text-base font-extrabold min-w-[30px]">{{ $selectedWorker->rating ?: 4.5 }}</span>
+                        <input type="range" id="perfRating" min="0" max="5" step="0.1" value="{{ $selectedWorker->rating }}" oninput="document.getElementById('perfRatingDisplay').textContent = this.value" class="flex-1">
+                        <span id="perfRatingDisplay" class="text-base font-extrabold min-w-[30px]">{{ $selectedWorker->rating }}</span>
                     </div>
                 </div>
                 <div class="form-group">

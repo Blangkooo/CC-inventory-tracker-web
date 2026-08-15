@@ -5,6 +5,12 @@
 
 @section('content')
 
+    @include('partials._breadcrumbs', ['bc_items' => [
+        ['label' => 'Branches', 'url' => route('branches')],
+        ['label' => $branch->name, 'url' => route('branches.show', $branch) . '?tab=' . $tab],
+        ['label' => ucfirst($tab), 'url' => null],
+    ]])
+
     <div class="master-detail">
         <div class="widget">
             <div class="widget-head">
