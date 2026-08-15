@@ -19,7 +19,7 @@
     </div>
     <div class="tile">
         <div class="tile__title">Reading your reports</div>
-        <div class="text-[12.5px] text-ink-2 mt-2 leading-relaxed"><a href="{{ route('analytics.index') }}" class="text-accent no-underline hover:underline">Analytics</a> is for trends and comparisons; <a href="{{ route('reports.index') }}" class="text-accent no-underline hover:underline">Reports</a> gives you flat, exportable tables for bookkeeping.</div>
+        <div class="text-[12.5px] text-ink-2 mt-2 leading-relaxed"><a href="{{ route('analytics') }}" class="text-accent no-underline hover:underline">Analytics</a> is for trends and comparisons; <a href="{{ route('reports') }}" class="text-accent no-underline hover:underline">Reports</a> gives you flat, exportable tables for bookkeeping.</div>
     </div>
     <div class="tile">
         <div class="tile__title">Uploading documents</div>
