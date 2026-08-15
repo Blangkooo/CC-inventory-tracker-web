@@ -669,7 +669,7 @@
                 txHtml += '<div class="transaction-item__total"><span>TOTAL:</span><span>&#8369;' + Number(tx.total_amount).toLocaleString() + '</span></div>';
                 txHtml += '</div>';
             });
-            txContainer.innerHTML = txHtml || '<div class="empty-state">No transactions recorded yet.</div>';
+            txContainer.innerHTML = txHtml || '<div class="empty-state-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="11" x2="15" y2="11"/></svg><span class="empty-state-text">No transactions recorded yet.</span></div>';
         }
 
         // Render current leakage
@@ -680,7 +680,7 @@
             data.currentLeakage.forEach(function(leak) {
                 leakHtml += '<div class="leakage-item"><span>' + leak.name + '</span><span class="leakage-item__amount" style="color:' + (leak.amount > 50 ? '#dc2626' : 'var(--brown)') + '">' + Number(leak.amount).toLocaleString() + ' ' + leak.unit + '</span></div>';
             });
-            leakBody.innerHTML = leakHtml || '<div class="empty-state">No leakage data.</div>';
+            leakBody.innerHTML = leakHtml || '<div class="empty-state-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c4.97 0 9-3.582 9-8 0-4.418-4.03-11-9-13-4.97 2-9 8.582-9 13 0 4.418 4.03 8 9 8z"/></svg><span class="empty-state-text">No leakage data.</span></div>';
         }
 
         // Render flags detected
@@ -690,7 +690,7 @@
             data.activeAlerts.slice(0, 3).forEach(function(alert) {
                 flagHtml += '<div class="leakage-item"><span>' + (alert.ingredient ? alert.ingredient.name : 'Unknown') + '</span><span class="status-badge ' + alert.severity + '">' + (alert.severity ? alert.severity.charAt(0).toUpperCase() + alert.severity.slice(1) : '') + '</span></div>';
             });
-            flagContainer.innerHTML = flagHtml || '<div class="empty-state">No flags detected.</div>';
+            flagContainer.innerHTML = flagHtml || '<div class="empty-state-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg><span class="empty-state-text">No flags detected.</span></div>';
         }
 
         // Render profit margin

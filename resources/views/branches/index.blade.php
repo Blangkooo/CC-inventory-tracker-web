@@ -519,7 +519,10 @@
     {{-- LEFT: Business Info --}}
     <div class="business-info" id="businessInfo">
         @if($branches->isEmpty())
-            <div class="empty-state">No businesses yet. Add your first business!</div>
+            <div class="empty-state-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></svg>
+                <span class="empty-state-text">No businesses yet. Add your first business!</span>
+            </div>
         @else
             @php $branch = $branches->first(); @endphp
             <div class="business-info__header">
@@ -762,7 +765,7 @@
         var recipesContainer = document.getElementById('recipesContainer');
         if (recipesContainer && data.products) {
             if (data.products.length === 0) {
-                recipesContainer.innerHTML = '<div class="empty-state">No recipes found.</div>';
+                recipesContainer.innerHTML = '<div class="empty-state-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span class="empty-state-text">No recipes found.</span></div>';
             } else {
                 var recipesHtml = '';
                 data.products.forEach(function(product) {

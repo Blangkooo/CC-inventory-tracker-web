@@ -209,7 +209,10 @@
     </div>
     <div class="report-card__body">
         @if($recentFlags->isEmpty())
-            <div class="empty-state">None as of yet.</div>
+            <div class="empty-state-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                <span class="empty-state-text">None as of yet.</span>
+            </div>
         @else
             <ul class="flag-list">
                 @foreach($recentFlags as $flag)
@@ -246,7 +249,10 @@
     </div>
     <div class="report-card__body">
         @if($previousFlags->isEmpty())
-            <div class="empty-state">No previous flags.</div>
+            <div class="empty-state-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                <span class="empty-state-text">No previous flags.</span>
+            </div>
         @else
             <ul class="flag-list">
                 @foreach($previousFlags as $flag)
@@ -303,7 +309,7 @@
         var recentContainer = document.querySelectorAll('.report-card__body')[0];
         if (recentContainer && data.recentFlags) {
             if (data.recentFlags.length === 0) {
-                recentContainer.innerHTML = '<div class="empty-state">None as of yet.</div>';
+                recentContainer.innerHTML = '<div class="empty-state-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg><span class="empty-state-text">None as of yet.</span></div>';
             } else {
                 var html = '<ul class="flag-list">';
                 data.recentFlags.forEach(function(flag) {
@@ -323,7 +329,7 @@
         var prevContainer = document.querySelectorAll('.report-card__body')[1];
         if (prevContainer && data.previousFlags) {
             if (data.previousFlags.length === 0) {
-                prevContainer.innerHTML = '<div class="empty-state">No previous flags.</div>';
+                prevContainer.innerHTML = '<div class="empty-state-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg><span class="empty-state-text">No previous flags.</span></div>';
             } else {
                 var html2 = '<ul class="flag-list">';
                 data.previousFlags.forEach(function(flag) {
