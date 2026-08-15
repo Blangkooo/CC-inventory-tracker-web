@@ -106,6 +106,8 @@
         'performance'     => $profile?->performance_metrics ?? $fallback['performance'],
         'rating'          => $profile?->rating ?? 0,
         'profile_id'      => $profile?->id,
+        'peer_reviews'    => $selectedUser?->peerReviews->sortByDesc('created_at')->values() ?? collect(),
+        'goals'           => $selectedUser?->goals->sortBy('status')->values() ?? collect(),
     ];
 
     $initials = fn($name) => collect(explode(' ', $name))->map(fn($w) => strtoupper($w[0]))->take(2)->implode('');
@@ -356,8 +358,8 @@
             </div>
         </div>
 
-        {{-- Bottom Two-Up: Work Shift + Performance --}}
-        <div class="grid grid-cols-2 gap-4 max-[880px]:grid-cols-1">
+        {{-- Bottom Three-Up: Work Shift + Performance + Peer Review --}}
+        <div class="grid grid-cols-3 gap-4 max-[1100px]:grid-cols-1">
             <div class="card border-[1.5px] border-line border-t-[3px] border-t-accent p-5">
                 <div class="text-xs font-bold uppercase tracking-[.04em] text-accent mb-4">Work Shift</div>
                 <div class="grid grid-cols-[48px_1fr] gap-x-3 gap-y-0.5" id="scheduleDisplay">
@@ -407,6 +409,53 @@
                         </div>
                     @endforelse
                 </div>
+            </div>
+            <div class="card border-[1.5px] border-line p-5 flex flex-col">
+                <div class="flex items-center justify-between mb-3.5 pb-3 border-b border-line">
+                    <span class="text-xs font-bold uppercase tracking-[.04em] text-accent">Peer Review</span>
+                    <button type="button" class="border-[1.5px] border-line bg-white cursor-pointer px-3 py-1 rounded-md text-[11px] font-semibold transition-all duration-[120ms] hover:border-accent hover:text-accent" onclick="openReviewModal({{ $selectedWorker->id }})">Add</button>
+                </div>
+                <div class="flex flex-col gap-2 overflow-y-auto max-h-[220px]" id="peerReviewList">
+                    @forelse ($selectedWorker->peer_reviews as $review)
+                        <div class="p-2.5 px-3 bg-[rgba(92,45,27,.03)] border border-[rgba(92,45,27,.08)] rounded-lg" data-review-id="{{ $review->id }}">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-[11px] font-bold">{{ $review->reviewer->name ?? 'Unknown' }}</span>
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                    @if ($review->rating !== null)
+                                        <span class="text-[10px] font-bold text-accent">{{ number_format($review->rating, 1) }}&#9733;</span>
+                                    @endif
+                                    <span class="text-[10px] opacity-40">{{ $review->created_at->format('M j, Y') }}</span>
+                                    <button type="button" class="opacity-30 hover:opacity-80 hover:text-red-600 cursor-pointer bg-transparent border-none p-0 leading-none text-sm" onclick="deletePeerReview({{ $review->id }})" title="Delete">&times;</button>
+                                </div>
+                            </div>
+                            <div class="text-[12.5px] mt-1 leading-snug">{{ $review->comment }}</div>
+                        </div>
+                    @empty
+                        <div class="text-[13px] opacity-40 p-2.5">No reviews yet.</div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+
+        {{-- GOALS --}}
+        <div class="card border-[1.5px] border-line p-5">
+            <div class="flex items-center justify-between mb-3.5 pb-3 border-b border-line">
+                <span class="text-xs font-bold uppercase tracking-[.04em] text-accent">Goals</span>
+                <button type="button" class="border-[1.5px] border-line bg-white cursor-pointer px-3 py-1 rounded-md text-[11px] font-semibold transition-all duration-[120ms] hover:border-accent hover:text-accent" onclick="openGoalModal({{ $selectedWorker->id }})">Add Goal</button>
+            </div>
+            <div class="flex flex-col gap-1.5" id="goalsList">
+                @forelse ($selectedWorker->goals as $goal)
+                    <div class="flex items-center gap-2.5 p-2.5 px-3.5 rounded-lg border {{ $goal->status === 'completed' ? 'bg-green-600/[.04] border-green-600/[.12]' : 'bg-[rgba(92,45,27,.03)] border-[rgba(92,45,27,.08)]' }}" data-goal-id="{{ $goal->id }}">
+                        <input type="checkbox" class="w-4 h-4 accent-accent cursor-pointer" {{ $goal->status === 'completed' ? 'checked' : '' }} onchange="toggleGoal({{ $goal->id }}, this.checked)">
+                        <span class="flex-1 text-[13px] font-medium {{ $goal->status === 'completed' ? 'line-through opacity-50' : '' }}">{{ $goal->title }}</span>
+                        @if ($goal->target_date)
+                            <span class="text-[11px] opacity-50 shrink-0">Due {{ $goal->target_date->format('M j') }}</span>
+                        @endif
+                        <button type="button" class="opacity-30 hover:opacity-80 hover:text-red-600 cursor-pointer bg-transparent border-none p-0 leading-none text-base shrink-0" onclick="deleteGoal({{ $goal->id }})" title="Delete">&times;</button>
+                    </div>
+                @empty
+                    <div class="text-[13px] opacity-40 p-2.5">No goals set yet.</div>
+                @endforelse
             </div>
         </div>
 
@@ -481,6 +530,25 @@
                     </tr>
                 </tbody>
             </table>
+        </div>
+
+        {{-- OPEN POSITIONS --}}
+        <div class="card border-[1.5px] border-line p-5">
+            <div class="flex items-center justify-between mb-3.5 pb-3 border-b border-line">
+                <span class="text-xs font-bold uppercase tracking-[.04em] text-accent">Open Positions</span>
+                <a href="{{ route('hiring.index') }}" class="text-[11px] font-semibold text-accent no-underline hover:underline">Manage in Hiring &rarr;</a>
+            </div>
+            <div class="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3">
+                @forelse ($openPositions as $opening)
+                    <div class="p-3.5 bg-[rgba(92,45,27,.03)] border border-[rgba(92,45,27,.08)] rounded-lg">
+                        <div class="text-[13px] font-bold">{{ $opening->title }}</div>
+                        <div class="text-[11px] opacity-50 mt-0.5">{{ $opening->branch->name ?? 'All branches' }}</div>
+                        <div class="text-[11px] font-semibold text-accent mt-1.5">{{ $opening->applicants_count }} {{ Str::plural('applicant', $opening->applicants_count) }}</div>
+                    </div>
+                @empty
+                    <div class="text-[13px] opacity-40 p-2.5">No open positions right now.</div>
+                @endforelse
+            </div>
         </div>
 
     </div>
@@ -744,6 +812,67 @@
             <div class="flex gap-2.5 justify-end mt-5 pt-4 border-t border-line">
                 <button type="button" class="btn-cancel" onclick="closeModal('profileModal')">Cancel</button>
                 <button type="submit" class="btn-save" id="profileSubmitBtn">Save Profile</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- ADD PEER REVIEW MODAL --}}
+<div class="modal-overlay" id="reviewModal">
+    <div class="bg-card rounded-[var(--radius-card)] shadow-[0_16px_48px_rgba(44,24,16,.25)] w-full max-w-[460px] max-h-[90vh] overflow-y-auto px-8 py-7 pb-6">
+        <div class="flex items-center justify-between mb-5">
+            <h2 class="text-[17px] font-extrabold">Add Peer Review</h2>
+            <button type="button" class="w-8 h-8 rounded-lg bg-transparent border-none cursor-pointer flex items-center justify-center text-lg transition-colors hover:bg-[rgba(92,45,27,.07)]" onclick="closeModal('reviewModal')">&times;</button>
+        </div>
+        <form id="reviewForm" onsubmit="return submitReview(event)">
+            @csrf
+            <input type="hidden" id="reviewWorkerId">
+            <div class="flex flex-col gap-3.5">
+                <div class="form-group">
+                    <label class="form-label">Rating <span class="font-normal opacity-50 text-[10px]">(optional, out of 5)</span></label>
+                    <div class="flex items-center gap-3">
+                        <input type="range" id="reviewRating" min="0" max="5" step="0.5" value="0" oninput="document.getElementById('reviewRatingDisplay').textContent = this.value" class="flex-1">
+                        <span id="reviewRatingDisplay" class="text-base font-extrabold min-w-[24px]">0</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Comment <span class="text-red-600">*</span></label>
+                    <textarea id="reviewComment" class="form-input resize-y" rows="4" placeholder="How has this worker been doing?" required></textarea>
+                    <span class="form-error" id="reviewErrorComment"></span>
+                </div>
+            </div>
+            <div class="flex gap-2.5 justify-end mt-5 pt-4 border-t border-line">
+                <button type="button" class="btn-cancel" onclick="closeModal('reviewModal')">Cancel</button>
+                <button type="submit" class="btn-save" id="reviewSubmitBtn">Add Review</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- ADD GOAL MODAL --}}
+<div class="modal-overlay" id="goalModal">
+    <div class="bg-card rounded-[var(--radius-card)] shadow-[0_16px_48px_rgba(44,24,16,.25)] w-full max-w-[460px] max-h-[90vh] overflow-y-auto px-8 py-7 pb-6">
+        <div class="flex items-center justify-between mb-5">
+            <h2 class="text-[17px] font-extrabold">Add Goal</h2>
+            <button type="button" class="w-8 h-8 rounded-lg bg-transparent border-none cursor-pointer flex items-center justify-center text-lg transition-colors hover:bg-[rgba(92,45,27,.07)]" onclick="closeModal('goalModal')">&times;</button>
+        </div>
+        <form id="goalForm" onsubmit="return submitGoal(event)">
+            @csrf
+            <input type="hidden" id="goalWorkerId">
+            <div class="flex flex-col gap-3.5">
+                <div class="form-group">
+                    <label class="form-label">Goal <span class="text-red-600">*</span></label>
+                    <input type="text" id="goalTitle" class="form-input" placeholder="e.g. Complete barista certification" required>
+                    <span class="form-error" id="goalErrorTitle"></span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Target Date <span class="font-normal opacity-50 text-[10px]">(optional)</span></label>
+                    <input type="date" id="goalTargetDate" class="form-input">
+                </div>
+            </div>
+            <div class="flex gap-2.5 justify-end mt-5 pt-4 border-t border-line">
+                <button type="button" class="btn-cancel" onclick="closeModal('goalModal')">Cancel</button>
+                <button type="submit" class="btn-save" id="goalSubmitBtn">Add Goal</button>
             </div>
         </form>
     </div>
@@ -1264,6 +1393,148 @@
         } catch (err) {
             showToast(err.message, 'error');
             btn.disabled = false; btn.textContent = 'Save Performance';
+        }
+    }
+
+    // ── Peer Reviews ──
+    function openReviewModal(workerId) {
+        document.getElementById('reviewWorkerId').value = workerId;
+        document.getElementById('reviewRating').value = 0;
+        document.getElementById('reviewRatingDisplay').textContent = '0';
+        document.getElementById('reviewComment').value = '';
+        openModal('reviewModal');
+    }
+
+    async function submitReview(event) {
+        event.preventDefault();
+        const workerId = document.getElementById('reviewWorkerId').value;
+        const btn = document.getElementById('reviewSubmitBtn');
+        btn.disabled = true; btn.textContent = 'Saving…';
+
+        const rating = parseFloat(document.getElementById('reviewRating').value);
+        const comment = document.getElementById('reviewComment').value.trim();
+
+        try {
+            const res = await fetch('{{ url("/business/workers") }}/' + workerId + '/peer-reviews', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ comment, rating: rating > 0 ? rating : null }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                const errorEl = document.getElementById('reviewErrorComment');
+                if (data.errors?.comment && errorEl) {
+                    errorEl.textContent = data.errors.comment[0];
+                    errorEl.classList.add('is-visible');
+                    btn.disabled = false; btn.textContent = 'Add Review';
+                    return false;
+                }
+                throw new Error(data.message || 'Failed to add review');
+            }
+            showToast('Review added!', 'success');
+            closeModal('reviewModal');
+            setTimeout(() => location.reload(), 600);
+        } catch (err) {
+            showToast(err.message, 'error');
+            btn.disabled = false; btn.textContent = 'Add Review';
+        }
+        return false;
+    }
+
+    async function deletePeerReview(reviewId) {
+        if (!confirm('Delete this review?')) return;
+        try {
+            const res = await fetch('{{ url("/business/workers/peer-reviews") }}/' + reviewId, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json', 'X-HTTP-Method-Override': 'DELETE' },
+            });
+            if (!res.ok) { const data = await res.json(); throw new Error(data.message || 'Delete failed'); }
+            document.querySelector('[data-review-id="' + reviewId + '"]')?.remove();
+            showToast('Review deleted.', 'success');
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    }
+
+    // ── Goals ──
+    function openGoalModal(workerId) {
+        document.getElementById('goalWorkerId').value = workerId;
+        document.getElementById('goalTitle').value = '';
+        document.getElementById('goalTargetDate').value = '';
+        openModal('goalModal');
+    }
+
+    async function submitGoal(event) {
+        event.preventDefault();
+        const workerId = document.getElementById('goalWorkerId').value;
+        const btn = document.getElementById('goalSubmitBtn');
+        btn.disabled = true; btn.textContent = 'Saving…';
+
+        const title = document.getElementById('goalTitle').value.trim();
+        const targetDate = document.getElementById('goalTargetDate').value;
+
+        try {
+            const res = await fetch('{{ url("/business/workers") }}/' + workerId + '/goals', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ title, target_date: targetDate || null }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                const errorEl = document.getElementById('goalErrorTitle');
+                if (data.errors?.title && errorEl) {
+                    errorEl.textContent = data.errors.title[0];
+                    errorEl.classList.add('is-visible');
+                    btn.disabled = false; btn.textContent = 'Add Goal';
+                    return false;
+                }
+                throw new Error(data.message || 'Failed to add goal');
+            }
+            showToast('Goal added!', 'success');
+            closeModal('goalModal');
+            setTimeout(() => location.reload(), 600);
+        } catch (err) {
+            showToast(err.message, 'error');
+            btn.disabled = false; btn.textContent = 'Add Goal';
+        }
+        return false;
+    }
+
+    async function toggleGoal(goalId, completed) {
+        try {
+            const res = await fetch('{{ url("/business/workers/goals") }}/' + goalId + '/status', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken, 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-HTTP-Method-Override': 'PUT' },
+                body: JSON.stringify({ status: completed ? 'completed' : 'pending' }),
+            });
+            if (!res.ok) { const data = await res.json(); throw new Error(data.message || 'Update failed'); }
+            const row = document.querySelector('[data-goal-id="' + goalId + '"]');
+            const label = row?.querySelector('span.flex-1');
+            if (label) label.classList.toggle('line-through', completed);
+            if (label) label.classList.toggle('opacity-50', completed);
+            if (row) {
+                row.classList.toggle('bg-green-600/[.04]', completed);
+                row.classList.toggle('border-green-600/[.12]', completed);
+                row.classList.toggle('bg-[rgba(92,45,27,.03)]', !completed);
+                row.classList.toggle('border-[rgba(92,45,27,.08)]', !completed);
+            }
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    }
+
+    async function deleteGoal(goalId) {
+        if (!confirm('Delete this goal?')) return;
+        try {
+            const res = await fetch('{{ url("/business/workers/goals") }}/' + goalId, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json', 'X-HTTP-Method-Override': 'DELETE' },
+            });
+            if (!res.ok) { const data = await res.json(); throw new Error(data.message || 'Delete failed'); }
+            document.querySelector('[data-goal-id="' + goalId + '"]')?.remove();
+            showToast('Goal deleted.', 'success');
+        } catch (err) {
+            showToast(err.message, 'error');
         }
     }
 

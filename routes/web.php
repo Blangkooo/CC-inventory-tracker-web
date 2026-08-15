@@ -442,7 +442,7 @@ Route::middleware('auth')->group(function () {
                 ? [\App\Models\User::ROLE_STAFF]           // managers see only staff
                 : [\App\Models\User::ROLE_STAFF, \App\Models\User::ROLE_MANAGER]  // super_admins see all
             )
-            ->with('branch', 'profile')
+            ->with('branch', 'profile', 'peerReviews.reviewer', 'goals')
             ->when($isManager, fn ($q) => $q->where('branch_id', $user->branch_id))
             ->orderBy('name')
             ->get();
@@ -454,10 +454,19 @@ Route::middleware('auth')->group(function () {
             ->unique()
             ->toArray();
 
+        $openPositions = \App\Models\JobOpening::where('status', 'open')
+            ->when($isManager, fn ($q) => $q->where('branch_id', $user->branch_id))
+            ->with('branch')
+            ->withCount('applicants')
+            ->latest()
+            ->take(5)
+            ->get();
+
         return view('business.workers', [
             'branches'          => \App\Models\Branch::when($isManager, fn ($q) => $q->where('id', $user->branch_id))->orderBy('name')->get(),
             'workers'           => $workers,
             'openShiftUserIds'  => $openShiftUserIds,
+            'openPositions'     => $openPositions,
         ]);
     })->name('business.workers');
 
@@ -504,6 +513,20 @@ Route::middleware('auth')->group(function () {
     // ── Worker Activity (transactions, shifts, discrepancies) ─────────────
     Route::get('/business/workers/{user}/activity', \App\Http\Controllers\ActivityController::class)
         ->name('business.workers.activity');
+
+    // ── Peer Reviews ────────────────────────────────────────────────────
+    Route::post('/business/workers/{user}/peer-reviews', [\App\Http\Controllers\WorkersController::class, 'storePeerReview'])
+        ->name('business.workers.peer-reviews.store');
+    Route::delete('/business/workers/peer-reviews/{peerReview}', [\App\Http\Controllers\WorkersController::class, 'destroyPeerReview'])
+        ->name('business.workers.peer-reviews.destroy');
+
+    // ── Employee Goals ──────────────────────────────────────────────────
+    Route::post('/business/workers/{user}/goals', [\App\Http\Controllers\WorkersController::class, 'storeGoal'])
+        ->name('business.workers.goals.store');
+    Route::put('/business/workers/goals/{goal}/status', [\App\Http\Controllers\WorkersController::class, 'updateGoalStatus'])
+        ->name('business.workers.goals.status');
+    Route::delete('/business/workers/goals/{goal}', [\App\Http\Controllers\WorkersController::class, 'destroyGoal'])
+        ->name('business.workers.goals.destroy');
 
     // ── Logistics Page (Summary + Flags) ────────────────────────────
     Route::get('/logistics', function () {

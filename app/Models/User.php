@@ -55,6 +55,16 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Transaction::class);
     }
 
+    public function peerReviews(): HasMany
+    {
+        return $this->hasMany(PeerReview::class, 'reviewee_id');
+    }
+
+    public function goals(): HasMany
+    {
+        return $this->hasMany(EmployeeGoal::class);
+    }
+
     public function shiftLogs(): HasMany
     {
         return $this->hasMany(ShiftLog::class);

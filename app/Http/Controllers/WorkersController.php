@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\EmployeeGoal;
+use App\Models\PeerReview;
 use App\Models\User;
 use App\Models\WorkerProfile;
 use Illuminate\Http\JsonResponse;
@@ -196,5 +198,125 @@ class WorkersController extends Controller
         $user->delete();
 
         return response()->json(['message' => 'Worker deleted successfully.']);
+    }
+
+    public function storePeerReview(Request $request, User $user): JsonResponse
+    {
+        if (! in_array($user->role, self::MANAGED_ROLES)) {
+            return response()->json(['message' => 'Worker not found.'], 404);
+        }
+
+        $authUser = $request->user();
+
+        if (! $authUser->isSuperAdmin() && ! $authUser->isManager()) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        if ($authUser->isManager() && $authUser->branch_id !== $user->branch_id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        $validated = $request->validate([
+            'comment' => ['required', 'string', 'max:1000'],
+            'rating'  => ['nullable', 'numeric', 'min:0', 'max:5'],
+        ]);
+
+        $review = PeerReview::create([
+            'reviewee_id' => $user->id,
+            'reviewer_id' => $authUser->id,
+            'comment'     => $validated['comment'],
+            'rating'      => $validated['rating'] ?? null,
+        ]);
+
+        return response()->json([
+            'message' => 'Review added.',
+            'review'  => $review->load('reviewer'),
+        ], 201);
+    }
+
+    public function destroyPeerReview(Request $request, PeerReview $peerReview): JsonResponse
+    {
+        $authUser = $request->user();
+
+        if (! $authUser->isSuperAdmin() && ! $authUser->isManager()) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        if ($authUser->isManager() && $authUser->branch_id !== $peerReview->reviewee->branch_id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        $peerReview->delete();
+
+        return response()->json(['message' => 'Review deleted.']);
+    }
+
+    public function storeGoal(Request $request, User $user): JsonResponse
+    {
+        if (! in_array($user->role, self::MANAGED_ROLES)) {
+            return response()->json(['message' => 'Worker not found.'], 404);
+        }
+
+        $authUser = $request->user();
+
+        if (! $authUser->isSuperAdmin() && ! $authUser->isManager()) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        if ($authUser->isManager() && $authUser->branch_id !== $user->branch_id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        $validated = $request->validate([
+            'title'       => ['required', 'string', 'max:255'],
+            'target_date' => ['nullable', 'date'],
+        ]);
+
+        $goal = EmployeeGoal::create([
+            'user_id'     => $user->id,
+            'created_by'  => $authUser->id,
+            'title'       => $validated['title'],
+            'target_date' => $validated['target_date'] ?? null,
+        ]);
+
+        return response()->json(['message' => 'Goal added.', 'goal' => $goal], 201);
+    }
+
+    public function updateGoalStatus(Request $request, EmployeeGoal $goal): JsonResponse
+    {
+        $authUser = $request->user();
+
+        if (! $authUser->isSuperAdmin() && ! $authUser->isManager()) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        if ($authUser->isManager() && $authUser->branch_id !== $goal->user->branch_id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        $validated = $request->validate([
+            'status' => ['required', 'in:pending,in_progress,completed'],
+        ]);
+
+        $goal->update(['status' => $validated['status']]);
+
+        return response()->json(['message' => 'Goal updated.', 'goal' => $goal]);
+    }
+
+    public function destroyGoal(Request $request, EmployeeGoal $goal): JsonResponse
+    {
+        $authUser = $request->user();
+
+        if (! $authUser->isSuperAdmin() && ! $authUser->isManager()) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        if ($authUser->isManager() && $authUser->branch_id !== $goal->user->branch_id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        $goal->delete();
+
+        return response()->json(['message' => 'Goal deleted.']);
     }
 }
