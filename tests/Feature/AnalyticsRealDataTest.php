@@ -108,4 +108,45 @@ class AnalyticsRealDataTest extends TestCase
         $response->assertOk();
         $response->assertJson(['profitMargin' => null, 'totalOrders' => 1]);
     }
+
+    public function test_branch_comparison_is_shown_to_super_admin_but_not_to_a_manager(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $manager = User::factory()->manager()->create(['branch_id' => Branch::factory()->create()->id]);
+
+        $adminResponse = $this->actingAs($admin)->get('/analytics');
+        $adminResponse->assertOk();
+        $adminResponse->assertViewHas('branchComparison', fn ($comparison) => $comparison->isNotEmpty());
+
+        $managerResponse = $this->actingAs($manager)->get('/analytics');
+        $managerResponse->assertOk();
+        $managerResponse->assertViewHas('branchComparison', fn ($comparison) => $comparison->isEmpty());
+    }
+
+    public function test_branch_comparison_export_is_blocked_for_managers(): void
+    {
+        $manager = User::factory()->manager()->create(['branch_id' => Branch::factory()->create()->id]);
+
+        $this->actingAs($manager)->get('/analytics/export')->assertForbidden();
+    }
+
+    public function test_branch_comparison_export_returns_real_revenue_as_csv(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $branch = Branch::factory()->create(['name' => 'Branch Test']);
+        $product = Product::create(['name' => 'Milk Tea', 'category' => 'Drinks', 'price' => 100, 'is_active' => true]);
+
+        Transaction::create([
+            'branch_id' => $branch->id, 'user_id' => $admin->id, 'product_id' => $product->id,
+            'client_uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'quantity' => 1, 'unit_price' => 100, 'total_amount' => 100, 'sync_status' => 'synced',
+        ]);
+
+        $response = $this->actingAs($admin)->get('/analytics/export');
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+        $response->streamedContent();
+        $this->assertStringContainsString('Branch Test', $response->streamedContent());
+    }
 }

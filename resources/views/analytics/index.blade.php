@@ -349,6 +349,32 @@
     </button>
 </div>
 
+@if($branchComparison->isNotEmpty())
+{{-- ═══ BRANCH COMPARISON (super_admin only — a manager only ever sees one branch) ═══ --}}
+<div class="analytics-card" style="margin-bottom: 16px;">
+    <div class="analytics-card__header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div class="analytics-card__title">Branch Comparison — This Year</div>
+        <a href="{{ route('analytics.export') }}" class="btn-sm">Export CSV</a>
+    </div>
+    <div class="analytics-card__body" style="padding: 0;">
+        <table class="inventory-table">
+            <thead>
+                <tr><th>Branch</th><th>Revenue</th><th>Orders</th></tr>
+            </thead>
+            <tbody>
+                @foreach($branchComparison as $row)
+                    <tr>
+                        <td>{{ $row['name'] }}</td>
+                        <td>&#8369;{{ number_format($row['revenue'], 2) }}</td>
+                        <td>{{ number_format($row['orders']) }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
+
 {{-- ═══ ACTIVITY VIEW ═══ --}}
 <div id="activityView">
     <div class="activity-grid">
@@ -415,10 +441,10 @@
                 </div>
                 <div class="analytics-card__body">
                     @forelse($activeAlerts->take(3) as $alert)
-                        <div class="leakage-item">
+                        <a href="{{ route('alerts', ['severity' => $alert->severity, 'status' => 'pending']) }}" class="leakage-item" style="text-decoration:none;color:inherit;">
                             <span>{{ $alert->ingredient->name ?? 'Unknown' }}</span>
                             <span class="status-badge {{ $alert->severity }}">{{ ucfirst($alert->severity) }}</span>
-                        </div>
+                        </a>
                     @empty
                         <div class="empty-state-icon">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
@@ -668,7 +694,8 @@
         if (flagContainer && data.activeAlerts) {
             var flagHtml = '';
             data.activeAlerts.slice(0, 3).forEach(function(alert) {
-                flagHtml += '<div class="leakage-item"><span>' + (alert.ingredient ? alert.ingredient.name : 'Unknown') + '</span><span class="status-badge ' + alert.severity + '">' + (alert.severity ? alert.severity.charAt(0).toUpperCase() + alert.severity.slice(1) : '') + '</span></div>';
+                var alertsUrl = '{{ route('alerts') }}?severity=' + encodeURIComponent(alert.severity) + '&status=pending';
+                flagHtml += '<a href="' + alertsUrl + '" class="leakage-item" style="text-decoration:none;color:inherit;"><span>' + (alert.ingredient ? alert.ingredient.name : 'Unknown') + '</span><span class="status-badge ' + alert.severity + '">' + (alert.severity ? alert.severity.charAt(0).toUpperCase() + alert.severity.slice(1) : '') + '</span></a>';
             });
             flagContainer.innerHTML = flagHtml || '<div class="empty-state-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg><span class="empty-state-text">No flags detected.</span></div>';
         }

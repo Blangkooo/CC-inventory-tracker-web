@@ -177,6 +177,25 @@
             document.getElementById('custom-date-apply')?.addEventListener('click', applyFilters);
 
             severitySelect?.addEventListener('change', applyFilters);
+
+            // Pre-apply filters passed via the URL (e.g. a Flags Detected link from Analytics).
+            const params = new URLSearchParams(window.location.search);
+            const urlSeverity = params.get('severity');
+            const urlStatus = params.get('status');
+            if (urlSeverity && severitySelect) {
+                severitySelect.value = urlSeverity;
+            }
+            if (urlStatus) {
+                const matchingTab = Array.from(statusTabs).find(function (t) { return t.dataset.status === urlStatus; });
+                if (matchingTab) {
+                    statusTabs.forEach(function (t) { t.classList.remove('active'); });
+                    matchingTab.classList.add('active');
+                    activeStatus = urlStatus;
+                }
+            }
+            if (urlSeverity || urlStatus) {
+                applyFilters();
+            }
         })();
     </script>
 

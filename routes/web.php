@@ -208,6 +208,7 @@ Route::middleware('auth')->group(function () {
 
     // ── Analytics + Reports (main design — kept as-is, see PR notes) ─────
     Route::get('/analytics', [\App\Http\Controllers\AnalyticsController::class, 'index'])->name('analytics');
+    Route::get('/analytics/export', [\App\Http\Controllers\AnalyticsController::class, 'exportComparison'])->name('analytics.export');
     Route::get('/reports', function () {
         $user = auth()->user();
         $isManager = $user->isManager();

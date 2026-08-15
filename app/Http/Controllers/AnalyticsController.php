@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AnalyticsController extends Controller
 {
@@ -24,6 +25,22 @@ class AnalyticsController extends Controller
     public function data(Request $request): JsonResponse
     {
         return response()->json($this->buildData($request));
+    }
+
+    public function exportComparison(Request $request): StreamedResponse
+    {
+        abort_if($request->user()->isManager(), 403, 'Branch comparison is not available for branch-scoped accounts.');
+
+        $rows = $this->branchComparison();
+
+        return response()->streamDownload(function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Branch', 'Revenue This Year (PHP)', 'Orders This Year']);
+            foreach ($rows as $row) {
+                fputcsv($out, [$row['name'], number_format($row['revenue'], 2, '.', ''), $row['orders']]);
+            }
+            fclose($out);
+        }, 'branch-comparison-'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
     }
 
     private function buildData(Request $request): array
@@ -174,7 +191,34 @@ class AnalyticsController extends Controller
             'totalOrders' => $totalOrders,
             'orderTrend' => $orderTrend,
             'inventoryItems' => $inventoryItems,
+            // Branch-vs-branch comparison only makes sense for an account that can
+            // see more than one branch — a manager's $branches is always just their own.
+            'branchComparison' => $isManager ? collect() : $this->branchComparison(),
         ];
+    }
+
+    /**
+     * Revenue + order count per branch, this year, for the super_admin-only
+     * comparison table and its CSV export.
+     */
+    private function branchComparison(): \Illuminate\Support\Collection
+    {
+        $revenueByBranch = Transaction::selectRaw('branch_id, SUM(total_amount) as revenue, COUNT(*) as orders')
+            ->whereYear('created_at', now()->year)
+            ->groupBy('branch_id')
+            ->get()
+            ->keyBy('branch_id');
+
+        return Branch::orderBy('name')->get()->map(function ($branch) use ($revenueByBranch) {
+            $row = $revenueByBranch->get($branch->id);
+
+            return [
+                'id' => $branch->id,
+                'name' => $branch->name,
+                'revenue' => (float) ($row->revenue ?? 0),
+                'orders' => (int) ($row->orders ?? 0),
+            ];
+        })->sortByDesc('revenue')->values();
     }
 
     /**
