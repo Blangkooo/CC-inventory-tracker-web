@@ -241,6 +241,10 @@
                     <span id="notifDot" class="dot" style="display:none"></span>
                 </button>
                 <div id="notifDropdown" class="card p-0" style="display:none;position:absolute;right:0;top:calc(100% + 8px);width:340px;max-height:400px;overflow-y:auto;z-index:200;">
+                    <div class="flex items-center justify-between px-3 py-2 border-b border-line">
+                        <span class="text-[12px] font-bold">Notifications</span>
+                        <button type="button" id="notifMarkAllBtn" onclick="markAllNotifsRead()" class="text-[11px] font-semibold text-accent bg-transparent border-none cursor-pointer p-0 hover:underline" style="display:none;">Mark all read</button>
+                    </div>
                     <div id="notifList" class="p-3 text-[12px] text-ink-3">Loading…</div>
                     <a href="{{ route('alerts') }}" class="flex items-center justify-center py-2.5 text-[12px] font-semibold text-accent no-underline hover:underline border-t border-line">View all alerts</a>
                 </div>
@@ -280,6 +284,7 @@
         const dropdown = document.getElementById('notifDropdown');
         const list = document.getElementById('notifList');
         const dot = document.getElementById('notifDot');
+        const markAllBtn = document.getElementById('notifMarkAllBtn');
 
         function escapeHtml(s) {
             const div = document.createElement('div');
@@ -289,6 +294,7 @@
 
         function renderNotifications(data) {
             dot.style.display = data.unread_count > 0 ? '' : 'none';
+            markAllBtn.style.display = data.unread_count > 0 ? '' : 'none';
 
             if (data.notifications.length === 0) {
                 list.innerHTML = '<div style="text-align:center;padding:20px 12px;color:var(--color-ink-3)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 8px;opacity:.35"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span style="font-size:12px;font-weight:600">No notifications yet.</span></div>';
@@ -324,6 +330,22 @@
                     el.classList.add('opacity-55');
                     const remaining = list.querySelectorAll('div:not(.opacity-55)').length;
                     dot.style.display = remaining > 0 ? '' : 'none';
+                    markAllBtn.style.display = remaining > 0 ? '' : 'none';
+                }
+            });
+        };
+
+        window.markAllNotifsRead = function () {
+            markAllBtn.disabled = true;
+            fetch('{{ route('notifications.read-all') }}', {
+                method: 'PUT',
+                headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+            }).then(res => {
+                markAllBtn.disabled = false;
+                if (res.ok) {
+                    list.querySelectorAll('#notifList > div').forEach(el => el.classList.add('opacity-55'));
+                    dot.style.display = 'none';
+                    markAllBtn.style.display = 'none';
                 }
             });
         };
