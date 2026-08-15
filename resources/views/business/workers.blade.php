@@ -416,7 +416,9 @@
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center justify-between gap-2">
                                         <span class="text-[11.5px] font-bold truncate">{{ $reviewerName }}</span>
-                                        <button type="button" class="opacity-30 hover:opacity-80 hover:text-red-600 cursor-pointer bg-transparent border-none p-0 leading-none text-sm shrink-0" onclick="deletePeerReview({{ $review->id }})" title="Delete">&times;</button>
+                                        <button type="button" class="w-6 h-6 rounded-full flex items-center justify-center text-ink-3 hover:bg-red-600/10 hover:text-red-600 transition-colors shrink-0 cursor-pointer bg-transparent border-none p-0" onclick="deletePeerReview({{ $review->id }})" title="Delete review">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                        </button>
                                     </div>
                                     <div class="flex items-center gap-2 mt-0.5">
                                         @if ($review->rating !== null)
@@ -479,7 +481,9 @@
                         @if ($goal->target_date)
                             <span class="text-[11px] font-semibold {{ $isDone ? 'opacity-30' : 'text-accent' }} shrink-0">Due {{ $goal->target_date->format('M j') }}</span>
                         @endif
-                        <button type="button" class="opacity-30 hover:opacity-80 hover:text-red-600 cursor-pointer bg-transparent border-none p-0 leading-none text-base shrink-0" onclick="deleteGoal({{ $goal->id }})" title="Delete">&times;</button>
+                        <button type="button" class="w-6 h-6 rounded-full flex items-center justify-center text-ink-3 hover:bg-red-600/10 hover:text-red-600 transition-colors shrink-0 cursor-pointer bg-transparent border-none p-0" onclick="deleteGoal({{ $goal->id }})" title="Delete goal">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
                     </div>
                 @empty
                     <div class="empty-state-icon !py-5">
