@@ -8,6 +8,25 @@
     <div class="text-[13px] text-ink-2 mt-0.5">Hourly rates and generated payslips, from clocked shift hours</div>
 </div>
 
+<div class="grid grid-cols-4 max-[880px]:grid-cols-2 card border-[1.5px] border-line overflow-hidden divide-x divide-line max-[880px]:divide-x-0 mb-5">
+    <div class="p-4 text-center max-[880px]:border-b max-[880px]:border-line">
+        <div class="text-[26px] font-extrabold text-accent leading-none">₱{{ number_format($kpi_monthly_payroll, 2) }}</div>
+        <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">Monthly Payroll</div>
+    </div>
+    <div class="p-4 text-center max-[880px]:border-b max-[880px]:border-line">
+        <div class="text-[26px] font-extrabold text-accent leading-none">{{ $kpi_pending_payslips }}</div>
+        <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">Pending Payslips</div>
+    </div>
+    <div class="p-4 text-center">
+        <div class="text-[26px] font-extrabold text-green-600 leading-none">{{ $kpi_paid_this_month }}</div>
+        <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">Paid This Month</div>
+    </div>
+    <div class="p-4 text-center">
+        <div class="text-[26px] font-extrabold text-accent leading-none">{{ $kpi_average_rate !== null ? '₱'.number_format($kpi_average_rate, 2) : '—' }}</div>
+        <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">Average Rate</div>
+    </div>
+</div>
+
 <div class="mb-4">
     <h3 class="text-[15px] font-extrabold mb-2.5">Worker Rates</h3>
     <div class="summary-table-wrap">
@@ -29,7 +48,7 @@
                                 {{-- Setting pay is an owner decision; managers see the rate but can't change it. --}}
                                 <div class="flex items-center gap-1.5">
                                     <span>&#8369;</span>
-                                    <input type="number" step="0.01" min="0" class="form-input !h-8 !w-[100px] !py-1 !text-[12px]" id="rate-{{ $worker->id }}" value="{{ $worker->profile?->hourly_rate ?? '' }}" placeholder="0.00">
+                                    <input type="number" step="0.01" min="0" class="form-input !h-8 !w-[100px] !py-1 !text-[12px]" id="rate-{{ $worker->id }}" value="{{ $worker->profile?->hourly_rate ?? '' }}" placeholder="{{ $worker->profile?->hourly_rate ? '0.00' : 'Not set' }}">
                                     <button class="btn-sm" onclick="saveRate({{ $worker->id }})">Save</button>
                                 </div>
                             @else

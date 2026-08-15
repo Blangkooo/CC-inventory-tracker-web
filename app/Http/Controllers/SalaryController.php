@@ -29,7 +29,20 @@ class SalaryController extends Controller
             ->take(30)
             ->get();
 
-        return view('salary.index', compact('workers', 'payslips'));
+        $monthlyPayslips = Payslip::when($isManager, fn ($q) => $q->where('branch_id', $branchId))
+            ->where('created_at', '>=', now()->startOfMonth())
+            ->get();
+
+        $configuredRates = $workers->pluck('profile.hourly_rate')->filter(fn ($r) => $r !== null && (float) $r > 0);
+
+        return view('salary.index', [
+            'workers' => $workers,
+            'payslips' => $payslips,
+            'kpi_monthly_payroll' => $monthlyPayslips->sum('gross_pay'),
+            'kpi_pending_payslips' => $monthlyPayslips->where('status', 'draft')->count(),
+            'kpi_paid_this_month' => $monthlyPayslips->where('status', 'paid')->count(),
+            'kpi_average_rate' => $configuredRates->isNotEmpty() ? $configuredRates->avg() : null,
+        ]);
     }
 
     public function updateRate(Request $request, User $user): JsonResponse
