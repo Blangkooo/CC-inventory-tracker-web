@@ -360,17 +360,9 @@
                     <div class="analytics-card__title">Recent Transaction</div>
                 </div>
                 <div class="analytics-card__body">
-                    @php
-                        $exampleTxns = collect([
-                            (object) ['product' => (object) ['name' => 'Classic Milk Tea', 'price' => 130], 'total_amount' => 130],
-                            (object) ['product' => (object) ['name' => 'Black Forest Milk Tea', 'price' => 150], 'total_amount' => 150],
-                            (object) ['product' => (object) ['name' => 'Cheese Dog Set', 'price' => 180], 'total_amount' => 180],
-                        ]);
-                        $displayTxns = $recentTransactions->isNotEmpty() ? $recentTransactions->take(5) : $exampleTxns;
-                    @endphp
-                    @foreach($displayTxns as $index => $txn)
+                    @forelse($recentTransactions as $index => $txn)
                         <div class="transaction-item">
-                            <div class="transaction-item__title">Transaction {{ $displayTxns->count() - $index }}</div>
+                            <div class="transaction-item__title">Transaction {{ $recentTransactions->count() - $index }}</div>
                             @if($txn->product)
                                 <div class="transaction-item__row">
                                     <span>1 {{ $txn->product->name }}</span>
@@ -382,7 +374,12 @@
                                 <span>&#8369;{{ number_format($txn->total_amount, 0) }}</span>
                             </div>
                         </div>
-                    @endforeach
+                    @empty
+                        <div class="empty-state-icon">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="11" x2="15" y2="11"/></svg>
+                            <span class="empty-state-text">No transactions recorded yet.</span>
+                        </div>
+                    @endforelse
                 </div>
             </div>
 
@@ -392,22 +389,19 @@
                     <div class="analytics-card__title">Current Leakage</div>
                 </div>
                 <div class="analytics-card__body">
-                    @php
-                        $exampleLeaks = collect([
-                            ['name' => 'Tapioca Pearls', 'amount' => 1500, 'unit' => 'g'],
-                            ['name' => 'Brown Sugar Syrup', 'amount' => 800, 'unit' => 'ml'],
-                            ['name' => 'Plastic Cups', 'amount' => 80, 'unit' => 'pcs'],
-                        ]);
-                        $displayLeaks = $currentLeakage->isNotEmpty() ? $currentLeakage : $exampleLeaks;
-                    @endphp
-                    @foreach($displayLeaks as $leak)
+                    @forelse($currentLeakage as $leak)
                         <div class="leakage-item">
                             <span>{{ $leak['name'] }}</span>
                             <span class="leakage-item__amount" style="color: {{ $leak['amount'] > 50 ? '#dc2626' : 'var(--brown)' }}">
                                 {{ number_format($leak['amount']) }} {{ $leak['unit'] }}
                             </span>
                         </div>
-                    @endforeach
+                    @empty
+                        <div class="empty-state-icon">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c4.97 0 9-3.582 9-8 0-4.418-4.03-11-9-13-4.97 2-9 8.582-9 13 0 4.418 4.03 8 9 8z"/></svg>
+                            <span class="empty-state-text">No leakage data.</span>
+                        </div>
+                    @endforelse
                 </div>
             </div>
         </div>
@@ -420,20 +414,17 @@
                     <div class="analytics-card__title">Flags Detected</div>
                 </div>
                 <div class="analytics-card__body">
-                    @php
-                        $exampleAlerts = collect([
-                            (object) ['ingredient' => (object) ['name' => 'Tapioca Pearls'], 'severity' => 'severe'],
-                            (object) ['ingredient' => (object) ['name' => 'Brown Sugar Syrup'], 'severity' => 'moderate'],
-                            (object) ['ingredient' => (object) ['name' => 'Coffee Beans'], 'severity' => 'low'],
-                        ]);
-                        $displayAlerts = $activeAlerts->isNotEmpty() ? $activeAlerts->take(3) : $exampleAlerts;
-                    @endphp
-                    @foreach($displayAlerts as $alert)
+                    @forelse($activeAlerts->take(3) as $alert)
                         <div class="leakage-item">
                             <span>{{ $alert->ingredient->name ?? 'Unknown' }}</span>
                             <span class="status-badge {{ $alert->severity }}">{{ ucfirst($alert->severity) }}</span>
                         </div>
-                    @endforeach
+                    @empty
+                        <div class="empty-state-icon">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                            <span class="empty-state-text">No flags detected.</span>
+                        </div>
+                    @endforelse
                 </div>
             </div>
 
@@ -441,7 +432,7 @@
             <div class="analytics-card">
                 <div class="analytics-card__body metric-card">
                     <span class="metric-card__label">Total Profit Margin</span>
-                    <span class="metric-card__value">{{ $profitMargin > 0 ? $profitMargin : 24 }}% &#8593;</span>
+                    <span class="metric-card__value">{{ $profitMargin !== null ? $profitMargin.'%' : '—' }} {!! $profitMargin > 0 ? '&#8593;' : '' !!}</span>
                 </div>
             </div>
 
@@ -457,7 +448,7 @@
                             <option value="weekly">Weekly</option>
                         </select>
                         <div>
-                            <span class="chart-trend">{{ $performanceTrend > 0 ? $performanceTrend : 12 }}% &#8593;</span>
+                            <span class="chart-trend">{{ $performanceTrend }}% {!! $performanceTrend >= 0 ? '&#8593;' : '&#8595;' !!}</span>
                             <div class="chart-trend vs">vs last month</div>
                         </div>
                     </div>
@@ -465,14 +456,11 @@
                     @php
                         $monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
                         $currentMonth = now()->month;
-                        // Example data if no real sales data exists
-                        $exampleMonthlySales = [1 => 45000, 2 => 52000, 3 => 48000, 4 => 61000, 5 => 55000, 6 => 67000, 7 => 72000];
-                        $displayMonthlySales = !empty($monthlySales) ? $monthlySales : $exampleMonthlySales;
                     @endphp
                     @for ($m = 1; $m <= 12; $m++)
                         @php
-                            $val = $displayMonthlySales[$m] ?? 0;
-                            $maxVal = max(array_values($displayMonthlySales ?: [1]));
+                            $val = $monthlySales[$m] ?? 0;
+                            $maxVal = max(array_values($monthlySales ?: [1]));
                             $h = $maxVal > 0 ? max(3, ($val / $maxVal) * 100) : 3;
                             $isFuture = $m > $currentMonth;
                         @endphp
@@ -497,17 +485,15 @@
                             <option value="weekly">Weekly</option>
                         </select>
                         <div class="chart-stats">
-                            <div class="chart-stats__value">{{ $totalOrders > 0 ? number_format($totalOrders) : '2,840' }} Set</div>
+                            <div class="chart-stats__value">{{ number_format($totalOrders) }}</div>
                             <div class="chart-stats__label">Orders</div>
-                            <div class="chart-stats__trend">{{ $orderTrend > 0 ? $orderTrend : 8 }}% increase</div>
+                            <div class="chart-stats__trend">{{ $orderTrend >= 0 ? $orderTrend.'% increase' : abs($orderTrend).'% decrease' }}</div>
                         </div>
                     </div>
                     <div class="bar-chart">
                         @for ($m = 1; $m <= 12; $m++)@php
-                            $exampleHistorical = [1 => 320, 2 => 380, 3 => 350, 4 => 420, 5 => 390, 6 => 480, 7 => 520];
-                            $displayHistorical = !empty($historicalData) ? $historicalData : $exampleHistorical;
-                            $val = $displayHistorical[$m] ?? 0;
-                            $maxVal = max(array_values($displayHistorical ?: [1]));
+                            $val = $historicalData[$m] ?? 0;
+                            $maxVal = max(array_values($historicalData ?: [1]));
                             $h = $maxVal > 0 ? max(3, ($val / $maxVal) * 100) : 3;
                             $isFuture = $m > $currentMonth;
                         @endphp
@@ -527,21 +513,6 @@
 <div id="inventoryView" style="display: none;">
     <div class="analytics-card">
         <div class="analytics-card__body" style="padding: 0;">
-            @php
-                // Fallback example data when no real inventory exists
-                $exampleItems = collect([
-                    (object) ['item_name' => 'Black Tea Leaves', 'estimated_amount' => 5000, 'on_site_amount' => 4800, 'unit' => 'g', 'min_threshold' => 500],
-                    (object) ['item_name' => 'Whole Milk', 'estimated_amount' => 20000, 'on_site_amount' => 18500, 'unit' => 'ml', 'min_threshold' => 2000],
-                    (object) ['item_name' => 'Brown Sugar Syrup', 'estimated_amount' => 5000, 'on_site_amount' => 4200, 'unit' => 'ml', 'min_threshold' => 500],
-                    (object) ['item_name' => 'Tapioca Pearls', 'estimated_amount' => 10000, 'on_site_amount' => 8500, 'unit' => 'g', 'min_threshold' => 1000],
-                    (object) ['item_name' => 'Plastic Cups (500ml)', 'estimated_amount' => 500, 'on_site_amount' => 420, 'unit' => 'pcs', 'min_threshold' => 100],
-                    (object) ['item_name' => 'Coffee Beans (Arabica)', 'estimated_amount' => 3000, 'on_site_amount' => 2800, 'unit' => 'g', 'min_threshold' => 300],
-                    (object) ['item_name' => 'Cheese Sauce', 'estimated_amount' => 2000, 'on_site_amount' => 0, 'unit' => 'g', 'min_threshold' => 200],
-                    (object) ['item_name' => 'Hotdog Buns', 'estimated_amount' => 100, 'on_site_amount' => 85, 'unit' => 'pcs', 'min_threshold' => 20],
-                ]);
-                $displayItems = $inventoryItems->isNotEmpty() ? $inventoryItems : $exampleItems;
-            @endphp
-
             <table class="inventory-table">
                 <thead>
                     <tr>
@@ -554,7 +525,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($displayItems as $item)
+                    @forelse($inventoryItems as $item)
                         @php
                             $leakage = $item->estimated_amount - $item->on_site_amount;
                             $leakagePct = $item->estimated_amount > 0 ? ($leakage / $item->estimated_amount) * 100 : 0;
@@ -584,7 +555,9 @@
                                 <span class="status-badge {{ $remark }}">{{ $remark }}</span>
                             </td>
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr><td colspan="6" style="text-align:center;opacity:.4;padding:24px;">No inventory items found.</td></tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
@@ -703,17 +676,16 @@
         // Render profit margin
         var profitEl = document.querySelector('.metric-card__value');
         if (profitEl) {
-            profitEl.innerHTML = (data.profitMargin > 0 ? data.profitMargin : 24) + '% &#8593;';
+            profitEl.innerHTML = data.profitMargin !== null ? (data.profitMargin + '% ' + (data.profitMargin > 0 ? '&#8593;' : '')) : '&mdash;';
         }
 
         // Render performance chart
         var perfChart = document.getElementById('performanceChart');
         if (perfChart && data.monthlySales) {
-            var displaySales = Object.keys(data.monthlySales).length > 0 ? data.monthlySales : {1:45000,2:52000,3:48000,4:61000,5:55000,6:67000,7:72000};
-            var maxVal = Math.max.apply(null, Object.values(displaySales).concat([1]));
+            var maxVal = Math.max.apply(null, Object.values(data.monthlySales).concat([1]));
             var chartHtml = '';
             for (var m = 1; m <= 12; m++) {
-                var val = displaySales[m] || 0;
+                var val = data.monthlySales[m] || 0;
                 var h = maxVal > 0 ? Math.max(3, (val / maxVal) * 100) : 3;
                 var isFuture = m > currentMonth;
                 chartHtml += '<div class="bar-col"><div class="bar" style="height:' + (isFuture ? 0 : h) + '%;' + (isFuture ? 'opacity:.15' : '') + '"></div><div class="bar-label">' + monthLabels[m-1] + '</div></div>';
@@ -724,17 +696,16 @@
         // Render trend
         var trendEl = document.querySelector('.chart-trend');
         if (trendEl) {
-            trendEl.innerHTML = (data.performanceTrend > 0 ? data.performanceTrend : 12) + '% &#8593;';
+            trendEl.innerHTML = data.performanceTrend + '% ' + (data.performanceTrend >= 0 ? '&#8593;' : '&#8595;');
         }
 
         // Render historical chart
         var histCharts = document.querySelectorAll('.bar-chart');
         if (histCharts.length > 1 && data.historicalData) {
-            var histData = Object.keys(data.historicalData).length > 0 ? data.historicalData : {1:320,2:380,3:350,4:420,5:390,6:480,7:520};
-            var histMax = Math.max.apply(null, Object.values(histData).concat([1]));
+            var histMax = Math.max.apply(null, Object.values(data.historicalData).concat([1]));
             var histHtml = '';
             for (var m2 = 1; m2 <= 12; m2++) {
-                var hVal = histData[m2] || 0;
+                var hVal = data.historicalData[m2] || 0;
                 var hH = histMax > 0 ? Math.max(3, (hVal / histMax) * 100) : 3;
                 var hFuture = m2 > currentMonth;
                 histHtml += '<div class="bar-col"><div class="bar" style="height:' + (hFuture ? 0 : hH) + '%;' + (hFuture ? 'opacity:.15' : '') + '"></div><div class="bar-label">' + monthLabels[m2-1] + '</div></div>';
@@ -745,7 +716,11 @@
         // Render historical stats
         var histStats = document.querySelector('.chart-stats__value');
         if (histStats) {
-            histStats.textContent = (data.totalOrders > 0 ? Number(data.totalOrders).toLocaleString() : '2,840') + ' Set';
+            histStats.textContent = Number(data.totalOrders).toLocaleString();
+        }
+        var histTrend = document.querySelector('.chart-stats__trend');
+        if (histTrend) {
+            histTrend.textContent = data.orderTrend >= 0 ? (data.orderTrend + '% increase') : (Math.abs(data.orderTrend) + '% decrease');
         }
 
         // Render inventory table
@@ -753,18 +728,21 @@
         if (invBody && data.inventoryItems) {
             var invHtml = '';
             data.inventoryItems.forEach(function(item) {
-                var leakage = item.estimated_amount - item.on_site_amount;
-                var leakagePct = item.estimated_amount > 0 ? (leakage / item.estimated_amount) * 100 : 0;
+                var estimatedAmount = Number(item.estimated_amount);
+                var onSiteAmount = Number(item.on_site_amount);
+                var minThreshold = Number(item.min_threshold || 0);
+                var leakage = estimatedAmount - onSiteAmount;
+                var leakagePct = estimatedAmount > 0 ? (leakage / estimatedAmount) * 100 : 0;
                 var leakageStatus = 'none';
                 if (leakagePct > 10) leakageStatus = 'severe';
                 else if (leakagePct > 5) leakageStatus = 'moderate';
                 var inventoryStatus = 'stocked';
-                if (item.on_site_amount <= 0) inventoryStatus = 'out of stock';
-                else if (item.on_site_amount < (item.min_threshold || 0)) inventoryStatus = 'low';
+                if (onSiteAmount <= 0) inventoryStatus = 'out of stock';
+                else if (onSiteAmount < minThreshold) inventoryStatus = 'low';
                 var remark = 'normal';
                 if (leakageStatus === 'severe') remark = 'low';
                 else if (leakageStatus === 'moderate') remark = 'moderate';
-                invHtml += '<tr><td>' + item.item_name + '</td><td>' + Number(item.estimated_amount).toLocaleString() + ' ' + item.unit + '</td><td>' + Number(item.on_site_amount).toLocaleString() + ' ' + item.unit + '</td><td><span class="status-badge ' + leakageStatus + '">' + leakageStatus + '</span></td><td><span class="status-badge ' + (inventoryStatus === 'stocked' ? 'stocked' : (inventoryStatus === 'low' ? 'low' : 'severe')) + '">' + inventoryStatus + '</span></td><td><span class="status-badge ' + remark + '">' + remark + '</span></td></tr>';
+                invHtml += '<tr><td>' + item.item_name + '</td><td>' + estimatedAmount.toLocaleString() + ' ' + item.unit + '</td><td>' + onSiteAmount.toLocaleString() + ' ' + item.unit + '</td><td><span class="status-badge ' + leakageStatus + '">' + leakageStatus + '</span></td><td><span class="status-badge ' + (inventoryStatus === 'stocked' ? 'stocked' : (inventoryStatus === 'low' ? 'low' : 'severe')) + '">' + inventoryStatus + '</span></td><td><span class="status-badge ' + remark + '">' + remark + '</span></td></tr>';
             });
             invBody.innerHTML = invHtml || '<tr><td colspan="6" style="text-align:center;opacity:.4;padding:24px;">No inventory items found.</td></tr>';
         }

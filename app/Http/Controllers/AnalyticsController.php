@@ -3,83 +3,228 @@
 namespace App\Http\Controllers;
 
 use App\Models\Branch;
-use App\Models\ShiftLog;
+use App\Models\BranchStock;
+use App\Models\DiscrepancyAlert;
+use App\Models\Product;
 use App\Models\ShiftStockCount;
+use App\Models\StockMovement;
 use App\Models\Transaction;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class AnalyticsController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $user = auth()->user();
+        return view('analytics.index', $this->buildData($request));
+    }
+
+    public function data(Request $request): JsonResponse
+    {
+        return response()->json($this->buildData($request));
+    }
+
+    private function buildData(Request $request): array
+    {
+        $user = $request->user();
         $isManager = $user->isManager();
-        $branchId = $isManager ? $user->branch_id : null;
+        $selectedBranchId = $request->query('branch_id') ? (int) $request->query('branch_id') : null;
 
-        $salesTotals = Transaction::selectRaw('DATE(created_at) as d, SUM(total_amount) as total')
-            ->where('created_at', '>=', now()->subDays(29)->startOfDay())
-            ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
-            ->groupBy('d')
-            ->pluck('total', 'd');
+        $branches = Branch::when($isManager, fn ($q) => $q->where('id', $user->branch_id))
+            ->orderBy('name')
+            ->get();
 
-        $salesSeries = collect(range(0, 29))->map(function ($i) use ($salesTotals) {
-            $date = now()->subDays(29 - $i)->format('Y-m-d');
+        $branchScope = function ($query) use ($isManager, $user, $selectedBranchId) {
+            if ($selectedBranchId) {
+                $query->where('branch_id', $selectedBranchId);
+            } elseif ($isManager && $user->branch_id) {
+                $query->where('branch_id', $user->branch_id);
+            }
+        };
 
-            return ['date' => $date, 'total' => (float) ($salesTotals[$date] ?? 0)];
-        });
+        $recentTransactions = Transaction::with('product', 'branch', 'user')
+            ->when(true, $branchScope)
+            ->latest()
+            ->take(5)
+            ->get();
 
-        $topProducts = Transaction::with('product')
-            ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
-            ->selectRaw('product_id, SUM(total_amount) as revenue, SUM(quantity) as units')
-            ->groupBy('product_id')
-            ->orderByDesc('revenue')
-            ->take(8)
-            ->get()
-            ->map(fn ($row) => [
-                'name' => $row->product?->name ?? 'Unknown product',
-                'revenue' => (float) $row->revenue,
-                'units' => (int) $row->units,
-            ]);
+        $activeAlerts = DiscrepancyAlert::with('branch', 'ingredient')
+            ->where('status', 'pending')
+            ->when(true, $branchScope)
+            ->latest()
+            ->take(5)
+            ->get();
 
-        $branchRevenue = Branch::withSum('transactions as revenue', 'total_amount')
-            ->when($isManager, fn ($q) => $q->where('id', $branchId))
-            ->orderByDesc('revenue')
-            ->get()
-            ->map(fn ($b) => ['name' => $b->name, 'revenue' => (float) ($b->revenue ?? 0)]);
+        $leakageRows = ShiftStockCount::with('ingredient', 'shiftLog.user')
+            ->where('variance', '<', 0)
+            ->when(true, function ($q) use ($isManager, $user, $selectedBranchId) {
+                $q->whereHas('shiftLog', function ($sq) use ($isManager, $user, $selectedBranchId) {
+                    if ($selectedBranchId) {
+                        $sq->where('branch_id', $selectedBranchId);
+                    } elseif ($isManager && $user->branch_id) {
+                        $sq->where('branch_id', $user->branch_id);
+                    }
+                });
+            })
+            ->latest()
+            ->get();
 
-        $laborHours = ShiftLog::with('user')
-            ->where('status', 'closed')
-            ->whereNotNull('shift_end')
-            ->where('shift_start', '>=', now()->startOfMonth())
-            ->when($isManager, fn ($q) => $q->where('branch_id', $branchId))
-            ->get()
-            ->groupBy('user_id')
-            ->map(fn ($logs) => [
-                'name' => $logs->first()->user?->name ?? 'Unknown worker',
-                'hours' => round($logs->sum(fn ($l) => $l->shift_start->diffInMinutes($l->shift_end) / 60), 1),
+        $currentLeakage = $leakageRows->groupBy(fn ($row) => $row->ingredient->name ?? 'Unknown')
+            ->map(fn ($rows, $name) => [
+                'name' => $name,
+                'amount' => abs($rows->sum('variance')),
+                'unit' => $rows->first()->ingredient->unit ?? '',
             ])
-            ->sortByDesc('hours')
             ->values()
-            ->take(8);
+            ->take(5);
 
-        $leakageTrend = ShiftStockCount::where('variance', '<', 0)
-            ->whereHas('shiftLog', fn ($q) => $q->where('shift_start', '>=', now()->subDays(29))
-                ->when($isManager, fn ($q2) => $q2->where('branch_id', $branchId)))
-            ->with('shiftLog')
+        // MONTH() is MySQL-only; SQLite (the test suite) needs strftime instead.
+        $monthExpr = DB::connection()->getDriverName() === 'sqlite'
+            ? "CAST(strftime('%m', created_at) AS INTEGER)"
+            : 'MONTH(created_at)';
+
+        $monthlySales = Transaction::selectRaw("{$monthExpr} as month, SUM(total_amount) as total")
+            ->whereYear('created_at', now()->year)
+            ->when(true, $branchScope)
+            ->groupBy('month')
+            ->pluck('total', 'month')
+            ->toArray();
+
+        $historicalData = $monthlySales;
+
+        $totalRevenue = Transaction::whereYear('created_at', now()->year)
+            ->when(true, $branchScope)
+            ->sum('total_amount');
+
+        $lastMonthRevenue = Transaction::whereMonth('created_at', now()->subMonth())
+            ->whereYear('created_at', now()->subMonth()->year)
+            ->when(true, $branchScope)
+            ->sum('total_amount');
+
+        $performanceTrend = $lastMonthRevenue > 0
+            ? round((($totalRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100)
+            : ($totalRevenue > 0 ? 100 : 0);
+
+        $totalOrders = Transaction::whereYear('created_at', now()->year)
+            ->when(true, $branchScope)
+            ->count();
+
+        $thisMonthOrders = Transaction::whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->when(true, $branchScope)
+            ->count();
+
+        $lastMonthOrders = Transaction::whereMonth('created_at', now()->subMonth())
+            ->whereYear('created_at', now()->subMonth()->year)
+            ->when(true, $branchScope)
+            ->count();
+
+        $orderTrend = $lastMonthOrders > 0
+            ? round((($thisMonthOrders - $lastMonthOrders) / $lastMonthOrders) * 100)
+            : ($thisMonthOrders > 0 ? 100 : 0);
+
+        $profitMargin = $this->weightedProfitMargin($branchScope);
+
+        $stocks = BranchStock::with('ingredient', 'branch', 'movements')
+            ->when(true, function ($q) use ($isManager, $user, $selectedBranchId) {
+                if ($selectedBranchId) {
+                    $q->where('branch_id', $selectedBranchId);
+                } elseif ($isManager && $user->branch_id) {
+                    $q->where('branch_id', $user->branch_id);
+                }
+            })
+            ->get();
+
+        $inventoryItems = $stocks->map(function ($stock) {
+            $movements = $stock->movements;
+            $initial = $movements->where('type', StockMovement::TYPE_INITIAL)->sum('quantity_change');
+            $restocks = $movements->where('type', StockMovement::TYPE_RESTOCK)->sum('quantity_change');
+            $sales = abs($movements->where('type', StockMovement::TYPE_SALE)->sum('quantity_change'));
+
+            $estimated = ($initial + $restocks - $sales);
+            if ($estimated <= 0 && $stock->current_quantity > 0) {
+                $estimated = $stock->current_quantity;
+            }
+
+            return (object) [
+                'id' => $stock->id,
+                'item_name' => $stock->ingredient?->name ?? 'Unknown Ingredient',
+                'unit' => $stock->ingredient?->unit ?? '',
+                'branch_id' => $stock->branch_id,
+                'branch_name' => $stock->branch?->name ?? 'Unknown',
+                'estimated_amount' => max(0, $estimated),
+                'on_site_amount' => $stock->current_quantity,
+                'min_threshold' => $stock->min_threshold,
+                'status' => $stock->stock_status,
+            ];
+        })->sortBy('branch_name')->values();
+
+        return [
+            'branches' => $branches,
+            'selectedBranchId' => $selectedBranchId,
+            'recentTransactions' => $recentTransactions,
+            'activeAlerts' => $activeAlerts,
+            'currentLeakage' => $currentLeakage,
+            'monthlySales' => $monthlySales,
+            'historicalData' => $historicalData,
+            'profitMargin' => $profitMargin,
+            'performanceTrend' => $performanceTrend,
+            'totalOrders' => $totalOrders,
+            'orderTrend' => $orderTrend,
+            'inventoryItems' => $inventoryItems,
+        ];
+    }
+
+    /**
+     * Revenue-weighted average margin (price vs. recipe ingredient cost), across
+     * products sold this year that have both a price and a costed recipe. Null
+     * when no sold product has recipe/supplier cost data to compute a real figure.
+     */
+    private function weightedProfitMargin(callable $branchScope): ?float
+    {
+        $revenueByProduct = Transaction::selectRaw('product_id, SUM(total_amount) as revenue')
+            ->whereYear('created_at', now()->year)
+            ->when(true, $branchScope)
+            ->groupBy('product_id')
+            ->pluck('revenue', 'product_id');
+
+        if ($revenueByProduct->isEmpty()) {
+            return null;
+        }
+
+        $products = Product::with('recipes.ingredient.suppliers')
+            ->whereIn('id', $revenueByProduct->keys())
             ->get()
-            ->groupBy(fn ($row) => $row->shiftLog->shift_start->format('Y-m-d'))
-            ->map(fn ($rows, $date) => ['date' => $date, 'total' => (float) $rows->sum(fn ($r) => abs($r->variance))])
-            ->sortKeys()
-            ->values();
+            ->keyBy('id');
 
-        $peakSales = max($salesSeries->max('total'), 1);
-        $peakLeakage = max($leakageTrend->max('total') ?: 0, 1);
-        $peakLabor = max($laborHours->max('hours') ?: 0, 1);
-        $peakProduct = max($topProducts->max('revenue') ?: 0, 1);
+        $weightedMarginSum = 0.0;
+        $weightedRevenueTotal = 0.0;
 
-        return view('analytics.index', compact(
-            'salesSeries', 'topProducts', 'branchRevenue', 'laborHours', 'leakageTrend',
-            'peakSales', 'peakLeakage', 'peakLabor', 'peakProduct', 'isManager'
-        ));
+        foreach ($revenueByProduct as $productId => $revenue) {
+            $product = $products->get($productId);
+            $price = (float) ($product->price ?? 0);
+            if (! $product || $price <= 0 || $product->recipes->isEmpty()) {
+                continue;
+            }
+
+            $costBySize = $product->recipes->groupBy('size')->map(fn ($lines) => $lines->sum(function ($recipe) {
+                $unitCost = $recipe->ingredient->suppliers->firstWhere('pivot.is_primary', true)?->pivot?->unit_cost ?? 0;
+
+                return $unitCost * (float) $recipe->quantity_required;
+            }));
+
+            $avgCost = $costBySize->avg();
+            if ($avgCost <= 0) {
+                continue;
+            }
+
+            $marginPct = (($price - $avgCost) / $price) * 100;
+            $weightedMarginSum += $marginPct * $revenue;
+            $weightedRevenueTotal += $revenue;
+        }
+
+        return $weightedRevenueTotal > 0 ? round($weightedMarginSum / $weightedRevenueTotal, 1) : null;
     }
 }
