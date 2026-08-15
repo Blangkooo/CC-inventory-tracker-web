@@ -30,11 +30,15 @@ class LegalDocument extends Model
         return $this->belongsTo(User::class, 'uploaded_by');
     }
 
-    public function isExpiringSoon(): bool
+    public function isExpiringSoon(int $days = 30): bool
     {
         return $this->expires_at !== null
             && ! $this->expires_at->isPast()
-            && $this->expires_at->diffInDays(now()) <= 30;
+            // Carbon 3's diffInDays() is signed by default (negative when
+            // $this is in the future), so it must be wrapped in abs() —
+            // unwrapped, this check was true for every future date, no
+            // matter how far out, not just ones inside the window.
+            && abs($this->expires_at->diffInDays(now())) <= $days;
     }
 
     public function isExpired(): bool

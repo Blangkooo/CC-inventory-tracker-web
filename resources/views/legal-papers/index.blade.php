@@ -26,6 +26,25 @@
     @endif
 </div>
 
+<div class="grid grid-cols-4 max-[880px]:grid-cols-2 card border-[1.5px] border-line overflow-hidden divide-x divide-line max-[880px]:divide-x-0 mb-5">
+    <div class="p-4 text-center max-[880px]:border-b max-[880px]:border-line">
+        <div class="text-[26px] font-extrabold {{ $expiring_30_count > 0 ? 'text-amber-600' : 'text-accent' }} leading-none">{{ $expiring_30_count }}</div>
+        <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">Expiring in 30 Days</div>
+    </div>
+    <div class="p-4 text-center max-[880px]:border-b max-[880px]:border-line">
+        <div class="text-[26px] font-extrabold text-accent leading-none">{{ $expiring_60_count }}</div>
+        <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">Expiring in 60 Days</div>
+    </div>
+    <div class="p-4 text-center">
+        <div class="text-[26px] font-extrabold {{ $expired_count > 0 ? 'text-red-600' : 'text-accent' }} leading-none">{{ $expired_count }}</div>
+        <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">Expired Documents</div>
+    </div>
+    <div class="p-4 text-center">
+        <div class="text-[26px] font-extrabold text-green-600 leading-none">{{ $active_count }}</div>
+        <div class="text-[10px] font-bold uppercase tracking-[.05em] opacity-50 mt-1.5">Active Documents</div>
+    </div>
+</div>
+
 <div class="summary-table-wrap">
     @if ($documents->isEmpty())
         <div class="empty-state-icon">

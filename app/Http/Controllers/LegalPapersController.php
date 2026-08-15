@@ -25,7 +25,18 @@ class LegalPapersController extends Controller
 
         $branches = Branch::when($isManager, fn ($q) => $q->where('id', $branchId))->orderBy('name')->get();
 
-        return view('legal-papers.index', compact('documents', 'branches'));
+        $expired = $documents->filter(fn ($d) => $d->isExpired());
+        $expiring30 = $documents->filter(fn ($d) => $d->isExpiringSoon(30));
+        $expiring60 = $documents->filter(fn ($d) => $d->isExpiringSoon(60) && ! $d->isExpiringSoon(30));
+
+        return view('legal-papers.index', [
+            'documents' => $documents,
+            'branches' => $branches,
+            'expiring_30_count' => $expiring30->count(),
+            'expiring_60_count' => $expiring60->count(),
+            'expired_count' => $expired->count(),
+            'active_count' => $documents->count() - $expired->count(),
+        ]);
     }
 
     public function store(Request $request): JsonResponse
