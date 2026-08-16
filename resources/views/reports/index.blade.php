@@ -5,12 +5,6 @@
 @section('content')
 <style>
     /* ══ REPORTS-SPECIFIC STYLES ════════════════════════════════════════ */
-    .page-title {
-        font-size: 14px;
-        font-weight: 500;
-        opacity: .6;
-        margin-bottom: 20px;
-    }
 
     /* ══ BUSINESS TABS ══════════════════════════════════════════════════ */
     .business-tabs {
@@ -54,33 +48,6 @@
         align-items: center;
         justify-content: center;
         font-size: 10px;
-    }
-
-    /* ══ CARDS ══════════════════════════════════════════════════════════ */
-    .report-card {
-        background: #fff;
-        border: 1.5px solid var(--border);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow);
-        margin-bottom: 20px;
-    }
-
-    .report-card__header {
-        padding: 16px 20px;
-        border-bottom: 1px solid var(--border);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .report-card__title {
-        font-size: 16px;
-        font-weight: 700;
-    }
-
-    .report-card__body {
-        padding: 20px;
-        min-height: 120px;
     }
 
     /* ══ FLAG LEGEND ════════════════════════════════════════════════════ */
@@ -157,14 +124,6 @@
         text-decoration: underline;
     }
 
-    .empty-state {
-        text-align: center;
-        color: var(--brown);
-        opacity: .5;
-        font-size: 14px;
-        padding: 20px;
-    }
-
     @media (max-width: 768px) {
         .flag-item { flex-wrap: wrap; }
         .flag-item__date { width: 100%; margin-left: 28px; }
@@ -173,7 +132,10 @@
 </style>
 
 {{-- ═══ PAGE TITLE ═══ --}}
-<div class="page-title">owner reports</div>
+<div class="mb-6">
+    <div class="text-[22px] font-extrabold tracking-tight">Reports</div>
+    <div class="text-[13px] text-ink-2 mt-0.5">Discrepancy flags across branches</div>
+</div>
 
 {{-- ═══ BUSINESS TABS ═══ --}}
 <div class="business-tabs">
@@ -189,9 +151,9 @@
 </div>
 
 {{-- ═══ RECENT FLAGS DETECTED ═══ --}}
-<div class="report-card">
-    <div class="report-card__header">
-        <div class="report-card__title">Recent Flags Detected</div>
+<div class="card mb-5">
+    <div class="card__head">
+        <div class="card__title">Recent Flags Detected</div>
         <div class="flag-legend">
             <span class="flag-legend__item">
                 <span class="flag-legend__dot low"></span>
@@ -207,7 +169,7 @@
             </span>
         </div>
     </div>
-    <div class="report-card__body">
+    <div class="card__body">
         @if($recentFlags->isEmpty())
             <div class="empty-state-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
@@ -229,9 +191,9 @@
 </div>
 
 {{-- ═══ PREVIOUS FLAGS ═══ --}}
-<div class="report-card">
-    <div class="report-card__header">
-        <div class="report-card__title">Previous Flags</div>
+<div class="card mb-5">
+    <div class="card__head">
+        <div class="card__title">Previous Flags</div>
         <div class="flag-legend">
             <span class="flag-legend__item">
                 <span class="flag-legend__dot low"></span>
@@ -247,7 +209,7 @@
             </span>
         </div>
     </div>
-    <div class="report-card__body">
+    <div class="card__body">
         @if($previousFlags->isEmpty())
             <div class="empty-state-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
@@ -282,7 +244,7 @@
         el.classList.add('active');
 
         // Show loading state
-        document.querySelectorAll('.report-card__body').forEach(function(body) {
+        document.querySelectorAll('.card__body').forEach(function(body) {
             body.style.opacity = '0.4';
         });
 
@@ -293,12 +255,12 @@
         .then(function(r) { return r.json(); })
         .then(function(data) {
             renderReportsData(data);
-            document.querySelectorAll('.report-card__body').forEach(function(body) {
+            document.querySelectorAll('.card__body').forEach(function(body) {
                 body.style.opacity = '1';
             });
         })
         .catch(function() {
-            document.querySelectorAll('.report-card__body').forEach(function(body) {
+            document.querySelectorAll('.card__body').forEach(function(body) {
                 body.style.opacity = '1';
             });
         });
@@ -306,7 +268,7 @@
 
     function renderReportsData(data) {
         // Render recent flags
-        var recentContainer = document.querySelectorAll('.report-card__body')[0];
+        var recentContainer = document.querySelectorAll('.card__body')[0];
         if (recentContainer && data.recentFlags) {
             if (data.recentFlags.length === 0) {
                 recentContainer.innerHTML = '<div class="empty-state-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg><span class="empty-state-text">None as of yet.</span></div>';
@@ -326,7 +288,7 @@
         }
 
         // Render previous flags
-        var prevContainer = document.querySelectorAll('.report-card__body')[1];
+        var prevContainer = document.querySelectorAll('.card__body')[1];
         if (prevContainer && data.previousFlags) {
             if (data.previousFlags.length === 0) {
                 prevContainer.innerHTML = '<div class="empty-state-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg><span class="empty-state-text">No previous flags.</span></div>';
