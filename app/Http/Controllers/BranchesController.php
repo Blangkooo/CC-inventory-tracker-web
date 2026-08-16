@@ -50,6 +50,22 @@ class BranchesController extends Controller
             ->with('success', 'Business added successfully!');
     }
 
+    public function updateDescription(Request $request, Branch $branch)
+    {
+        $user = auth()->user();
+        abort_if($user->isManager() && $branch->id !== $user->branch_id, 403);
+
+        $validated = $request->validate([
+            'description' => ['nullable', 'string'],
+        ]);
+
+        $description = trim((string) ($validated['description'] ?? ''));
+
+        $branch->update(['description' => $description !== '' ? $description : null]);
+
+        return response()->json(['success' => true, 'branch' => $branch]);
+    }
+
     public function show(Branch $branch, Request $request): View
     {
         $user = auth()->user();

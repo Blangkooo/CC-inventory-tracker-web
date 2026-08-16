@@ -270,6 +270,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/branches', [BranchesController::class, 'index'])->name('branches');
     Route::post('/branches', [BranchesController::class, 'store'])->name('branches.store');
     Route::get('/branches/{branch}', [BranchesController::class, 'show'])->whereNumber('branch')->name('branches.show');
+    Route::put('/branches/{branch}/description', [BranchesController::class, 'updateDescription'])->whereNumber('branch')->name('branches.description.update');
     Route::get('/alerts', [AlertsController::class, 'index'])->name('alerts');
 
     // ── Notification inbox (bell dropdown) ───────────────────────────

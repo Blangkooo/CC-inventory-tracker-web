@@ -532,7 +532,7 @@
             <div class="business-info__details">
                 <p><strong>Location:</strong> {{ $branch->location ?? 'Not specified' }}</p>
                 <p><strong>Date of Operation:</strong> Established {{ $branch->created_at->format('F j, Y') }}</p>
-                <p><strong>About:</strong> {{ $branch->description ?? 'A cozy, neighborhood-centric specialty coffee shop dedicated to serving ethically sourced, small-batch roasted coffee. It serves as a warm community hub for remote workers, students, and coffee enthusiasts looking for a premium caffeine fix in a relaxed, minimalist environment.' }}</p>
+                <p><strong>About:</strong> {{ $branch->description ?: 'No description set yet.' }}</p>
                 <p><strong>Services Offered:</strong></p>
                 <ul>
                     <li>Artisanal espresso bar and manual pour-overs.</li>
@@ -565,7 +565,7 @@
         </div>
 
         <div id="recipesContainer">
-            @if(isset($products) && $products->isNotEmpty())
+            @if($products->isNotEmpty())
                 @foreach($products->take(3) as $product)
                     <div class="recipe-card" data-category="{{ $product->category ?? 'Drinks' }}">
                         <div class="recipe-card__name">{{ $product->name }}</div>
@@ -594,32 +594,9 @@
                     </div>
                 @endforeach
             @else
-                {{-- Fallback placeholder data --}}
-                <div class="recipe-card" data-category="Drinks">
-                    <div class="recipe-card__name">Regular Classic Bubble Tea</div>
-                    <div class="recipe-section">
-                        <span class="recipe-section__badge">Ingredients</span>
-                        <dl class="recipe-ingredients">
-                            <dt>Pearl</dt><dd>20 grams</dd>
-                            <dt>Sugar</dt><dd>10 grams</dd>
-                            <dt>Milk Tea</dt><dd>10 ounces</dd>
-                            <dt>Tea</dt><dd>120 ml</dd>
-                            <dt>Ice</dt><dd>30 grams</dd>
-                        </dl>
-                    </div>
-                    <div class="recipe-section">
-                        <span class="recipe-section__badge">Procedure</span>
-                        <div class="recipe-procedure">
-                            <h4>Cook the pearls</h4>
-                            <p>Boil 2 cups of water. Add pearls and stir. Boil for 7 minutes. Drain water</p>
-                            <h4>Make it sweet</h4>
-                            <p>Same pot mix cooked pearls with brown sugar and 1 tbsp water. Simmer on low for 3 minutes until thick and glossy. Remove from heat.</p>
-                            <h4>Brew the tea</h4>
-                            <p>Steep tea bags in 1 cup of hot water. Remove tea bags and add simple syrup. Let it cool.</p>
-                            <h4>Assemble</h4>
-                            <p>In cup, add pearls, ice, tea, and milk. Pop the cover and straw. Serve</p>
-                        </div>
-                    </div>
+                <div class="empty-state-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    <span class="empty-state-text">No recipes found.</span>
                 </div>
             @endif
         </div>
@@ -627,6 +604,23 @@
         <div class="recipes-footer">
             <a href="{{ route('recipes') }}" class="btn-edit-recipe">Edit</a>
         </div>
+    </div>
+</div>
+
+{{-- ═══ EDIT DESCRIPTION MODAL ═══ --}}
+<div class="modal-overlay" id="editDescriptionModal">
+    <div class="modal-content" style="max-width: 480px;">
+        <span class="modal-badge">Edit Description</span>
+        <h2 class="modal-title">Update business description</h2>
+        <p class="modal-subtitle">This appears under "About" on the business info card.</p>
+
+        <form onsubmit="submitDescription(event)">
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea class="form-input form-textarea" id="editDescriptionInput" placeholder="Enter a short description of your business"></textarea>
+            </div>
+            <button type="submit" class="btn-submit" id="editDescriptionSubmitBtn">Save</button>
+        </form>
     </div>
 </div>
 
@@ -697,8 +691,13 @@
 </div>
 
 <script>
+    var currentBranchId = {{ $branches->first()->id ?? 'null' }};
+    var currentBranchDescription = @json($branches->first()->description ?? null);
+    var csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
     // ═══ Branch Switching ═══
     function switchBranch(branchId, el) {
+        currentBranchId = branchId;
         // Update URL without reload
         var url = new URL(window.location.href);
         url.searchParams.set('branch_id', branchId);
@@ -734,6 +733,7 @@
     function renderBranchData(data) {
         if (!data.branch) return;
         var branch = data.branch;
+        currentBranchDescription = branch.description || null;
 
         // Update business info card
         var infoCard = document.getElementById('businessInfo');
@@ -745,7 +745,7 @@
             html += '<div class="business-info__details">';
             html += '<p><strong>Location:</strong> ' + (branch.location || 'Not specified') + '</p>';
             html += '<p><strong>Date of Operation:</strong> Established ' + new Date(branch.created_at).toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'}) + '</p>';
-            html += '<p><strong>About:</strong> ' + (branch.description || 'A cozy, neighborhood-centric specialty coffee shop.') + '</p>';
+            html += '<p><strong>About:</strong> ' + (branch.description || 'No description set yet.') + '</p>';
             html += '<p><strong>Services Offered:</strong></p>';
             html += '<ul>';
             html += '<li>Artisanal espresso bar and manual pour-overs.</li>';
@@ -811,10 +811,17 @@
         }
     });
 
+    document.getElementById('editDescriptionModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeEditDescriptionModal();
+        }
+    });
+
     // Close modal on Escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeAddBusinessModal();
+            closeEditDescriptionModal();
         }
     });
 
@@ -845,8 +852,40 @@
 
     // ═══ Business Actions ═══
     function editDescription() {
-        // TODO: Open edit description modal
-        console.log('Edit description clicked');
+        document.getElementById('editDescriptionInput').value = currentBranchDescription || '';
+        document.getElementById('editDescriptionModal').classList.add('active');
+    }
+
+    function closeEditDescriptionModal() {
+        document.getElementById('editDescriptionModal').classList.remove('active');
+    }
+
+    async function submitDescription(e) {
+        e.preventDefault();
+        var btn = document.getElementById('editDescriptionSubmitBtn');
+        var description = document.getElementById('editDescriptionInput').value;
+        btn.disabled = true;
+        btn.textContent = 'Saving…';
+
+        try {
+            var res = await fetch('/branches/' + currentBranchId + '/description', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                body: JSON.stringify({ description: description }),
+            });
+            var data = await res.json();
+            if (res.ok) {
+                closeEditDescriptionModal();
+                window.location.reload();
+            } else {
+                alert(data.message || 'Error updating description.');
+            }
+        } catch (err) {
+            alert('Error updating description.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Save';
+        }
     }
 
     function disownBusiness() {
