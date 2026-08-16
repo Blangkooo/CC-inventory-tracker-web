@@ -19,6 +19,7 @@ class BranchesController extends Controller
             'transactions' => fn ($q) => $q->whereDate('created_at', today()),
             'users' => fn ($q) => $q->where('role', 'staff'),
         ])
+            ->where('status', 'active')
             ->when($user->isManager(), fn ($q) => $q->where('id', $user->branch_id))
             ->get();
 
@@ -62,6 +63,15 @@ class BranchesController extends Controller
         $description = trim((string) ($validated['description'] ?? ''));
 
         $branch->update(['description' => $description !== '' ? $description : null]);
+
+        return response()->json(['success' => true, 'branch' => $branch]);
+    }
+
+    public function disown(Branch $branch)
+    {
+        abort_unless(auth()->user()->isSuperAdmin(), 403);
+
+        $branch->update(['status' => 'inactive']);
 
         return response()->json(['success' => true, 'branch' => $branch]);
     }

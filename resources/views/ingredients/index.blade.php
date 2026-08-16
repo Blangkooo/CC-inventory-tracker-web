@@ -5,7 +5,7 @@
 
 @section('content')
 <div class="toolbar">
-    <button class="btn btn--primary" onclick="openAddModal()">
+    <button class="btn-primary" onclick="openAddModal()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:middle;margin-right:6px;">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
@@ -28,12 +28,12 @@
             @forelse ($ingredients as $ingredient)
                 <tr data-id="{{ $ingredient->id }}">
                     <td class="cell-primary">{{ $ingredient->name }}</td>
-                    <td><span class="badge badge--outline">{{ $ingredient->unit }}</span></td>
+                    <td><span class="badge badge-gray">{{ $ingredient->unit }}</span></td>
                     <td>{{ $ingredient->recipes()->count() }}</td>
                     <td>{{ $ingredient->created_at?->format('M d, Y') ?? '—' }}</td>
                     <td style="text-align:right">
-                        <button class="btn btn--sm btn--secondary" onclick="openEditModal({{ $ingredient->id }}, '{{ addslashes($ingredient->name) }}', '{{ addslashes($ingredient->unit) }}')">Edit</button>
-                        <button class="btn btn--sm btn--danger" onclick="openDeleteModal({{ $ingredient->id }}, '{{ addslashes($ingredient->name) }}')">Delete</button>
+                        <button class="btn-sm" onclick="openEditModal({{ $ingredient->id }}, '{{ addslashes($ingredient->name) }}', '{{ addslashes($ingredient->unit) }}')">Edit</button>
+                        <button class="btn-sm danger" onclick="openDeleteModal({{ $ingredient->id }}, '{{ addslashes($ingredient->name) }}')">Delete</button>
                     </td>
                 </tr>
             @empty
@@ -87,8 +87,8 @@
                 </div>
             </div>
             <div class="modal__footer">
-                <button type="button" class="btn btn--secondary" onclick="closeModal('ingredient-modal')">Cancel</button>
-                <button type="submit" class="btn btn--primary" id="submit-btn">Save Ingredient</button>
+                <button type="button" class="btn-secondary" onclick="closeModal('ingredient-modal')">Cancel</button>
+                <button type="submit" class="btn-primary" id="submit-btn">Save Ingredient</button>
             </div>
         </form>
     </div>
@@ -110,8 +110,8 @@
             </p>
         </div>
         <div class="modal__footer">
-            <button type="button" class="btn btn--secondary" onclick="closeModal('delete-modal')">Cancel</button>
-            <button type="button" class="btn btn--danger" id="delete-confirm-btn">Delete</button>
+            <button type="button" class="btn-secondary" onclick="closeModal('delete-modal')">Cancel</button>
+            <button type="button" class="btn-danger" id="delete-confirm-btn">Delete</button>
         </div>
         <form id="delete-form" method="POST" style="display:none">
             @csrf

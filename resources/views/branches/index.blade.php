@@ -543,7 +543,9 @@
             </div>
             <div class="business-info__actions">
                 <button class="btn-outline" onclick="editDescription()">Edit Description</button>
-                <button class="btn-danger" onclick="disownBusiness()">Disown Business</button>
+                @if(auth()->user()->isSuperAdmin())
+                    <button class="btn-danger" onclick="disownBusiness()">Disown Business</button>
+                @endif
             </div>
         @endif
     </div>
@@ -694,6 +696,7 @@
     var currentBranchId = {{ $branches->first()->id ?? 'null' }};
     var currentBranchDescription = @json($branches->first()->description ?? null);
     var csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    var isSuperAdmin = @json(auth()->user()->isSuperAdmin());
 
     // ═══ Branch Switching ═══
     function switchBranch(branchId, el) {
@@ -756,7 +759,9 @@
             html += '</div>';
             html += '<div class="business-info__actions">';
             html += '<button class="btn-outline" onclick="editDescription()">Edit Description</button>';
-            html += '<button class="btn-danger" onclick="disownBusiness()">Disown Business</button>';
+            if (isSuperAdmin) {
+                html += '<button class="btn-danger" onclick="disownBusiness()">Disown Business</button>';
+            }
             html += '</div>';
             infoCard.innerHTML = html;
         }
@@ -888,10 +893,25 @@
         }
     }
 
-    function disownBusiness() {
-        if (confirm('Are you sure you want to disown this business?')) {
-            // TODO: Implement disown business functionality
-            console.log('Disown business clicked');
+    async function disownBusiness() {
+        if (!currentBranchId) return;
+        if (!confirm('Are you sure you want to disown this business? It will be deactivated and hidden from active views. This can be reversed later by a super admin.')) {
+            return;
+        }
+
+        try {
+            var res = await fetch('/branches/' + currentBranchId + '/disown', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+            });
+            var data = await res.json();
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                alert(data.message || 'Error disowning business.');
+            }
+        } catch (err) {
+            alert('Error disowning business.');
         }
     }
 </script>
