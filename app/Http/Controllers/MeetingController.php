@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesBranchAccess;
 use App\Models\Meeting;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -9,6 +10,8 @@ use Illuminate\Support\Facades\Auth;
 
 class MeetingController extends Controller
 {
+    use AuthorizesBranchAccess;
+
     /**
      * Display a listing of meetings for the calendar.
      */
@@ -47,6 +50,8 @@ class MeetingController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        $user = Auth::user();
+
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
@@ -60,7 +65,11 @@ class MeetingController extends Controller
             'attendee_ids.*' => ['exists:users,id'],
         ]);
 
-        $validated['created_by'] = Auth::id();
+        if ($user->isManager()) {
+            $validated['branch_id'] = $user->branch_id;
+        }
+
+        $validated['created_by'] = $user->id;
         $validated['status'] = 'scheduled';
 
         $meeting = Meeting::create($validated);
@@ -82,6 +91,8 @@ class MeetingController extends Controller
      */
     public function show(Meeting $meeting)
     {
+        $this->authorizeBranchOrCompanyWide($meeting->branch_id);
+
         $meeting->load(['branch', 'creator', 'attendees']);
 
         return response()->json([
@@ -95,6 +106,10 @@ class MeetingController extends Controller
      */
     public function update(Request $request, Meeting $meeting): JsonResponse
     {
+        $this->authorizeBranchOrCompanyWide($meeting->branch_id);
+
+        $user = Auth::user();
+
         $validated = $request->validate([
             'title' => ['sometimes', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
@@ -108,6 +123,10 @@ class MeetingController extends Controller
             'attendee_ids' => ['nullable', 'array'],
             'attendee_ids.*' => ['exists:users,id'],
         ]);
+
+        if ($user->isManager()) {
+            $validated['branch_id'] = $user->branch_id;
+        }
 
         $meeting->update($validated);
 
@@ -128,6 +147,8 @@ class MeetingController extends Controller
      */
     public function destroy(Meeting $meeting): JsonResponse
     {
+        $this->authorizeBranchOrCompanyWide($meeting->branch_id);
+
         $meeting->delete();
 
         return response()->json([
