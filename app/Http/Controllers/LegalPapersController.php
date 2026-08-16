@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesBranchAccess;
 use App\Models\Branch;
 use App\Models\LegalDocument;
 use Illuminate\Http\JsonResponse;
@@ -12,6 +13,8 @@ use Illuminate\View\View;
 
 class LegalPapersController extends Controller
 {
+    use AuthorizesBranchAccess;
+
     public function index(): View
     {
         $user = auth()->user();
@@ -62,6 +65,8 @@ class LegalPapersController extends Controller
 
     public function update(Request $request, LegalDocument $document): JsonResponse
     {
+        $this->authorizeBranchOrCompanyWide($document->branch_id);
+
         $validated = $request->validate([
             'branch_id' => ['nullable', 'exists:branches,id'],
             'title' => ['required', 'string', 'max:255'],
@@ -78,6 +83,8 @@ class LegalPapersController extends Controller
 
     public function destroy(LegalDocument $document): JsonResponse
     {
+        $this->authorizeBranchOrCompanyWide($document->branch_id);
+
         Storage::disk('public')->delete($document->file_path);
         $document->delete();
 
@@ -86,6 +93,8 @@ class LegalPapersController extends Controller
 
     public function download(LegalDocument $document): RedirectResponse
     {
+        $this->authorizeBranchOrCompanyWide($document->branch_id);
+
         return redirect(Storage::url($document->file_path));
     }
 }

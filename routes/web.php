@@ -73,95 +73,108 @@ Route::middleware('auth')->group(function () {
     Route::post('/mail', [NoticesController::class, 'store'])->name('notices.store');
     Route::delete('/mail/{notice}', [NoticesController::class, 'destroy'])->name('notices.destroy');
 
-    // ── Calendar (main design — kept as-is, see PR notes) ──────────
-    Route::get('/calendar', function () {
-        $user = auth()->user();
-        $isManager = $user->isManager();
-
-        // Get branches for the meeting form
-        $branches = \App\Models\Branch::when($isManager, fn ($q) => $q->where('id', $user->branch_id))
-            ->orderBy('name')
-            ->get();
-
-        // Get meetings for the current month
-        $meetings = \App\Models\Meeting::with(['branch', 'creator'])
-            ->when($isManager && $user->branch_id, fn ($q) => $q->where('branch_id', $user->branch_id))
-            ->whereMonth('date', now()->month)
-            ->whereYear('date', now()->year)
-            ->orderBy('date')
-            ->orderBy('start_time')
-            ->get();
-
-        // Get meetings for the current week
-        $weekMeetings = \App\Models\Meeting::with(['branch', 'creator'])
-            ->when($isManager && $user->branch_id, fn ($q) => $q->where('branch_id', $user->branch_id))
-            ->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])
-            ->orderBy('date')
-            ->orderBy('start_time')
-            ->get();
-
-        // Get upcoming meetings
-        $upcomingMeetings = \App\Models\Meeting::with(['branch', 'creator'])
-            ->when($isManager && $user->branch_id, fn ($q) => $q->where('branch_id', $user->branch_id))
-            ->where('date', '>=', now()->toDateString())
-            ->orderBy('date')
-            ->orderBy('start_time')
-            ->take(5)
-            ->get();
-
-        // Get days with events for calendar highlighting
-        $eventDays = $meetings->pluck('date')->map(fn($d) => $d->day)->unique()->toArray();
-
-        return view('calendar.index', [
-            'branches' => $branches,
-            'meetings' => $meetings,
-            'weekMeetings' => $weekMeetings,
-            'upcomingMeetings' => $upcomingMeetings,
-            'eventDays' => $eventDays,
-        ]);
-    })->name('calendar');
-
-    // ── Meeting AJAX Endpoints ────────────────────────────────────────
-    Route::post('/calendar/meetings', function (\Illuminate\Http\Request $request) {
-        $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'date' => ['required', 'date'],
-            'start_time' => ['required', 'string', 'max:10'],
-            'end_time' => ['required', 'string', 'max:10'],
-            'meeting_type' => ['nullable', 'in:meeting,task,event'],
-            'location' => ['nullable', 'string', 'max:255'],
-            'branch_id' => ['nullable', 'exists:branches,id'],
-        ]);
-
-        $validated['created_by'] = auth()->id();
-        $validated['status'] = 'scheduled';
-
-        $meeting = \App\Models\Meeting::create($validated);
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Meeting created successfully.',
-            'data' => $meeting->load(['branch', 'creator']),
-        ], 201);
-    })->name('calendar.meetings.store');
-
-    Route::delete('/calendar/meetings/{meeting}', function (\App\Models\Meeting $meeting) {
-        $meeting->delete();
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Meeting deleted successfully.',
-        ]);
-    })->name('calendar.meetings.delete');
-
     /*
      * Everything below is closed to staff. These screens read across the whole
      * branch (pay rates, expense ledgers, revenue) and the controllers treat
      * "not a manager" as "may see every branch" — so without this gate a staff
-     * account would see more than a manager, not less.
+     * account would see more than a manager, not less. Calendar/Meetings joined
+     * this group too: the sidebar already hides it from staff, this just closes
+     * the matching URL-guessing gap.
      */
     Route::middleware('role:super_admin,manager')->group(function () {
+        // ── Calendar (main design — kept as-is, see PR notes) ────────────
+        Route::get('/calendar', function () {
+            $user = auth()->user();
+            $isManager = $user->isManager();
+
+            // Get branches for the meeting form
+            $branches = \App\Models\Branch::when($isManager, fn ($q) => $q->where('id', $user->branch_id))
+                ->orderBy('name')
+                ->get();
+
+            // Get meetings for the current month
+            $meetings = \App\Models\Meeting::with(['branch', 'creator'])
+                ->when($isManager && $user->branch_id, fn ($q) => $q->where('branch_id', $user->branch_id))
+                ->whereMonth('date', now()->month)
+                ->whereYear('date', now()->year)
+                ->orderBy('date')
+                ->orderBy('start_time')
+                ->get();
+
+            // Get meetings for the current week
+            $weekMeetings = \App\Models\Meeting::with(['branch', 'creator'])
+                ->when($isManager && $user->branch_id, fn ($q) => $q->where('branch_id', $user->branch_id))
+                ->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])
+                ->orderBy('date')
+                ->orderBy('start_time')
+                ->get();
+
+            // Get upcoming meetings
+            $upcomingMeetings = \App\Models\Meeting::with(['branch', 'creator'])
+                ->when($isManager && $user->branch_id, fn ($q) => $q->where('branch_id', $user->branch_id))
+                ->where('date', '>=', now()->toDateString())
+                ->orderBy('date')
+                ->orderBy('start_time')
+                ->take(5)
+                ->get();
+
+            // Get days with events for calendar highlighting
+            $eventDays = $meetings->pluck('date')->map(fn($d) => $d->day)->unique()->toArray();
+
+            return view('calendar.index', [
+                'branches' => $branches,
+                'meetings' => $meetings,
+                'weekMeetings' => $weekMeetings,
+                'upcomingMeetings' => $upcomingMeetings,
+                'eventDays' => $eventDays,
+            ]);
+        })->name('calendar');
+
+        // ── Meeting AJAX Endpoints ────────────────────────────────────────
+        Route::post('/calendar/meetings', function (\Illuminate\Http\Request $request) {
+            $user = auth()->user();
+
+            $validated = $request->validate([
+                'title' => ['required', 'string', 'max:255'],
+                'description' => ['nullable', 'string'],
+                'date' => ['required', 'date'],
+                'start_time' => ['required', 'string', 'max:10'],
+                'end_time' => ['required', 'string', 'max:10'],
+                'meeting_type' => ['nullable', 'in:meeting,task,event'],
+                'location' => ['nullable', 'string', 'max:255'],
+                'branch_id' => ['nullable', 'exists:branches,id'],
+            ]);
+
+            if ($user->isManager()) {
+                $validated['branch_id'] = $user->branch_id;
+            }
+
+            $validated['created_by'] = $user->id;
+            $validated['status'] = 'scheduled';
+
+            $meeting = \App\Models\Meeting::create($validated);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Meeting created successfully.',
+                'data' => $meeting->load(['branch', 'creator']),
+            ], 201);
+        })->name('calendar.meetings.store');
+
+        Route::delete('/calendar/meetings/{meeting}', function (\App\Models\Meeting $meeting) {
+            $user = auth()->user();
+            if (! $user->isSuperAdmin() && ($meeting->branch_id === null || $user->branch_id !== $meeting->branch_id)) {
+                abort(403, 'Forbidden: you do not have access to this branch.');
+            }
+
+            $meeting->delete();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Meeting deleted successfully.',
+            ]);
+        })->name('calendar.meetings.delete');
+
         // ── Receipt OCR Scanning + Reconciliation ────────────────────────
         Route::get('/receipts', [\App\Http\Controllers\ReceiptsController::class, 'index'])->name('receipts.index');
         Route::post('/receipts', [\App\Http\Controllers\ReceiptsController::class, 'store'])->name('receipts.store');

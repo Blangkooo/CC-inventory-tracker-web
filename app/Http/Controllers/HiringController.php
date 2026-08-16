@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesBranchAccess;
 use App\Models\Branch;
 use App\Models\JobApplicant;
 use App\Models\JobOpening;
@@ -11,6 +12,8 @@ use Illuminate\View\View;
 
 class HiringController extends Controller
 {
+    use AuthorizesBranchAccess;
+
     public function index(): View
     {
         $user = auth()->user();
@@ -49,14 +52,20 @@ class HiringController extends Controller
 
     public function storeOpening(Request $request): JsonResponse
     {
+        $user = auth()->user();
+
         $validated = $request->validate([
             'branch_id' => ['nullable', 'exists:branches,id'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
         ]);
 
+        if ($user->isManager()) {
+            $validated['branch_id'] = $user->branch_id;
+        }
+
         $validated['status'] = 'open';
-        $validated['posted_by'] = auth()->id();
+        $validated['posted_by'] = $user->id;
 
         $opening = JobOpening::create($validated);
 
@@ -65,12 +74,20 @@ class HiringController extends Controller
 
     public function updateOpening(Request $request, JobOpening $opening): JsonResponse
     {
+        $this->authorizeBranchOrCompanyWide($opening->branch_id);
+
+        $user = auth()->user();
+
         $validated = $request->validate([
             'branch_id' => ['nullable', 'exists:branches,id'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'status' => ['required', 'in:open,closed'],
         ]);
+
+        if ($user->isManager()) {
+            $validated['branch_id'] = $user->branch_id;
+        }
 
         $opening->update($validated);
 
@@ -79,6 +96,8 @@ class HiringController extends Controller
 
     public function destroyOpening(JobOpening $opening): JsonResponse
     {
+        $this->authorizeBranchOrCompanyWide($opening->branch_id);
+
         $opening->delete();
 
         return response()->json(['success' => true]);
@@ -86,6 +105,8 @@ class HiringController extends Controller
 
     public function storeApplicant(Request $request, JobOpening $opening): JsonResponse
     {
+        $this->authorizeBranchOrCompanyWide($opening->branch_id);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
@@ -106,6 +127,8 @@ class HiringController extends Controller
 
     public function updateApplicantStatus(Request $request, JobApplicant $applicant): JsonResponse
     {
+        $this->authorizeBranchOrCompanyWide($applicant->opening->branch_id);
+
         $validated = $request->validate([
             'status' => ['required', 'in:applied,shortlisted,interviewed,hired,rejected'],
         ]);
@@ -117,6 +140,8 @@ class HiringController extends Controller
 
     public function destroyApplicant(JobApplicant $applicant): JsonResponse
     {
+        $this->authorizeBranchOrCompanyWide($applicant->opening->branch_id);
+
         $applicant->delete();
 
         return response()->json(['success' => true]);

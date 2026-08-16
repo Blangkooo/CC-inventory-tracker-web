@@ -21,4 +21,22 @@ trait AuthorizesBranchAccess
             abort(403, 'Forbidden: you do not have access to this branch.');
         }
     }
+
+    /**
+     * For resources whose branch_id is nullable (company-wide). Non-admins may only
+     * mutate a resource scoped to their own branch — a null (company-wide) branch_id
+     * is visible to them via index queries but not theirs to edit or delete.
+     */
+    protected function authorizeBranchOrCompanyWide(?int $branchId): void
+    {
+        $user = request()->user();
+
+        if (! $user || $user->isSuperAdmin()) {
+            return;
+        }
+
+        if ($branchId === null || $user->branch_id !== $branchId) {
+            abort(403, 'Forbidden: you do not have access to this branch.');
+        }
+    }
 }
