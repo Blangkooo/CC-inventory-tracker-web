@@ -1,15 +1,9 @@
 @extends('layouts.sidebar')
 
-@section('title', 'owner businesses')
+@section('title', 'Branches')
 
 @section('content')
 <style>
-    .workspace {
-        padding: 20px 32px;
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-
     /* ══ BUSINESS TABS ════════════════════════════════════════════════════ */
     .business-tabs {
         display: flex;
@@ -485,6 +479,12 @@
         font-size: 13px;
     }
 </style>
+
+{{-- ═══ PAGE HEADER ═══ --}}
+<div class="mb-6">
+    <div class="text-[22px] font-extrabold tracking-tight">Branches</div>
+    <div class="text-[13px] text-ink-2 mt-0.5">Manage your registered businesses and their recipes</div>
+</div>
 
 {{-- ═══ FLASH MESSAGES ═══ --}}
 @if(session('success'))
