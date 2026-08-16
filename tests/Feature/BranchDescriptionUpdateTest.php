@@ -60,4 +60,42 @@ class BranchDescriptionUpdateTest extends TestCase
         $response->assertOk();
         $this->assertNull($branch->fresh()->description);
     }
+
+    public function test_super_admin_can_update_services(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $branch = Branch::factory()->create(['services' => null]);
+
+        $response = $this->actingAs($admin)
+            ->putJson("/branches/{$branch->id}/description", ['services' => "Espresso bar\nFree Wi-Fi"]);
+
+        $response->assertOk();
+        $this->assertSame("Espresso bar\nFree Wi-Fi", $branch->fresh()->services);
+    }
+
+    public function test_services_can_be_cleared_to_null(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $branch = Branch::factory()->create(['services' => 'Espresso bar']);
+
+        $response = $this->actingAs($admin)
+            ->putJson("/branches/{$branch->id}/description", ['services' => '']);
+
+        $response->assertOk();
+        $this->assertNull($branch->fresh()->services);
+    }
+
+    public function test_updating_description_only_leaves_services_unchanged(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $branch = Branch::factory()->create(['description' => 'Old', 'services' => 'Espresso bar']);
+
+        $response = $this->actingAs($admin)
+            ->putJson("/branches/{$branch->id}/description", ['description' => 'New description']);
+
+        $response->assertOk();
+        $fresh = $branch->fresh();
+        $this->assertSame('New description', $fresh->description);
+        $this->assertSame('Espresso bar', $fresh->services);
+    }
 }

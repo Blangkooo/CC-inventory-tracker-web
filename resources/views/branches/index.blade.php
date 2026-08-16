@@ -533,16 +533,24 @@
                 <p><strong>Location:</strong> {{ $branch->location ?? 'Not specified' }}</p>
                 <p><strong>Date of Operation:</strong> Established {{ $branch->created_at->format('F j, Y') }}</p>
                 <p><strong>About:</strong> {{ $branch->description ?: 'No description set yet.' }}</p>
-                <p><strong>Services Offered:</strong></p>
-                <ul>
-                    <li>Artisanal espresso bar and manual pour-overs.</li>
-                    <li>Curated selection of loose-leaf teas and seasonal iced beverages.</li>
-                    <li>Light breakfast pastries and grab-and-go snacks.</li>
-                    <li>Free high-speed Wi-Fi and comfortable workstation seating.</li>
-                </ul>
+                @php
+                    $serviceLines = $branch->services
+                        ? array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $branch->services))))
+                        : [];
+                @endphp
+                @if(count($serviceLines) > 0)
+                    <p><strong>Services Offered:</strong></p>
+                    <ul>
+                        @foreach($serviceLines as $service)
+                            <li>{{ $service }}</li>
+                        @endforeach
+                    </ul>
+                @else
+                    <p><strong>Services Offered:</strong> Not listed yet.</p>
+                @endif
             </div>
             <div class="business-info__actions">
-                <button class="btn-outline" onclick="editDescription()">Edit Description</button>
+                <button class="btn-outline" onclick="editDescription()">Edit Business Info</button>
                 @if(auth()->user()->isSuperAdmin())
                     <button class="btn-danger" onclick="disownBusiness()">Disown Business</button>
                 @endif
@@ -609,17 +617,21 @@
     </div>
 </div>
 
-{{-- ═══ EDIT DESCRIPTION MODAL ═══ --}}
+{{-- ═══ EDIT BUSINESS INFO MODAL ═══ --}}
 <div class="modal-overlay" id="editDescriptionModal">
     <div class="modal-content" style="max-width: 480px;">
-        <span class="modal-badge">Edit Description</span>
-        <h2 class="modal-title">Update business description</h2>
-        <p class="modal-subtitle">This appears under "About" on the business info card.</p>
+        <span class="modal-badge">Edit Business Info</span>
+        <h2 class="modal-title">Update business info</h2>
+        <p class="modal-subtitle">This appears on the business info card.</p>
 
         <form onsubmit="submitDescription(event)">
             <div class="form-group">
                 <label class="form-label">Description</label>
                 <textarea class="form-input form-textarea" id="editDescriptionInput" placeholder="Enter a short description of your business"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Services Offered</label>
+                <textarea class="form-input form-textarea" id="editServicesInput" placeholder="One service per line, e.g. Artisanal espresso bar"></textarea>
             </div>
             <button type="submit" class="btn-submit" id="editDescriptionSubmitBtn">Save</button>
         </form>
@@ -695,6 +707,7 @@
 <script>
     var currentBranchId = {{ $branches->first()->id ?? 'null' }};
     var currentBranchDescription = @json($branches->first()->description ?? null);
+    var currentBranchServices = @json($branches->first()->services ?? null);
     var csrfToken = document.querySelector('meta[name="csrf-token"]').content;
     var isSuperAdmin = @json(auth()->user()->isSuperAdmin());
 
@@ -737,6 +750,7 @@
         if (!data.branch) return;
         var branch = data.branch;
         currentBranchDescription = branch.description || null;
+        currentBranchServices = branch.services || null;
 
         // Update business info card
         var infoCard = document.getElementById('businessInfo');
@@ -749,16 +763,18 @@
             html += '<p><strong>Location:</strong> ' + (branch.location || 'Not specified') + '</p>';
             html += '<p><strong>Date of Operation:</strong> Established ' + new Date(branch.created_at).toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'}) + '</p>';
             html += '<p><strong>About:</strong> ' + (branch.description || 'No description set yet.') + '</p>';
-            html += '<p><strong>Services Offered:</strong></p>';
-            html += '<ul>';
-            html += '<li>Artisanal espresso bar and manual pour-overs.</li>';
-            html += '<li>Curated selection of loose-leaf teas and seasonal iced beverages.</li>';
-            html += '<li>Light breakfast pastries and grab-and-go snacks.</li>';
-            html += '<li>Free high-speed Wi-Fi and comfortable workstation seating.</li>';
-            html += '</ul>';
+            var serviceLines = (branch.services || '').split(/\r\n|\r|\n/).map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 0; });
+            if (serviceLines.length > 0) {
+                html += '<p><strong>Services Offered:</strong></p>';
+                html += '<ul>';
+                serviceLines.forEach(function(s) { html += '<li>' + s + '</li>'; });
+                html += '</ul>';
+            } else {
+                html += '<p><strong>Services Offered:</strong> Not listed yet.</p>';
+            }
             html += '</div>';
             html += '<div class="business-info__actions">';
-            html += '<button class="btn-outline" onclick="editDescription()">Edit Description</button>';
+            html += '<button class="btn-outline" onclick="editDescription()">Edit Business Info</button>';
             if (isSuperAdmin) {
                 html += '<button class="btn-danger" onclick="disownBusiness()">Disown Business</button>';
             }
@@ -858,6 +874,7 @@
     // ═══ Business Actions ═══
     function editDescription() {
         document.getElementById('editDescriptionInput').value = currentBranchDescription || '';
+        document.getElementById('editServicesInput').value = currentBranchServices || '';
         document.getElementById('editDescriptionModal').classList.add('active');
     }
 
@@ -869,6 +886,7 @@
         e.preventDefault();
         var btn = document.getElementById('editDescriptionSubmitBtn');
         var description = document.getElementById('editDescriptionInput').value;
+        var services = document.getElementById('editServicesInput').value;
         btn.disabled = true;
         btn.textContent = 'Saving…';
 
@@ -876,17 +894,17 @@
             var res = await fetch('/branches/' + currentBranchId + '/description', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
-                body: JSON.stringify({ description: description }),
+                body: JSON.stringify({ description: description, services: services }),
             });
             var data = await res.json();
             if (res.ok) {
                 closeEditDescriptionModal();
                 window.location.reload();
             } else {
-                alert(data.message || 'Error updating description.');
+                alert(data.message || 'Error updating business info.');
             }
         } catch (err) {
-            alert('Error updating description.');
+            alert('Error updating business info.');
         } finally {
             btn.disabled = false;
             btn.textContent = 'Save';

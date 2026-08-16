@@ -57,12 +57,21 @@ class BranchesController extends Controller
         abort_if($user->isManager() && $branch->id !== $user->branch_id, 403);
 
         $validated = $request->validate([
-            'description' => ['nullable', 'string'],
+            'description' => ['sometimes', 'nullable', 'string'],
+            'services' => ['sometimes', 'nullable', 'string'],
         ]);
 
-        $description = trim((string) ($validated['description'] ?? ''));
+        $updates = [];
+        if (array_key_exists('description', $validated)) {
+            $description = trim((string) ($validated['description'] ?? ''));
+            $updates['description'] = $description !== '' ? $description : null;
+        }
+        if (array_key_exists('services', $validated)) {
+            $services = trim((string) ($validated['services'] ?? ''));
+            $updates['services'] = $services !== '' ? $services : null;
+        }
 
-        $branch->update(['description' => $description !== '' ? $description : null]);
+        $branch->update($updates);
 
         return response()->json(['success' => true, 'branch' => $branch]);
     }
