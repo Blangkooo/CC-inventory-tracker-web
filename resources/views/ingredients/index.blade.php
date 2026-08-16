@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.sidebar')
 
 @section('title', 'Ingredients')
 @section('subtitle', 'Manage your raw materials inventory')

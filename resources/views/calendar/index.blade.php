@@ -1,6 +1,7 @@
-@extends('layouts.app')
+@extends('layouts.sidebar')
 
 @section('title', 'Calendar')
+@section('subtitle', 'Meetings and scheduled events across your branches.')
 
 @section('content')
 <div class="max-w-[1200px] mx-auto">

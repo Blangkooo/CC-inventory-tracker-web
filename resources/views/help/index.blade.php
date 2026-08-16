@@ -1,6 +1,7 @@
-@extends('layouts.app')
+@extends('layouts.sidebar')
 
-@section('title', 'owner help center')
+@section('title', 'Help Center')
+@section('subtitle', 'Frequently asked questions and support.')
 
 @section('content')
 <div class="max-w-[1000px] mx-auto space-y-6">
