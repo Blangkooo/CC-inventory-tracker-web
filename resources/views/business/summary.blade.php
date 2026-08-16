@@ -1,38 +1,3 @@
-@php
-    // ── Placeholder fallbacks ─────────────────────────────────────────
-    if (!isset($branches) || $branches->isEmpty()) {
-        $branches = collect([
-            (object)['id'=>1,'name'=>'QC Main Branch'],
-            (object)['id'=>2,'name'=>'Makati Outlet'],
-            (object)['id'=>3,'name'=>'BGC Branch'],
-        ]);
-    }
-    if (!isset($activeBranch) || !$activeBranch) {
-        $activeBranch = $branches->first();
-    }
-    if (!isset($totalRevenue) || $totalRevenue == 0) $totalRevenue = 1_240_000;
-
-    if (!isset($recentTransactions) || $recentTransactions->isEmpty()) {
-        $recentTransactions = collect([
-            (object)['id'=>1005,'total_amount'=>375.00,'product'=>(object)['name'=>'Classic Milk Tea'],   'user'=>(object)['name'=>'Maria S.'],'created_at'=>now()->subMinutes(10)],
-            (object)['id'=>1004,'total_amount'=>600.00,'product'=>(object)['name'=>'Black Forest Milk Tea'],'user'=>(object)['name'=>'Juan D.'], 'created_at'=>now()->subMinutes(32)],
-            (object)['id'=>1003,'total_amount'=>275.00,'product'=>(object)['name'=>'Iced Coffee'],        'user'=>(object)['name'=>'Ana R.'],  'created_at'=>now()->subMinutes(58)],
-            (object)['id'=>1002,'total_amount'=>50.00, 'product'=>(object)['name'=>'Extra Sugar Shot'],   'user'=>(object)['name'=>'Maria S.'],'created_at'=>now()->subHours(2)],
-            (object)['id'=>1001,'total_amount'=>450.00,'product'=>(object)['name'=>'Taro Milk Tea'],      'user'=>(object)['name'=>'Juan D.'], 'created_at'=>now()->subHours(3)],
-        ]);
-    }
-    if (!isset($leakageRows) || $leakageRows->isEmpty()) {
-        $leakageRows = collect([
-            (object)['ingredient'=>(object)['name'=>'Whole Milk','unit'=>'L'],   'variance'=>-12.5],
-            (object)['ingredient'=>(object)['name'=>'Flavor Powder','unit'=>'kg'],'variance'=>-3.2],
-            (object)['ingredient'=>(object)['name'=>'Sugar','unit'=>'kg'],        'variance'=>-8.7],
-            (object)['ingredient'=>(object)['name'=>'Black Tea Base','unit'=>'L'],'variance'=>-2.1],
-        ]);
-    }
-    if (!isset($monthlySales) || $monthlySales->isEmpty()) {
-        $monthlySales = collect([1=>42000,2=>38000,3=>55000,4=>61000,5=>70000,6=>89000,7=>94000,8=>0,9=>0,10=>0,11=>0,12=>0]);
-    }
-@endphp
 @extends('layouts.sidebar')
 
 @section('title', 'Business Summary')

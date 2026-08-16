@@ -467,9 +467,8 @@ Route::middleware('auth')->group(function () {
     })->name('logistics');
 
     // ── Verification page (sub-tab in business/* views) ──────────────
-    Route::get('/business/verification', function () {
-        return view('business.verification');
-    })->name('business.verification');
+    Route::get('/business/verification', \App\Http\Controllers\VerificationController::class)
+        ->name('business.verification');
 
     // ── API Documentation (protected — requires auth) ─────────────────
     Route::get('/api-docs', function () {
