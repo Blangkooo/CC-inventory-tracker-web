@@ -222,7 +222,7 @@
                         <span class="flag-item__dot {{ $flag->severity }}"></span>
                         <span class="flag-item__name">{{ $flag->ingredient->name ?? 'Unknown' }} {{ ucfirst($flag->type ?? 'Discrepancy') }}</span>
                         <span class="flag-item__date">{{ $flag->created_at->format('m/ d/ Y') }}</span>
-                        <a href="{{ url('/api-docs') }}" class="flag-item__link">FlagReport.pdf</a>
+                        <a href="{{ route('reports.flags.pdf', $flag->id) }}" class="flag-item__link">FlagReport.pdf</a>
                     </li>
                 @endforeach
             </ul>
@@ -299,7 +299,7 @@
                     html2 += '<span class="flag-item__dot ' + flag.severity + '"></span>';
                     html2 += '<span class="flag-item__name">' + (flag.ingredient ? flag.ingredient.name : 'Unknown') + ' ' + (flag.type ? flag.type.charAt(0).toUpperCase() + flag.type.slice(1) : 'Discrepancy') + '</span>';
                     html2 += '<span class="flag-item__date">' + new Date(flag.created_at).toLocaleDateString('en-US', {month:'2-digit',day:'2-digit',year:'numeric'}) + '</span>';
-                    html2 += '<a href="/api-docs" class="flag-item__link">FlagReport.pdf</a>';
+                    html2 += '<a href="/reports/flags/' + flag.id + '/pdf" class="flag-item__link">FlagReport.pdf</a>';
                     html2 += '</li>';
                 });
                 html2 += '</ul>';

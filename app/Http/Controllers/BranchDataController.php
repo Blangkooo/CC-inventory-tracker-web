@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesBranchAccess;
 use App\Models\Branch;
 use App\Models\BranchStock;
 use App\Models\DiscrepancyAlert;
@@ -9,11 +10,15 @@ use App\Models\ShiftStockCount;
 use App\Models\StockMovement;
 use App\Models\Transaction;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class BranchDataController extends Controller
 {
+    use AuthorizesBranchAccess;
+
     /**
      * Helper: resolve the branch scope closure based on selected branch or manager restrictions.
      */
@@ -56,6 +61,24 @@ class BranchDataController extends Controller
             'recentFlags' => $recentFlags,
             'previousFlags' => $previousFlags,
         ]);
+    }
+
+    /**
+     * GET /reports/flags/{alert}/pdf
+     */
+    public function flagPdf(DiscrepancyAlert $alert): Response
+    {
+        $this->authorizeBranch($alert->branch_id);
+
+        $alert->load('branch', 'ingredient', 'shiftLog.user');
+
+        $pdf = Pdf::loadView('reports.flag-pdf', [
+            'alert' => $alert,
+            'generatedBy' => auth()->user()->name,
+            'generatedAt' => now()->format('M d, Y g:i A'),
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->download('flag-report-'.$alert->id.'-'.now()->format('Y-m-d').'.pdf');
     }
 
     /**

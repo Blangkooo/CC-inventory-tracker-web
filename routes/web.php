@@ -267,6 +267,10 @@ Route::middleware('auth')->group(function () {
         ]);
     })->name('reports');
 
+    Route::get('/reports/flags/{alert}/pdf', [\App\Http\Controllers\BranchDataController::class, 'flagPdf'])
+        ->whereNumber('alert')
+        ->name('reports.flags.pdf');
+
     // ── Staff Dashboard (self-service: clock in/out, verify stock) ─────
     Route::get('/staff/dashboard', [\App\Http\Controllers\StaffDashboardController::class, 'index'])
         ->name('staff.dashboard');
