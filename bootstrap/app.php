@@ -21,6 +21,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
         ]);
+
+        // Behind Railway's edge proxy the container only ever sees plain
+        // HTTP -- without trusting X-Forwarded-Proto, url()/asset() generate
+        // http:// links on an https:// page, which the browser blocks as
+        // mixed content.
+        $middleware->trustProxies(at: '*');
     })
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('app:purge-stale-receipts')->daily();
